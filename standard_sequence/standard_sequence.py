@@ -731,15 +731,11 @@ def do_imaging_beam_pulse(t, ta_last_detuning, repump_last_detuning):
 
 
 def turn_on_dipole_trap(t):
-    # devices.ipg_1064_aom_digital.go_high(t)
-    # devices.ipg_1064_aom_analog.constant(t, 1)
     devices.pulse_1064_digital.go_high(t)
     devices.pulse_1064_analog.constant(t, 1)
 
 
 def turn_off_dipole_trap(t):
-    # devices.ipg_1064_aom_digital.go_low(t)
-    # devices.ipg_1064_aom_analog.constant(t, 0)
     devices.pulse_1064_digital.go_low(t)
     devices.pulse_1064_analog.constant(t, 0)
 
@@ -786,6 +782,7 @@ def pre_imaging(t, ta_last_detuning, repump_last_detuning):
 
 
 def robust_loading_pulse(t, dur):
+    # TODO: rename this function, what is robust about this?
     devices.ta_shutter.open(t)
     devices.repump_shutter.open(t)
     devices.img_xy_shutter.open(t)
@@ -834,30 +831,27 @@ def parity_projection_pulse(t, dur, ta_last_detuning, repump_last_detuning):
     return t, ta_last_detuning, repump_last_detuning
 
 
-def do_blue(t, dur, blue_bool=shot_globals.do_456nm_laser,
-            blue_power=shot_globals.blue_456nm_power):
-    if blue_bool:
-        devices.blue_456_shutter.open(t)
-        devices.octagon_456_aom_analog.constant(t, blue_power)
-        # devices.moglabs_456_aom_analog.constant(t, 1)
-        # devices.moglabs_456_aom_digital.go_high(t)
-        devices.octagon_456_aom_digital.go_high(t)
-        # devices.optical_pump_shutter.open(t)
-        devices.img_xy_shutter.open(t)
-        devices.img_z_shutter.open(t)
-        devices.repump_shutter.open(t)
-        devices.repump_aom_digital.go_high(t)
-        devices.repump_aom_analog.constant(
-            t - 10e-6, shot_globals.ryd_456_repump_power)
-        # devices.moglabs_456_aom_analog.constant(t+dur,0)
-        # devices.moglabs_456_aom_digital.go_low(t+dur)
-        devices.octagon_456_aom_digital.go_low(t + dur)
-        devices.repump_aom_digital.go_low(t + dur)
-        # devices.optical_pump_shutter.close(t+dur)
-        devices.img_xy_shutter.close(t + dur)
-        devices.img_z_shutter.close(t + dur)
-        devices.repump_shutter.close(t + dur)
-        devices.blue_456_shutter.close(t + dur)
+def do_blue(t, dur, blue_power):
+    devices.blue_456_shutter.open(t)
+    devices.octagon_456_aom_analog.constant(t, blue_power)
+    devices.octagon_456_aom_digital.go_high(t)
+    # devices.optical_pump_shutter.open(t)
+    devices.img_xy_shutter.open(t)
+    devices.img_z_shutter.open(t)
+    devices.repump_shutter.open(t)
+    devices.repump_aom_digital.go_high(t)
+    devices.repump_aom_analog.constant(
+        t - 10e-6, shot_globals.ryd_456_repump_power)
+    # devices.moglabs_456_aom_analog.constant(t+dur,0)
+    # devices.moglabs_456_aom_digital.go_low(t+dur)
+    devices.octagon_456_aom_digital.go_low(t + dur)
+    devices.octagon_456_aom_analog.constant(t, 0)
+    devices.repump_aom_digital.go_low(t + dur)
+    # devices.optical_pump_shutter.close(t+dur)
+    devices.img_xy_shutter.close(t + dur)
+    devices.img_z_shutter.close(t + dur)
+    devices.repump_shutter.close(t + dur)
+    devices.blue_456_shutter.close(t + dur)
     return t
 
 
@@ -2423,9 +2417,10 @@ def do_tweezer_check():
         # samplerate=4e5,
         # )  # ramp back to full tweezer power
 
-    blue_dur = shot_globals.blue_456nm_duration
-    do_blue(t, blue_dur)
-    t += blue_dur
+    if shot_globals.do_456nm_laser:
+        blue_dur = shot_globals.blue_456nm_duration
+        do_blue(t, blue_dur)
+        t += blue_dur
 
     # if shot_globals.
 
