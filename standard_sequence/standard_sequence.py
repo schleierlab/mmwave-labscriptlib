@@ -78,7 +78,8 @@ def load_mot(t, mot_detuning, mot_coil_ctrl_voltage=10 / 6):
     return t
 
 
-def load_molasses(t, ta_bm_detuning, repump_bm_detuning, ta_last_detuning=shot_globals.mot_ta_detuning):  # -100
+def load_molasses(t, ta_bm_detuning, repump_bm_detuning,
+                  ta_last_detuning=shot_globals.mot_ta_detuning):  # -100
 
     devices.ta_vco.ramp(
         t,
@@ -159,27 +160,24 @@ def load_molasses(t, ta_bm_detuning, repump_bm_detuning, ta_last_detuning=shot_g
         biasz_calib(0))
 
     if shot_globals.mot_x_coil_voltage < 0:
-        devices.x_coil_current.ramp(
-            t - 4e-3,
-            duration=100e-6,
-            initial=shot_globals.mot_x_coil_voltage,
-            final=biasx_calib(0),  # 0 mG
-            samplerate=1e5,
-        )
+        t_x_coil = t - 4e-3
     else:
-        devices.x_coil_current.ramp(
-            t,
-            duration=100e-6,
-            initial=shot_globals.mot_x_coil_voltage,
-            final=biasx_calib(0),  # 0 mG
-            samplerate=1e5,
-        )
+        t_x_coil = t
+        
+    devices.x_coil_current.ramp(
+        t_x_coil,
+        duration=100e-6,
+        initial=shot_globals.mot_x_coil_voltage,
+        final=biasx_calib(0),  # 0 mG
+        samplerate=1e5,
+    )
 
     if shot_globals.mot_y_coil_voltage < 0:
         devices.y_coil_current.ramp(
             t - 4e-3,
             duration=100e-6,
             initial=shot_globals.mot_y_coil_voltage,
+            # TODO: is this correct? not biasy_calib?
             final=biasx_calib(0),  # 0 mG
             samplerate=1e5,
         )
@@ -193,21 +191,17 @@ def load_molasses(t, ta_bm_detuning, repump_bm_detuning, ta_last_detuning=shot_g
         )
 
     if shot_globals.mot_z_coil_voltage < 0:
-        devices.z_coil_current.ramp(
-            t - 4e-3,
-            duration=100e-6,
-            initial=shot_globals.mot_z_coil_voltage,
-            final=biasz_calib(0),  # 0 mG
-            samplerate=1e5,
-        )
+        t_z_coil = t - 4e-3
     else:
-        devices.z_coil_current.ramp(
-            t,
-            duration=100e-6,
-            initial=shot_globals.mot_z_coil_voltage,
-            final=biasz_calib(0),  # 0 mG
-            samplerate=1e5,
-        )
+        t_z_coil = t
+        
+    devices.z_coil_current.ramp(
+        t_z_coil,
+        duration=100e-6,
+        initial=shot_globals.mot_z_coil_voltage,
+        final=biasz_calib(0),  # 0 mG
+        samplerate=1e5,
+    )
 
     # devices.x_coil_current.constant(t, biasx_calib(0))
     # devices.y_coil_current.constant(t, biasy_calib(0))
