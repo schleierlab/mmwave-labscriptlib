@@ -25,6 +25,7 @@ if __name__ == "__main__":
     devices.initialize()
 
 # fixed parameters in the script
+# TODO: if keeping these global variables, rename them all caps
 coil_off_time = 1.4e-3  # minimum time for the MOT coil to be off
 ta_vco_ramp_t = 1.2e-4
 min_shutter_off_t = 6.28e-3  # minimum time for shutter to be off and on again
@@ -37,6 +38,7 @@ repump_bm_detuning = shot_globals.bm_repump_detuning
 
 
 def load_mot(t, mot_detuning, mot_coil_ctrl_voltage=10 / 6):
+    # TODO: abstract MOT laser turn on/off into a function
     devices.ta_aom_digital.go_high(t)
     devices.repump_aom_digital.go_high(t)
     # devices.mot_camera_trigger.go_low(t)
@@ -367,6 +369,7 @@ def load_molasses_img_beam(t, ta_bm_detuning, repump_bm_detuning):  # -100
 
 
 def do_mot(t, dur, *, use_coil, close_aom=True, close_shutter=True):
+    # TODO: compare this method to do_MOT() below
     if use_coil:
         load_mot(t, mot_detuning=shot_globals.mot_ta_detuning)
         devices.mot_coil_current_ctrl.constant(t + dur, 0)  # Turn off coils
@@ -374,7 +377,8 @@ def do_mot(t, dur, *, use_coil, close_aom=True, close_shutter=True):
         load_mot(
             t,
             mot_detuning=shot_globals.mot_ta_detuning,
-            mot_coil_ctrl_voltage=0)
+            mot_coil_ctrl_voltage=0
+        )
 
     if close_aom:
         devices.ta_aom_digital.go_low(t + dur)
@@ -388,6 +392,7 @@ def do_mot(t, dur, *, use_coil, close_aom=True, close_shutter=True):
 
 
 def do_MOT(t, dur, coils_bool):
+    # TODO: compare this method to do_mot() above
     if coils_bool:
         load_mot(t, mot_detuning=mot_detuning)
     else:
@@ -444,7 +449,7 @@ def do_mot_imaging(t, *, use_shutter=True):
 
 
 def reset_mot(t, ta_last_detuning):
-    print(f"time in diagonistics python {t}")
+    print(f"time in diagnostics python {t}")
     t += devices.ta_vco.ramp(
         t,
         duration=ta_vco_ramp_t,
@@ -457,31 +462,24 @@ def reset_mot(t, ta_last_detuning):
     if shot_globals.do_mot_coil:
         load_mot(t, mot_detuning=shot_globals.mot_ta_detuning)
     else:
-        load_mot(
-            t,
-            mot_detuning=shot_globals.mot_ta_detuning,
-            mot_coil_ctrl_voltage=0)
+        load_mot(t, mot_detuning=shot_globals.mot_ta_detuning,
+                 mot_coil_ctrl_voltage=0)
     # devices.uv_switch.go_low(t)
     return t
 
 
-def do_molasses(
-        t,
-        dur,
-        ta_last_detuning=shot_globals.mot_ta_detuning,
-        repump_last_detuning=0,
-        *,
-        close_shutter=True):
+def do_molasses(t, dur, ta_last_detuning=shot_globals.mot_ta_detuning,
+                repump_last_detuning=0, *, close_shutter=True):
     assert (shot_globals.do_molasses_img_beam or shot_globals.do_molasses_mot_beam), "either do_molasses_img_beam or do_molasses_mot_beam has to be on"
 
     if shot_globals.do_molasses_mot_beam:
-        assert shot_globals.bm_ta_detuning != 0, "bright molasses detuning = 0, did you forget to correct for the new case ?"
+        # TODO: what does this assert statement mean?
+        assert shot_globals.bm_ta_detuning != 0, "bright molasses detuning = 0, did you forget to correct for the new case?"
         devices.ta_shutter.open(t)
         devices.repump_shutter.open(t)
         devices.mot_xy_shutter.open(t)
         devices.mot_z_shutter.open(t)
-        _, ta_last_detuning, repump_last_detuning = load_molasses(
-            t, shot_globals.bm_ta_detuning, shot_globals.bm_repump_detuning, ta_last_detuning=ta_last_detuning)
+        _, ta_last_detuning, repump_last_detuning = load_molasses(t, shot_globals.bm_ta_detuning, shot_globals.bm_repump_detuning, ta_last_detuning=ta_last_detuning)
 
         print(f"molasses detuning is {shot_globals.bm_ta_detuning}")
         # turn off coil and light for TOF measurement, coil is already off in
@@ -497,9 +495,9 @@ def do_molasses(
         devices.mot_z_shutter.close(t)
         devices.img_xy_shutter.open(t)
         devices.img_z_shutter.open(t)
+        # TODO: what does this assert statement mean?
         assert shot_globals.bm_ta_detuning != 0, "bright molasses detuning = 0, did you forget to correct for the new case ?"
-        _, ta_last_detuning, repump_last_detuning = load_molasses_img_beam(
-            t, shot_globals.bm_img_ta_detuning, shot_globals.bm_img_repump_detuning)
+        _, ta_last_detuning, repump_last_detuning = load_molasses_img_beam(t, shot_globals.bm_img_ta_detuning, shot_globals.bm_img_repump_detuning)
         if close_shutter:
             devices.img_xy_shutter.close(t + dur)
             devices.img_z_shutter.close(t + dur)
@@ -524,13 +522,11 @@ def do_molasses_dipole_trap_imaging(
         exposure=shot_globals.bm_exposure_time,
         do_repump=True,
         close_shutter=True):
-
-    devices.x_coil_current.constant(
-        t, biasx_calib(0))  # define quantization axis
-    devices.y_coil_current.constant(
-        t, biasy_calib(0))  # define quantization axis
-    devices.z_coil_current.constant(
-        t, biasz_calib(0))  # define quantization axis
+    
+    # define quantization axis
+    devices.x_coil_current.constant(t, biasx_calib(0))
+    devices.y_coil_current.constant(t, biasy_calib(0))
+    devices.z_coil_current.constant(t, biasz_calib(0))
 
     devices.ta_shutter.open(t)
     if do_repump:
@@ -632,7 +628,6 @@ def do_molasses_dipole_trap_imaging(
         devices.mot_camera_trigger.go_low(t + shot_globals.bm_exposure_time)
 
     if shot_globals.do_kinetix_camera:
-
         devices.kinetix.expose(
             'Kinetix',
             t,
@@ -658,10 +653,6 @@ def do_molasses_dipole_trap_imaging(
             if shot_globals.do_img_z_beam_during_imaging:
                 devices.img_z_shutter.close(t)
     return t, ta_last_detuning, repump_last_detuning
-
-# def do_imaging_beam_pulse(t, *, img_ta_detuning = 0, img_repump_detuning
-# = 0, img_ta_power = 1, img_repump_power = 1, exposure =
-# shot_globals.bm_exposure_time, close_shutter = True):
 
 
 def do_imaging_beam_pulse(t, ta_last_detuning, repump_last_detuning):
