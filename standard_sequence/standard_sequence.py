@@ -37,6 +37,32 @@ ta_bm_detuning = shot_globals.bm_ta_detuning
 repump_bm_detuning = shot_globals.bm_repump_detuning
 
 
+def open_mot_shutters(t, label):
+    """Open the specified MOT shutters, else open all the MOT shutters"""
+    if label == "z":
+        devices.mot_z_shutter.go_high(t)
+    elif label == "xy":
+        devices.mot_xy_shutter.go_high(t)
+    else:
+        devices.mot_z_shutter.go_high(t)
+        devices.mot_xy_shutter.go_high(t)
+        
+    return t
+
+
+def open_img_shutters(t, label):
+    """Open the specified IMG shutters, else open all the IMG shutters"""
+    if label == "z":
+        devices.img_z_shutter.go_high(t)
+    elif label == "xy":
+        devices.img_xy_shutter.go_high(t)
+    else:
+        devices.img_z_shutter.go_high(t)
+        devices.img_xy_shutter.go_high(t)
+        
+    return t
+
+
 def load_mot(t, mot_detuning, mot_coil_ctrl_voltage=10 / 6):
     # TODO: abstract MOT laser turn on/off into a function
     devices.ta_aom_digital.go_high(t)
@@ -840,10 +866,8 @@ def do_blue(t, dur, blue_power):
     devices.img_z_shutter.open(t)
     devices.repump_shutter.open(t)
     devices.repump_aom_digital.go_high(t)
-    devices.repump_aom_analog.constant(
-        t - 10e-6, shot_globals.ryd_456_repump_power)
-    # devices.moglabs_456_aom_analog.constant(t+dur,0)
-    # devices.moglabs_456_aom_digital.go_low(t+dur)
+    devices.repump_aom_analog.constant(t - 10e-6,
+                                       shot_globals.ryd_456_repump_power)
     devices.octagon_456_aom_digital.go_low(t + dur)
     devices.octagon_456_aom_analog.constant(t, 0)
     devices.repump_aom_digital.go_low(t + dur)
@@ -855,12 +879,7 @@ def do_blue(t, dur, blue_power):
     return t
 
 
-def do_imaging(
-        t,
-        shot_number,
-        ta_last_detuning,
-        repump_last_detuning,
-        exposure=shot_globals.bm_exposure_time):
+def do_imaging(t, shot_number, ta_last_detuning, repump_last_detuning):
     devices.ta_shutter.open(t)
     devices.repump_shutter.open(t)
     if shot_number == 1:
@@ -908,7 +927,10 @@ def do_imaging(
     #     t +=  shot_globals.manta_exposure
     #     devices.repump_aom_digital.go_low(t)
     #     devices.ta_aom_digital.go_low(t)
-    assert shot_globals.img_exposure_time != 0, "Imaging expsorue time = 0, did you forget to adjust for the case?"
+    # TODO: what does this assert mean?
+    assert shot_globals.img_exposure_time != 0, ("Imaging exposure time = 0, "
+                                                 "did you forget to adjust "
+                                                 "for the case?")
 
     if shot_globals.do_kinetix_camera:
 
@@ -942,6 +964,7 @@ def do_imaging(
     devices.ta_aom_digital.go_low(t)
 
     if shot_number == 1:
+        # TODO: replace sections like this with a function literal
         if shot_globals.do_shutter_close_on_second_shot:
             if shot_globals.do_mot_beams_during_imaging:
                 if shot_globals.do_mot_xy_beams_during_imaging:
@@ -1494,12 +1517,6 @@ def do_mot_in_situ_check():
     labscript.start()
     t = 0
     mot_load_dur = 0.5
-
-    # temporal for Nolan's alignment
-    devices.local_addr_1064_aom_digital.go_high(t)
-    devices.ipg_1064_aom_digital.go_high(t)
-    devices.ipg_1064_aom_analog.constant(t, 1)
-    devices.local_addr_1064_aom_analog.constant(t, 1)
 
     do_mot(t, mot_load_dur, use_coil=True, close_aom=True, close_shutter=False)
     t += mot_load_dur  # MOT loading time 500 ms
@@ -3280,6 +3297,7 @@ def do_optical_pump_in_microtrap_check():
 
 
 if __name__ == "__main__":
+    # TODO: Can labscript.start() and t = 0 statements be moved here?
     if shot_globals.do_mot_in_situ_check:
         do_mot_in_situ_check()
 
