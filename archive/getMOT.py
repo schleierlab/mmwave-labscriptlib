@@ -10,7 +10,7 @@ from connection_table import devices
 from labscriptlib.shot_globals import shot_globals
 
 
-def load_mot(t, mot_coil_ctrl_voltage=10/6, mot_detuning = shot_globals.mot_detuning):
+def load_mot(t, mot_coil_ctrl_voltage=10/6, mot_detuning = shot_globals.CONST_MOT_DETUNING):
     devices.ta_aom_digital.go_high(t)
     devices.repump_aom_digital.go_high(t)
     devices.mot_camera_trigger.go_low(t)

@@ -18,12 +18,12 @@ from calibration import ta_freq_calib, repump_freq_calib, biasx_calib, biasy_cal
 from labscriptlib.shot_globals import shot_globals
 
 
-mot_detuning = shot_globals.mot_detuning # MHz, optimized based on atom number
+mot_detuning = shot_globals.CONST_MOT_DETUNING # MHz, optimized based on atom number
 # ta_bm_detuning = shot_globals.ta_bm_detuning
 # repump_bm_detuning = shot_globals.repump_bm_detuning
 
 
-def mot_beam_molasses(t, ta_bm_detuning = shot_globals.ta_bm_detuning, repump_bm_detuning = shot_globals.repump_bm_detuning): #-100
+def mot_beam_molasses(t, ta_bm_detuning = shot_globals.CONST_TA_BM_DETUNING, repump_bm_detuning = shot_globals.CONST_REPUMP_BM_DETUNING): #-100
     devices.ta_vco.ramp(
             t,
             duration=1e-3,
@@ -143,7 +143,7 @@ def img_beam_molasses(t, ta_bm_detuning = shot_globals.img_ta_bm_detuning, repum
     return t
 
 
-def load_mot(t, mot_coil_ctrl_voltage=10/6, mot_detuning = shot_globals.mot_detuning):
+def load_mot(t, mot_coil_ctrl_voltage=10/6, mot_detuning = shot_globals.CONST_MOT_DETUNING):
     devices.ta_aom_digital.go_high(t)
     devices.repump_aom_digital.go_high(t)
     devices.mot_camera_trigger.go_low(t)
@@ -253,7 +253,7 @@ def do_imaging(t, camera):
                 t,
                 duration=ta_vco_ramp_t,
                 initial=ta_freq_calib(mot_detuning),
-                final=ta_freq_calib(shot_globals.mot_detuning),
+                final=ta_freq_calib(shot_globals.CONST_MOT_DETUNING),
                 samplerate=4e5,
             )# ramp back to imaging
 

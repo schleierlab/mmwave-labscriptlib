@@ -25,16 +25,16 @@ if __name__ == "__main__":
     devices.initialize()
 
 # fixed parameters in the script
-# TODO: if keeping these global variables, rename them all caps
-coil_off_time = 1.4e-3  # minimum time for the MOT coil to be off
-ta_vco_ramp_t = 1.2e-4
-min_shutter_off_t = 6.28e-3  # minimum time for shutter to be off and on again
+CONST_COIL_OFF_TIME = 1.4e-3  # minimum time for the MOT coil to be off
+CONST_TA_VCO_RAMP_TIME = 1.2e-4
+CONST_MIN_SHUTTER_OFF_TIME = 6.28e-3  # minimum time for shutter to be off and on again
 # -13 # MHz, optimized based on atom number
-mot_detuning = shot_globals.mot_ta_detuning
+# TODO: these are not actually literal values, assign numerical value
+CONST_MOT_DETUNING = shot_globals.mot_ta_detuning
 # -100 # MHz, bright molasses detuning
-ta_bm_detuning = shot_globals.bm_ta_detuning
+CONST_TA_BM_DETUNING = shot_globals.bm_ta_detuning
 # 0 # MHz, bright molasses detuning
-repump_bm_detuning = shot_globals.bm_repump_detuning
+CONST_REPUMP_BM_DETUNING = shot_globals.bm_repump_detuning
 
 
 def open_mot_shutters(t, label=None):
@@ -86,6 +86,26 @@ def close_img_shutters(t, label=None):
         devices.img_z_shutter.go_low(t)
         devices.img_xy_shutter.go_low(t)
     
+    return t
+
+
+def do_ta_aom_pulse(t, dur, ta_power):
+    """Set AOMs to do a TA pulse, no shutter action"""
+    devices.ta_aom_digital.go_high(t)
+    devices.ta_aom_analog.constant(t, ta_power)
+    t += dur
+    devices.ta_aom_digital.go_low(t)
+    devices.ta_aom_analog.constant(t, 0)
+    return t
+
+
+def do_repump_aom_pulse(t, dur, repump_power):
+    """Set AOMs to do a repump pulse, no shutter action"""
+    devices.repump_aom_digital.go_high(t)
+    devices.repump_aom_analog.constant(t, repump_power)
+    t += dur
+    devices.repump_aom_digital.go_low(t)
+    devices.repump_aom_analog.constant(t, 0)
     return t
 
 
@@ -426,12 +446,9 @@ def do_mot(t, dur, *, use_coil, close_aom=True, close_shutter=True):
         load_mot(t, mot_detuning=shot_globals.mot_ta_detuning)
         devices.mot_coil_current_ctrl.constant(t + dur, 0)  # Turn off coils
     else:
-        load_mot(
-            t,
-            mot_detuning=shot_globals.mot_ta_detuning,
-            mot_coil_ctrl_voltage=0
-        )
-
+        load_mot(t, mot_detuning=shot_globals.mot_ta_detuning,
+                 mot_coil_ctrl_voltage=0)
+        
     if close_aom:
         devices.ta_aom_digital.go_low(t + dur)
         devices.repump_aom_digital.go_low(t + dur)
@@ -446,9 +463,9 @@ def do_mot(t, dur, *, use_coil, close_aom=True, close_shutter=True):
 def do_MOT(t, dur, coils_bool):
     # TODO: compare this method to do_mot() above
     if coils_bool:
-        load_mot(t, mot_detuning=mot_detuning)
+        load_mot(t, mot_detuning=CONST_MOT_DETUNING)
     else:
-        load_mot(t, mot_detuning=mot_detuning, mot_coil_ctrl_voltage=0)
+        load_mot(t, mot_detuning=CONST_MOT_DETUNING, mot_coil_ctrl_voltage=0)
 
     if shot_globals.do_molasses_img_beam:
         devices.mot_xy_shutter.close(t + dur)
@@ -456,7 +473,7 @@ def do_MOT(t, dur, coils_bool):
 
     # MOT coils ramped down in load_molasses
 
-    ta_last_detuning = mot_detuning
+    ta_last_detuning = CONST_MOT_DETUNING
     repump_last_detuning = 0
 
     return t
@@ -464,8 +481,8 @@ def do_MOT(t, dur, coils_bool):
 
 def do_mot_imaging(t, *, use_shutter=True):
     devices.ta_vco.ramp(
-        t - ta_vco_ramp_t,
-        duration=ta_vco_ramp_t,
+        t - CONST_TA_VCO_RAMP_TIME,
+        duration=CONST_TA_VCO_RAMP_TIME,
         initial=ta_freq_calib(shot_globals.mot_ta_detuning),
         final=ta_freq_calib(0),
         samplerate=4e5,
@@ -504,7 +521,7 @@ def reset_mot(t, ta_last_detuning):
     print(f"time in diagnostics python {t}")
     t += devices.ta_vco.ramp(
         t,
-        duration=ta_vco_ramp_t,
+        duration=CONST_TA_VCO_RAMP_TIME,
         initial=ta_freq_calib(ta_last_detuning),
         final=ta_freq_calib(shot_globals.mot_ta_detuning),
         samplerate=4e5,
@@ -588,8 +605,8 @@ def do_molasses_dipole_trap_imaging(
 
     if shot_globals.do_molasses_mot_beam:
         devices.ta_vco.ramp(
-            t - ta_vco_ramp_t,
-            duration=ta_vco_ramp_t,
+            t - CONST_TA_VCO_RAMP_TIME,
+            duration=CONST_TA_VCO_RAMP_TIME,
             initial=ta_freq_calib(ta_last_detuning),
             # ta_freq_calib(shot_globals.bm_ta_detuning),
             final=ta_freq_calib(img_ta_detuning),
@@ -597,8 +614,8 @@ def do_molasses_dipole_trap_imaging(
         )  # ramp back to imaging
 
         devices.repump_vco.ramp(
-            t - ta_vco_ramp_t,
-            duration=ta_vco_ramp_t,
+            t - CONST_TA_VCO_RAMP_TIME,
+            duration=CONST_TA_VCO_RAMP_TIME,
             # repump_freq_calib(shot_globals.bm_repump_detuning),
             initial=repump_freq_calib(repump_last_detuning),
             final=repump_freq_calib(img_repump_detuning),
@@ -607,8 +624,8 @@ def do_molasses_dipole_trap_imaging(
 
     if shot_globals.do_molasses_img_beam:
         devices.ta_vco.ramp(
-            t - ta_vco_ramp_t,
-            duration=ta_vco_ramp_t,
+            t - CONST_TA_VCO_RAMP_TIME,
+            duration=CONST_TA_VCO_RAMP_TIME,
             # ta_freq_calib(shot_globals.bm_img_ta_detuning),
             initial=ta_freq_calib(ta_last_detuning),
             final=ta_freq_calib(img_ta_detuning),
@@ -616,8 +633,8 @@ def do_molasses_dipole_trap_imaging(
         )  # ramp back to imaging
 
         devices.repump_vco.ramp(
-            t - ta_vco_ramp_t,
-            duration=ta_vco_ramp_t,
+            t - CONST_TA_VCO_RAMP_TIME,
+            duration=CONST_TA_VCO_RAMP_TIME,
             # repump_freq_calib(shot_globals.bm_img_repump_detuning),
             initial=repump_freq_calib(repump_last_detuning),
             final=repump_freq_calib(img_repump_detuning),
@@ -712,8 +729,8 @@ def do_imaging_beam_pulse(t, ta_last_detuning, repump_last_detuning):
     blue_detuning = 10
 
     devices.ta_vco.ramp(
-        t - ta_vco_ramp_t,
-        duration=ta_vco_ramp_t,
+        t - CONST_TA_VCO_RAMP_TIME,
+        duration=CONST_TA_VCO_RAMP_TIME,
         initial=ta_freq_calib(ta_last_detuning),
         # ta_freq_calib(shot_globals.bm_img_ta_detuning),
         final=ta_freq_calib(blue_detuning),
@@ -721,8 +738,8 @@ def do_imaging_beam_pulse(t, ta_last_detuning, repump_last_detuning):
     )  # ramp back to imaging
 
     devices.repump_vco.ramp(
-        t - ta_vco_ramp_t,
-        duration=ta_vco_ramp_t,
+        t - CONST_TA_VCO_RAMP_TIME,
+        duration=CONST_TA_VCO_RAMP_TIME,
         # repump_freq_calib(shot_globals.bm_img_repump_detuning),
         initial=repump_freq_calib(repump_last_detuning),
         final=repump_freq_calib(blue_detuning),
@@ -762,16 +779,16 @@ def do_imaging_beam_pulse(t, ta_last_detuning, repump_last_detuning):
 
     t += 3e-3
     devices.ta_vco.ramp(
-        t - ta_vco_ramp_t,
-        duration=ta_vco_ramp_t,
+        t - CONST_TA_VCO_RAMP_TIME,
+        duration=CONST_TA_VCO_RAMP_TIME,
         initial=ta_freq_calib(blue_detuning),
         final=ta_freq_calib(shot_globals.bm_img_ta_detuning),
         samplerate=4e5,
     )  # ramp back to imaging
 
     devices.repump_vco.ramp(
-        t - ta_vco_ramp_t,
-        duration=ta_vco_ramp_t,
+        t - CONST_TA_VCO_RAMP_TIME,
+        duration=CONST_TA_VCO_RAMP_TIME,
         initial=repump_freq_calib(blue_detuning),
         final=repump_freq_calib(shot_globals.bm_img_repump_detuning),
         samplerate=4e5,
@@ -802,7 +819,7 @@ def pre_imaging(t, ta_last_detuning, repump_last_detuning):
 
     devices.ta_vco.ramp(
         t,
-        duration=ta_vco_ramp_t,
+        duration=CONST_TA_VCO_RAMP_TIME,
         initial=ta_freq_calib(ta_last_detuning),
         final=ta_freq_calib(shot_globals.img_ta_detuning),
         samplerate=4e5,
@@ -810,7 +827,7 @@ def pre_imaging(t, ta_last_detuning, repump_last_detuning):
 
     devices.repump_vco.ramp(
         t,
-        duration=ta_vco_ramp_t,
+        duration=CONST_TA_VCO_RAMP_TIME,
         initial=repump_freq_calib(repump_last_detuning),
         final=repump_freq_calib(0),
         samplerate=4e5,
@@ -825,7 +842,7 @@ def pre_imaging(t, ta_last_detuning, repump_last_detuning):
     devices.ta_aom_analog.constant(t, shot_globals.img_ta_power)
     devices.repump_aom_analog.constant(t, shot_globals.img_repump_power)
 
-    t += ta_vco_ramp_t
+    t += CONST_TA_VCO_RAMP_TIME
 
     print('preimaging stage')
     print(f'ta_last_detuning = {ta_last_detuning}')
@@ -854,7 +871,7 @@ def robust_loading_pulse(t, dur):
 def parity_projection_pulse(t, dur, ta_last_detuning, repump_last_detuning):
     devices.ta_vco.ramp(
         t,
-        duration=ta_vco_ramp_t,
+        duration=CONST_TA_VCO_RAMP_TIME,
         initial=ta_freq_calib(ta_last_detuning),
         final=ta_freq_calib(shot_globals.bm_parity_projection_ta_detuning),
         samplerate=4e5,
@@ -866,7 +883,7 @@ def parity_projection_pulse(t, dur, ta_last_detuning, repump_last_detuning):
     devices.ta_aom_analog.constant(
         t, shot_globals.bm_parity_projection_ta_power)
 
-    t += ta_vco_ramp_t
+    t += CONST_TA_VCO_RAMP_TIME
 
     print('parity projection stage')
     print(f'ta_last_detuning = {ta_last_detuning}')
@@ -1100,7 +1117,7 @@ def optical_pumping(
 
         devices.ta_vco.ramp(
             t,
-            duration=ta_vco_ramp_t,
+            duration=CONST_TA_VCO_RAMP_TIME,
             initial=ta_freq_calib(ta_last_detuning),
             final=ta_freq_calib(ta_pumping_detuning),
             samplerate=4e5,
@@ -1109,7 +1126,7 @@ def optical_pumping(
         ta_last_detuning = ta_pumping_detuning
         repump_last_detuning = repump_last_detuning
 
-        t += ta_vco_ramp_t + ta_vco_stable_t
+        t += CONST_TA_VCO_RAMP_TIME + ta_vco_stable_t
 
         devices.mot_xy_shutter.open(t)
         devices.mot_z_shutter.open(t)
@@ -1188,7 +1205,7 @@ def optical_pumping(
 
         devices.ta_vco.ramp(
             t,
-            duration=ta_vco_ramp_t,
+            duration=CONST_TA_VCO_RAMP_TIME,
             initial=ta_freq_calib(ta_last_detuning),
             final=ta_freq_calib(ta_pumping_detuning),
             samplerate=4e5,
@@ -1196,7 +1213,7 @@ def optical_pumping(
 
         devices.repump_vco.ramp(
             t,
-            duration=ta_vco_ramp_t,
+            duration=CONST_TA_VCO_RAMP_TIME,
             initial=repump_freq_calib(repump_last_detuning),
             final=repump_freq_calib(repump_depumping_detuning),
             samplerate=4e5,
@@ -1208,7 +1225,7 @@ def optical_pumping(
         devices.ta_aom_digital.go_low(t - ta_shutter_off_t)
         devices.repump_aom_digital.go_low(t - ta_shutter_off_t)
 
-        t += max(ta_vco_ramp_t, 100e-6, shot_globals.op_ramp_delay)
+        t += max(CONST_TA_VCO_RAMP_TIME, 100e-6, shot_globals.op_ramp_delay)
 
         devices.optical_pump_shutter.open(t)
         devices.ta_aom_digital.go_high(t)
@@ -1309,7 +1326,7 @@ def optical_pumping(
 
             devices.ta_vco.ramp(
                 t,
-                duration=ta_vco_ramp_t,
+                duration=CONST_TA_VCO_RAMP_TIME,
                 initial=ta_freq_calib(ta_last_detuning),
                 final=ta_freq_calib(ta_pumping_detuning),
                 samplerate=4e5,
@@ -1317,7 +1334,7 @@ def optical_pumping(
 
             devices.repump_vco.ramp(
                 t,
-                duration=ta_vco_ramp_t,
+                duration=CONST_TA_VCO_RAMP_TIME,
                 initial=repump_freq_calib(repump_last_detuning),
                 final=repump_freq_calib(repump_pumping_detuning),
                 samplerate=4e5,
@@ -1326,7 +1343,7 @@ def optical_pumping(
             ta_last_detuning = ta_pumping_detuning
             repump_last_detuning = repump_pumping_detuning
 
-            t += max(ta_vco_ramp_t, 100e-6, shot_globals.op_ramp_delay)
+            t += max(CONST_TA_VCO_RAMP_TIME, 100e-6, shot_globals.op_ramp_delay)
             devices.ta_shutter.open(t)
             devices.ta_aom_digital.go_high(t)
 
@@ -1545,7 +1562,7 @@ def do_mot_in_situ_check(t):
     do_mot(t, mot_load_dur, use_coil=True, close_aom=True, close_shutter=False)
     t += mot_load_dur  # MOT loading time 500 ms
 
-    t += coil_off_time  # wait for the coil fully off
+    t += CONST_COIL_OFF_TIME  # wait for the coil fully off
 
     t = do_mot_imaging(t, use_shutter=False)
 
@@ -1566,7 +1583,7 @@ def do_mot_tof_check(t):
     do_mot(t, mot_load_dur, use_coil=True, close_aom=True, close_shutter=False)
     t += mot_load_dur  # MOT loading time 500 ms
 
-    assert shot_globals.mot_tof_imaging_delay > min_shutter_off_t, "time of flight too short for shutter"
+    assert shot_globals.mot_tof_imaging_delay > CONST_MIN_SHUTTER_OFF_TIME, "time of flight too short for shutter"
     t += shot_globals.mot_tof_imaging_delay
 
     t = do_mot_imaging(t, use_shutter=True)
@@ -1612,7 +1629,7 @@ def do_molasses_in_situ_check(t):
         t, molasses_dur, close_shutter=False)
     t += molasses_dur
 
-    t += ta_vco_ramp_t  # account for the ramp before imaging
+    t += CONST_TA_VCO_RAMP_TIME  # account for the ramp before imaging
 
     t, ta_last_detuning, repump_last_detuning = do_molasses_dipole_trap_imaging(
         t, ta_last_detuning, repump_last_detuning,
@@ -1633,7 +1650,7 @@ def do_molasses_in_situ_check(t):
     # devices.mot_xy_shutter.close(t)
     # devices.mot_z_shutter.close(t)
 
-    t += ta_vco_ramp_t
+    t += CONST_TA_VCO_RAMP_TIME
     t, ta_last_detuning, repump_last_detuning = do_molasses_dipole_trap_imaging(
         t, ta_last_detuning, repump_last_detuning, img_ta_detuning=0, img_repump_detuning=0, img_ta_power=1, img_repump_power=1, exposure=shot_globals.bm_exposure_time, close_shutter=False)
 
@@ -1690,7 +1707,7 @@ def do_molasses_tof_check(t):
         t, molasses_dur, close_shutter=True)
     t += molasses_dur
 
-    assert shot_globals.bm_tof_imaging_delay > min_shutter_off_t, "time of flight too short for shutter"
+    assert shot_globals.bm_tof_imaging_delay > CONST_MIN_SHUTTER_OFF_TIME, "time of flight too short for shutter"
     t += shot_globals.bm_tof_imaging_delay
     t, ta_last_detuning, repump_last_detuning = do_molasses_dipole_trap_imaging(
         t, ta_last_detuning, repump_last_detuning, img_ta_detuning=0, img_repump_detuning=0, img_ta_power=1, img_repump_power=1, exposure=shot_globals.bm_exposure_time, close_shutter=True)
@@ -1797,7 +1814,7 @@ def do_field_calib_in_molasses_check(t):
     # wait until the bias coils are on and the shutter is fullly closed
     bias_coil_on_time = 0.5e-3  # minimum time for the bias coil to be on
     shutter_ramp_time = 1.5e-3  # time for shutter to start open/close to fully open/close
-    t += max(bias_coil_on_time, shutter_ramp_time, min_shutter_off_t)
+    t += max(bias_coil_on_time, shutter_ramp_time, CONST_MIN_SHUTTER_OFF_TIME)
     if shot_globals.do_mw_pulse:
         # the offset for the beging of output comparing to the trigger
         spectrum_card_offset = 52.8e-6
@@ -2025,7 +2042,7 @@ def do_dipole_trap_tof_check(t):
 
     if shot_globals.do_killing_pulse:
         # for shutter and vco to be ready for killing pulse
-        t += ta_vco_ramp_t + min_shutter_off_t
+        t += CONST_TA_VCO_RAMP_TIME + CONST_MIN_SHUTTER_OFF_TIME
         t, ta_last_detuning, repump_last_detuning = killing_pulse(
             t, ta_last_detuning, repump_last_detuning)
         t += 10e-3
@@ -2033,7 +2050,7 @@ def do_dipole_trap_tof_check(t):
     else:
         t += 10e-3
 
-    assert shot_globals.img_tof_imaging_delay > min_shutter_off_t, "time of flight too short for shutter"
+    assert shot_globals.img_tof_imaging_delay > CONST_MIN_SHUTTER_OFF_TIME, "time of flight too short for shutter"
     t += shot_globals.img_tof_imaging_delay
     assert shot_globals.img_exposure_time != 0, "Imaging expsorue time = 0, did you forget to adjust for the case?"
     assert shot_globals.img_ta_power != 0, "Imaging ta power = 0, did you forget to adjust for the case?"
@@ -2129,7 +2146,7 @@ def do_img_beam_alignment_check(t):
         t, molasses_dur, close_shutter=True)
     t += molasses_dur
 
-    assert shot_globals.img_tof_imaging_delay > min_shutter_off_t, "time of flight too short for shutter"
+    assert shot_globals.img_tof_imaging_delay > CONST_MIN_SHUTTER_OFF_TIME, "time of flight too short for shutter"
     t += shot_globals.img_tof_imaging_delay
 
     if shot_globals.do_img_pulse:
@@ -2144,7 +2161,7 @@ def do_img_beam_alignment_check(t):
         # close_shutter = True
         # )
     else:
-        t += shot_globals.img_pulse_time + 3e-3 + ta_vco_ramp_t * 2
+        t += shot_globals.img_pulse_time + 3e-3 + CONST_TA_VCO_RAMP_TIME * 2
 
     t += 7e-3
 
@@ -2370,7 +2387,7 @@ def do_tweezer_check(t):
         robust_loading_pulse(t, dur=shot_globals.bm_robust_loading_pulse_dur)
         t += shot_globals.bm_robust_loading_pulse_dur
 
-    assert shot_globals.img_tof_imaging_delay > min_shutter_off_t, "time of flight too short for shutter'"
+    assert shot_globals.img_tof_imaging_delay > CONST_MIN_SHUTTER_OFF_TIME, "time of flight too short for shutter'"
     t += shot_globals.img_tof_imaging_delay
 
     # first shot
@@ -2574,7 +2591,7 @@ def do_tweezer_check_fifo(t):
         robust_loading_pulse(t, dur=shot_globals.bm_robust_loading_pulse_dur)
         t += shot_globals.bm_robust_loading_pulse_dur
 
-    assert shot_globals.img_tof_imaging_delay > min_shutter_off_t, "time of flight too short for shutter"
+    assert shot_globals.img_tof_imaging_delay > CONST_MIN_SHUTTER_OFF_TIME, "time of flight too short for shutter"
     t += shot_globals.img_tof_imaging_delay
 
     # first shot
@@ -2828,7 +2845,7 @@ def do_optical_pump_in_tweezer_check(t):
         robust_loading_pulse(t, dur=shot_globals.bm_robust_loading_pulse_dur)
         t += shot_globals.bm_robust_loading_pulse_dur
 
-    assert shot_globals.img_tof_imaging_delay > min_shutter_off_t, "time of flight too short for shutter"
+    assert shot_globals.img_tof_imaging_delay > CONST_MIN_SHUTTER_OFF_TIME, "time of flight too short for shutter"
     t += shot_globals.img_tof_imaging_delay
 
     # first shot
@@ -2928,7 +2945,7 @@ def do_optical_pump_in_tweezer_check(t):
 
     if shot_globals.do_killing_pulse:
         # for shutter and vco to be ready for killing pulse
-        t += ta_vco_ramp_t + min_shutter_off_t
+        t += CONST_TA_VCO_RAMP_TIME + CONST_MIN_SHUTTER_OFF_TIME
 
         # tw power ramp
         t += devices.tweezer_aom_analog.ramp(
@@ -3180,7 +3197,7 @@ def do_optical_pump_in_microtrap_check(t):
         )
 
         # for shutter and vco to be ready for killing pulse
-        t += ta_vco_ramp_t + min_shutter_off_t
+        t += CONST_TA_VCO_RAMP_TIME + CONST_MIN_SHUTTER_OFF_TIME
         t, ta_last_detuning, repump_last_detuning = killing_pulse(
             t, ta_last_detuning, repump_last_detuning)
         # t += 1e-3
@@ -3198,7 +3215,7 @@ def do_optical_pump_in_microtrap_check(t):
     t, ta_last_detuning, repump_last_detuning = pre_imaging(
         t, ta_last_detuning, repump_last_detuning)
 
-    assert shot_globals.img_tof_imaging_delay > min_shutter_off_t, "time of flight too short for shutter"
+    assert shot_globals.img_tof_imaging_delay > CONST_MIN_SHUTTER_OFF_TIME, "time of flight too short for shutter"
     t += shot_globals.img_tof_imaging_delay
 
     # first shot

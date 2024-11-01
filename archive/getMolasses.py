@@ -9,12 +9,12 @@ from calibration import ta_freq_calib, repump_freq_calib, biasx_calib, biasy_cal
 from connection_table import devices
 from labscriptlib.shot_globals import shot_globals
 
-mot_detuning = shot_globals.mot_detuning # MHz, optimized based on atom number
+mot_detuning = shot_globals.CONST_MOT_DETUNING # MHz, optimized based on atom number
 # ta_bm_detuning = shot_globals.ta_bm_detuning
 # repump_bm_detuning = shot_globals.repump_bm_detuning
 
 
-def load_molasses(t, ta_bm_detuning = shot_globals.ta_bm_detuning, repump_bm_detuning = shot_globals.repump_bm_detuning): #-100
+def load_molasses(t, ta_bm_detuning = shot_globals.CONST_TA_BM_DETUNING, repump_bm_detuning = shot_globals.CONST_REPUMP_BM_DETUNING): #-100
     devices.ta_vco.ramp(
             t,
             duration=1e-3,
