@@ -37,7 +37,7 @@ ta_bm_detuning = shot_globals.bm_ta_detuning
 repump_bm_detuning = shot_globals.bm_repump_detuning
 
 
-def open_mot_shutters(t, label):
+def open_mot_shutters(t, label=None):
     """Open the specified MOT shutters, else open all the MOT shutters"""
     if label == "z":
         devices.mot_z_shutter.go_high(t)
@@ -50,7 +50,20 @@ def open_mot_shutters(t, label):
     return t
 
 
-def open_img_shutters(t, label):
+def close_mot_shutters(t, label=None):
+    """Close the specified MOT shutters, else open all the MOT shutters"""
+    if label == "z":
+        devices.mot_z_shutter.go_low(t)
+    elif label == "xy":
+        devices.mot_xy_shutter.go_low(t)
+    else:
+        devices.mot_z_shutter.go_low(t)
+        devices.mot_xy_shutter.go_low(t)
+    
+    return t
+
+
+def open_img_shutters(t, label=None):
     """Open the specified IMG shutters, else open all the IMG shutters"""
     if label == "z":
         devices.img_z_shutter.go_high(t)
@@ -60,6 +73,19 @@ def open_img_shutters(t, label):
         devices.img_z_shutter.go_high(t)
         devices.img_xy_shutter.go_high(t)
         
+    return t
+
+
+def close_img_shutters(t, label=None):
+    """Open the specified IMG shutters, else open all the IMG shutters"""
+    if label == "z":
+        devices.img_z_shutter.go_low(t)
+    elif label == "xy":
+        devices.img_xy_shutter.go_low(t)
+    else:
+        devices.img_z_shutter.go_low(t)
+        devices.img_xy_shutter.go_low(t)
+    
     return t
 
 
