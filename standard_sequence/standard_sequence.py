@@ -32,6 +32,65 @@ min_shutter_off_t = 6.28e-3  # minimum time for shutter to be off and on again
 mot_detuning = shot_globals.mot_ta_detuning  # -13 # MHz, optimized based on atom number
 ta_bm_detuning = shot_globals.bm_ta_detuning  # -100 # MHz, bright molasses detuning
 repump_bm_detuning = shot_globals.bm_repump_detuning  # 0 # MHz, bright molasses detuning
+shutter_turn_off_t = 2e-3  # the time for shutter take from start to close to fully close
+shutter_turn_on_t = 2e-3  # the time for the shutter take from start to open to fully open
+
+
+def ta_aom_off(t):
+    devices.ta_aom_digital.go_low(t)  # digital off
+    devices.ta_aom_analog.constant(t, 0)  # analog off
+
+
+def ta_aom_on(t, const):
+    devices.ta_aom_digital.go_high(t)  # digital on
+    devices.ta_aom_analog.constant(t, const)  # analog to const
+
+
+def repump_aom_off(t):
+    devices.repump_aom_digital.go_low(t)  # digital off
+    devices.repump_aom_analog.constant(t, 0)  # analog off
+
+
+def repump_aom_on(t, const):
+    devices.repump_aom_digital.go_high(t)  # digital on
+    devices.repump_aom_analog.constant(t, const)  # analog to const
+
+
+def mot_aom_off(t):
+    ta_aom_off(t)  # ta beam off
+    repump_aom_off(t)  # repump beam off
+
+
+def mot_aom_on(t, ta_const, repump_const):
+    ta_aom_on(t, ta_const)  # ta beam off
+    repump_aom_on(t, repump_const)  # repump beam off
+
+
+def mot_shutter_off(t):
+    devices.mot_xy_shutter.close(t)  # close mot xy shutter
+    devices.mot_z_shutter.close(t)  # close mot z shutter
+    t += shutter_turn_off_t  # add the time it takes from start to close to fully close
+    return t
+
+
+def mot_shutter_on(t):
+    t -= shutter_turn_on_t
+    mot_aom_off(t)  # turn off all light during the time when shutter start to open
+    t += shutter_turn_on_t
+    devices.mot_xy_shutter.open(t)  # open mot xy shutter
+    devices.mot_z_shutter.open(t)  # open mot z shutter
+
+
+def mot_beam_off(t):
+    mot_aom_off(t)  # aom off
+    t = mot_shutter_off(t)  # shutter off + extra time to fully close
+    return t
+
+
+def mot_beam_on(t, ta_const, repump_const):
+    mot_aom_on(t, ta_const, repump_const)  # aom on at const power
+    mot_shutter_on(t)  # shutter on + close the beam during the shutter on time
+
 
 def load_mot(t, mot_detuning, mot_coil_ctrl_voltage=10/6):
     devices.ta_aom_digital.go_high(t)
@@ -69,6 +128,7 @@ def load_mot(t, mot_detuning, mot_coil_ctrl_voltage=10/6):
     # devices.y_coil_current.constant(t, biasy_calib(shot_globals.mot_biasy))
     # devices.z_coil_current.constant(t, biasz_calib(shot_globals.mot_biasz))
     return t
+
 
 def load_molasses(t, ta_bm_detuning , repump_bm_detuning, ta_last_detuning = shot_globals.mot_ta_detuning): #-100
 
@@ -203,6 +263,7 @@ def load_molasses(t, ta_bm_detuning , repump_bm_detuning, ta_last_detuning = sho
     print(f'ta_last_detuning = {ta_last_detuning}')
     print(f'repump_last_detuning = {repump_last_detuning}')
     return t, ta_last_detuning, repump_last_detuning
+
 
 def load_molasses_img_beam(t, ta_bm_detuning, repump_bm_detuning ): #-100
     devices.ta_aom_digital.go_high(t)
@@ -361,6 +422,7 @@ def load_molasses_img_beam(t, ta_bm_detuning, repump_bm_detuning ): #-100
     print(f'repump_last_detuning = {repump_last_detuning}')
     return t, ta_last_detuning, repump_last_detuning
 
+
 def do_mot(t, dur, *, use_coil , close_aom = True, close_shutter = True):
     if use_coil:
         load_mot(t, mot_detuning=shot_globals.mot_ta_detuning)
@@ -369,14 +431,23 @@ def do_mot(t, dur, *, use_coil , close_aom = True, close_shutter = True):
         load_mot(t, mot_detuning=shot_globals.mot_ta_detuning, mot_coil_ctrl_voltage=0)
 
     if close_aom:
-        devices.ta_aom_digital.go_low(t + dur)
-        devices.repump_aom_digital.go_low(t + dur)
+        t += dur
+        mot_aom_off(t)
+        # devices.ta_aom_digital.go_low(t + dur)
+        # devices.repump_aom_digital.go_low(t + dur)
 
     if close_shutter:
-        devices.mot_xy_shutter.close(t + dur)
-        devices.mot_z_shutter.close(t + dur)
+        if close_aom is False:
+            t += dur
+        t = mot_shutter_off(t)
+        # devices.mot_xy_shutter.close(t + dur)
+        # devices.mot_z_shutter.close(t + dur)
+
+    if (close_shutter is False) and (close_aom is False):
+        t += dur
 
     return t
+
 
 def do_MOT(t, dur, coils_bool):
     if coils_bool:
@@ -396,40 +467,42 @@ def do_MOT(t, dur, coils_bool):
 
     return t
 
-def do_mot_imaging(t, *, use_shutter = True):
+
+def do_mot_imaging(t, *, use_shutter=True):
     devices.ta_vco.ramp(
-        t - ta_vco_ramp_t ,
+        t - ta_vco_ramp_t,
         duration=ta_vco_ramp_t,
         initial=ta_freq_calib(shot_globals.mot_ta_detuning),
         final=ta_freq_calib(0),
         samplerate=4e5,
-    ) # ramp to imaging
+    )  # ramp to imaging
 
     # set ta and repump to full power
-    devices.ta_aom_analog.constant(t, 1)
-    devices.repump_aom_analog.constant(t, 1)
-
-
-    devices.ta_aom_digital.go_high(t)
-    devices.repump_aom_digital.go_high(t)
+    mot_aom_on(t, ta_const=1, repump_const=1)
+    # devices.ta_aom_analog.constant(t, 1)
+    # devices.repump_aom_analog.constant(t, 1)
+    # devices.ta_aom_digital.go_high(t)
+    # devices.repump_aom_digital.go_high(t)
 
     if use_shutter:
-        devices.mot_xy_shutter.open(t)
-        devices.mot_z_shutter.open(t)
+        mot_shutter_on(t)
+        # devices.mot_xy_shutter.open(t)
+        # devices.mot_z_shutter.open(t)
 
-    devices.manta419b_mot.expose('manta419b', t, 'atoms', exposure_time = shot_globals.mot_exposure_time)
+    devices.manta419b_mot.expose('manta419b', t, 'atoms', exposure_time=shot_globals.mot_exposure_time)
 
     t += shot_globals.mot_exposure_time
-
-
-    devices.ta_aom_digital.go_low(t)
-    devices.repump_aom_digital.go_low(t)
+    mot_aom_off(t)
+    # devices.ta_aom_digital.go_low(t)
+    # devices.repump_aom_digital.go_low(t)
 
     if use_shutter:
-        devices.mot_xy_shutter.close(t)
-        devices.mot_z_shutter.close(t)
+        t = mot_shutter_off(t)
+        # devices.mot_xy_shutter.close(t)
+        # devices.mot_z_shutter.close(t)
 
     return t
+
 
 def reset_mot(t, ta_last_detuning):
     print(f"time in diagonistics python {t}")
@@ -448,6 +521,7 @@ def reset_mot(t, ta_last_detuning):
         load_mot(t, mot_detuning=shot_globals.mot_ta_detuning, mot_coil_ctrl_voltage=0)
     # devices.uv_switch.go_low(t)
     return t
+
 
 def do_molasses(t, dur, ta_last_detuning = shot_globals.mot_ta_detuning, repump_last_detuning = 0, *, close_shutter = True):
     assert (shot_globals.do_molasses_img_beam or shot_globals.do_molasses_mot_beam), "either do_molasses_img_beam or do_molasses_mot_beam has to be on"
@@ -615,6 +689,7 @@ def do_molasses_dipole_trap_imaging(t, ta_last_detuning, repump_last_detuning, *
             if shot_globals.do_img_z_beam_during_imaging:
                 devices.img_z_shutter.close(t)
     return t, ta_last_detuning, repump_last_detuning
+
 
 # def do_imaging_beam_pulse(t, *, img_ta_detuning = 0, img_repump_detuning = 0, img_ta_power = 1, img_repump_power = 1, exposure = shot_globals.bm_exposure_time, close_shutter = True):
 def do_imaging_beam_pulse(t, ta_last_detuning, repump_last_detuning):
@@ -1099,10 +1174,14 @@ def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'micr
             )
 
         ta_shutter_off_t = 1.74e-3
-        devices.mot_z_shutter.close(t)
-        devices.mot_xy_shutter.close(t)
+        devices.mot_xy_shutter.close(t-1e-3)
+        devices.mot_z_shutter.close(t-1e-3)
+        devices.img_xy_shutter.close(t)
+        devices.img_z_shutter.close(t)
         devices.ta_aom_digital.go_low(t - ta_shutter_off_t)
+        devices.ta_aom_analog.constant(t - ta_shutter_off_t,0)
         devices.repump_aom_digital.go_low(t - ta_shutter_off_t)
+        devices.repump_aom_analog.constant(t - ta_shutter_off_t,0)
 
         t += max(ta_vco_ramp_t, 100e-6, shot_globals.op_ramp_delay)
 
@@ -1113,8 +1192,10 @@ def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'micr
         devices.repump_aom_analog.constant(t, shot_globals.odp_repump_power)
 
         devices.ta_aom_digital.go_low(t + shot_globals.odp_ta_time)
+        devices.ta_aom_analog.constant(t + shot_globals.odp_ta_time,0)
         devices.ta_shutter.close(t + shot_globals.odp_ta_time)
         devices.repump_aom_digital.go_low(t + shot_globals.odp_repump_time)
+        devices.repump_aom_analog.constant(t + shot_globals.odp_repump_time,0)
         devices.repump_shutter.close(t + shot_globals.odp_repump_time)
 
         assert shot_globals.odp_ta_time > shot_globals.odp_repump_time, "TA time should be longer than repump for atom in F = 3"
@@ -1157,10 +1238,10 @@ def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'micr
         print("I'm doing optical pumping now using sigma+ beams")
         do_comparison_with_optical_pump_MOT = False
         ta_shutter_off_t = 1.74e-3
-        devices.mot_xy_shutter.close(t)
-        devices.mot_z_shutter.close(t)
-        devices.img_xy_shutter.close(t)
-        devices.img_z_shutter.close(t)
+        devices.mot_xy_shutter.close(t-1e-3)
+        devices.mot_z_shutter.close(t-1e-3)
+        devices.img_xy_shutter.close(t-1e-3)
+        devices.img_z_shutter.close(t-1e-3)
         devices.ta_aom_digital.go_low(t - ta_shutter_off_t)
         devices.ta_aom_analog.constant(t - ta_shutter_off_t, 0)
         devices.mot_coil_current_ctrl.constant(t, 0)
@@ -1168,8 +1249,8 @@ def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'micr
         if do_comparison_with_optical_pump_MOT == True:
             devices.ta_shutter.close(t)
         else:
-            devices.ta_shutter.close(t)
-            devices.repump_shutter.close(t)
+            # devices.ta_shutter.close(t)
+            # devices.repump_shutter.close(t)
             devices.repump_aom_digital.go_low(t - ta_shutter_off_t)
             devices.repump_aom_analog.constant(t - ta_shutter_off_t, 0)
 
@@ -1225,7 +1306,9 @@ def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'micr
         devices.repump_aom_analog.constant(t, shot_globals.op_repump_power)
 
         devices.ta_aom_digital.go_low(t + shot_globals.op_ta_time)
+        devices.ta_aom_analog.constant(t + shot_globals.op_ta_time, 0)
         devices.repump_aom_digital.go_low(t + shot_globals.op_repump_time)
+        devices.repump_aom_analog.constant(t + shot_globals.op_repump_time, 0)
         devices.repump_shutter.close(t + shot_globals.op_repump_time)
         if shot_globals.do_depump_pulse_after_pumping:
             # do not close the TA shutter, pulsing the TA AOM for measuring dark states
@@ -1328,6 +1411,7 @@ def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'micr
     devices.mot_z_shutter.close(t)
     return t, ta_last_detuning, repump_last_detuning
 
+
 def killing_pulse(t, ta_last_detuning, repump_last_detuning):
     #==================== Use a strong killing pulse to kick all atoms in F=4 out =======================#
     ta_vco_ramp_t = 1.2e-4
@@ -1366,6 +1450,7 @@ def killing_pulse(t, ta_last_detuning, repump_last_detuning):
 
     return t, ta_last_detuning, repump_last_detuning
 
+
 def spectrum_microwave_sweep(t):
     uwave_clock = 9.192631770e3 # in unit of MHz
     local_oscillator_freq_mhz = 9486 # in unit of MHz MKU LO 8-13 PLL setting
@@ -1394,40 +1479,42 @@ def spectrum_microwave_sweep(t):
 
     return mw_sweep_duration
 
+
 def intensity_servo_keep_on(t):
     # keep the AOM digital high for intensity servo
     devices.ipg_1064_aom_digital.go_high(t)
     devices.moglabs_456_aom_digital.go_high(t)
 
+
 def do_mot_in_situ_check():
     labscript.start()
+    print("==== Running do_mot_in_situ_check =====")
     t = 0
     mot_load_dur = 0.5
 
-    #temporal for Nolan's alignment
-    devices.local_addr_1064_aom_digital.go_high(t)
-    devices.ipg_1064_aom_digital.go_high(t)
-    devices.ipg_1064_aom_analog.constant(t, 1)
-    devices.local_addr_1064_aom_analog.constant(t, 1)
+    t = do_mot(t, mot_load_dur, use_coil = True, close_aom = True, close_shutter = False)
+    # t = do_mot(t, mot_load_dur, use_coil=True, close_aom=True, close_shutter=False)
+    # t += mot_load_dur  # MOT loading time 500 ms
+    print(f"after mot t = {t}")
 
-    do_mot(t, mot_load_dur, use_coil = True, close_aom = True, close_shutter = False)
-    t += mot_load_dur # MOT loading time 500 ms
+    t += coil_off_time  # wait for the coil fully off
 
-    t += coil_off_time # wait for the coil fully off
+    t = do_mot_imaging(t, use_shutter=False)
+    print(f"after 1st mot image t = {t}")
 
-    t = do_mot_imaging(t, use_shutter = False)
+    # Turn off MOT for taking background imagess
+    t += 0.1  # Wait until the MOT disappear
+    t = do_mot_imaging(t, use_shutter=False)
+    print(f"after 2nd mot image t = {t}")
 
-    # Turn off MOT for taking background images
-    t += 0.1 # Wait until the MOT disappear
-    t = do_mot_imaging(t, use_shutter = False)
-    print("Running do_mot_in_situ_check")
     # set back to initial value
     t += 1e-2
-    t = reset_mot(t, ta_last_detuning = 0)
+    t = reset_mot(t, ta_last_detuning=0)
 
     labscript.stop(t + 1e-2)
 
     return t
+
 
 def do_mot_tof_check():
     labscript.start()
@@ -1454,6 +1541,7 @@ def do_mot_tof_check():
     labscript.stop(t + 1e-2)
 
     return t
+
 
 def do_molasses_in_situ_check():
     labscript.start()
@@ -1530,31 +1618,17 @@ def do_molasses_in_situ_check():
 
     return t
 
+
 def do_molasses_tof_check():
     labscript.start()
+    print("==== Running do_molasses_tof_check =====")
 
     t = 0
     mot_load_dur = 0.75
 
-    #temporal for Nolan's alignment
-    # devices.local_addr_1064_aom_digital.go_high(t)
-    # devices.ipg_1064_aom_digital.go_high(t)
-    # devices.ipg_1064_aom_analog.constant(t, 1)
-    # devices.local_addr_1064_aom_analog.constant(t, 1)
-
-    # if shot_globals.do_tweezers:
-    #     print("Initializing tweezers")
-    #     devices.dds0.synthesize(t+1e-2, shot_globals.TW_y_freqs, 0.95, 0)
-    #     spectrum_manager.start_card()
-    #     t1 = spectrum_manager.start_tweezers(t) #has to be the first thing in the timing sequence (?)
-    #     print('tweezer start time:',t1)
-    #     # Turn on the tweezer
-    #     devices.tweezer_aom_digital.go_high(t)
-    #     devices.tweezer_aom_analog.constant(t, 1) #0.3) #for single tweezer
-
-    do_mot(t, mot_load_dur, use_coil = True, close_aom = False, close_shutter = False)
-    t += mot_load_dur  # how long MOT last
-
+    t = do_mot(t, mot_load_dur, use_coil = True, close_aom = False, close_shutter = False)
+    # t += mot_load_dur  # how long MOT last
+    print(f"after mot t = {t}")
 
     molasses_dur = shot_globals.bm_time
     ta_last_detuning, repump_last_detuning = do_molasses(t, molasses_dur, close_shutter = True)
@@ -1597,6 +1671,7 @@ def do_molasses_tof_check():
     labscript.stop(t + 1e-2)
 
     return t
+
 
 def do_field_calib_in_molasses_check():
     labscript.start()
@@ -1707,6 +1782,7 @@ def do_field_calib_in_molasses_check():
     labscript.stop(t + 1e-2)
 
     return t
+
 
 def do_dipole_trap_tof_check():
     labscript.start()
@@ -1868,6 +1944,7 @@ def do_dipole_trap_tof_check():
 
     return t
 
+
 def do_img_beam_alignment_check():
     labscript.start()
 
@@ -1971,6 +2048,7 @@ def do_img_beam_alignment_check():
 
     return t
 
+
 def do_tweezer_position_check():
     check_on_vimba_viewer = True #False
     # look at the trap intensity distribution on the tweezer camera
@@ -2054,6 +2132,7 @@ def do_tweezer_position_check():
     labscript.stop(t + 1e-2)
 
     return t
+
 
 def do_tweezer_check():
     import numpy as np
@@ -2237,6 +2316,7 @@ def do_tweezer_check():
     labscript.stop(t + 1e-2)
 
     return t
+
 
 def do_tweezer_check_fifo():
 
@@ -2437,6 +2517,7 @@ def do_tweezer_check_fifo():
 
     labscript.stop(t + 1e-2)
     return t
+
 
 def do_optical_pump_in_tweezer_check():
 
@@ -2705,6 +2786,7 @@ def do_optical_pump_in_tweezer_check():
     labscript.stop(t + 1e-2)
     return t
 
+
 def do_optical_pump_in_microtrap_check():
 
     MOT_load_dur = 0.5 #0.5
@@ -2895,7 +2977,7 @@ def do_optical_pump_in_microtrap_check():
 
 if __name__ == "__main__":
     if shot_globals.do_mot_in_situ_check:
-        do_mot_in_situ_check()
+        t = do_mot_in_situ_check()
 
     if shot_globals.do_mot_tof_check:
         do_mot_tof_check()
