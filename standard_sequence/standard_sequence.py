@@ -28,13 +28,6 @@ if __name__ == "__main__":
 CONST_COIL_OFF_TIME = 1.4e-3  # minimum time for the MOT coil to be off
 CONST_TA_VCO_RAMP_TIME = 1.2e-4
 CONST_MIN_SHUTTER_OFF_TIME = 6.28e-3  # minimum time for shutter to be off and on again
-# -13 # MHz, optimized based on atom number
-# TODO: these are not actually literal values, assign numerical value
-CONST_MOT_DETUNING = shot_globals.mot_ta_detuning
-# -100 # MHz, bright molasses detuning
-CONST_TA_BM_DETUNING = shot_globals.bm_ta_detuning
-# 0 # MHz, bright molasses detuning
-CONST_REPUMP_BM_DETUNING = shot_globals.bm_repump_detuning
 
 
 def open_mot_shutters(t, label=None):
@@ -1464,9 +1457,7 @@ def optical_pumping(
 
 def killing_pulse(t, ta_last_detuning, repump_last_detuning):
     # ==================== Use a strong killing pulse to kick all atoms in F=4 out =======================#
-    ta_vco_ramp_t = 1.2e-4
-    min_shutter_off_t = 6.28e-3  # minimum time for shutter to be off and on again
-    time_offset = ta_vco_ramp_t + min_shutter_off_t
+    time_offset = CONST_TA_VCO_RAMP_TIME + CONST_MIN_SHUTTER_OFF_TIME
 
     devices.repump_aom_digital.go_low(t - time_offset)
     devices.repump_shutter.close(t - time_offset)
@@ -1478,7 +1469,7 @@ def killing_pulse(t, ta_last_detuning, repump_last_detuning):
 
     devices.ta_vco.ramp(
         t - time_offset,
-        duration=ta_vco_ramp_t,
+        duration=CONST_TA_VCO_RAMP_TIME,
         initial=ta_freq_calib(ta_last_detuning),
         final=ta_freq_calib(0),  # -45), #ta_bm_detuning),
         samplerate=4e5,
