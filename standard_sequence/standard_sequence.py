@@ -18,6 +18,14 @@ root_path = r"X:\userlib\labscriptlib"
 if root_path not in sys.path:
     sys.path.append(root_path)
 
+import labscript
+
+from connection_table import devices
+from calibration import ta_freq_calib, repump_freq_calib, biasx_calib, biasy_calib, biasz_calib
+from spectrum_manager import spectrum_manager
+from spectrum_manager_fifo import spectrum_manager_fifo
+from labscriptlib.shot_globals import shot_globals
+import numpy as np
 
 spcm_sequence_mode = shot_globals.do_sequence_mode
 
@@ -500,6 +508,7 @@ def do_mot_imaging(t, *, use_shutter=True):
 
     t += shot_globals.mot_exposure_time
 
+
     devices.ta_aom_digital.go_low(t)
     devices.repump_aom_digital.go_low(t)
 
@@ -717,6 +726,8 @@ def do_molasses_dipole_trap_imaging(
     return t, ta_last_detuning, repump_last_detuning
 
 
+
+# def do_imaging_beam_pulse(t, *, img_ta_detuning = 0, img_repump_detuning = 0, img_ta_power = 1, img_repump_power = 1, exposure = shot_globals.bm_exposure_time, close_shutter = True):
 def do_imaging_beam_pulse(t, ta_last_detuning, repump_last_detuning):
 
     blue_detuning = 10
@@ -1213,10 +1224,14 @@ def optical_pumping(
         )
 
         ta_shutter_off_t = 1.74e-3
-        devices.mot_z_shutter.close(t)
-        devices.mot_xy_shutter.close(t)
+        devices.mot_xy_shutter.close(t-1e-3)
+        devices.mot_z_shutter.close(t-1e-3)
+        devices.img_xy_shutter.close(t)
+        devices.img_z_shutter.close(t)
         devices.ta_aom_digital.go_low(t - ta_shutter_off_t)
+        devices.ta_aom_analog.constant(t - ta_shutter_off_t,0)
         devices.repump_aom_digital.go_low(t - ta_shutter_off_t)
+        devices.repump_aom_analog.constant(t - ta_shutter_off_t,0)
 
         t += max(CONST_TA_VCO_RAMP_TIME, 100e-6, shot_globals.op_ramp_delay)
 
@@ -1227,8 +1242,10 @@ def optical_pumping(
         devices.repump_aom_analog.constant(t, shot_globals.odp_repump_power)
 
         devices.ta_aom_digital.go_low(t + shot_globals.odp_ta_time)
+        devices.ta_aom_analog.constant(t + shot_globals.odp_ta_time,0)
         devices.ta_shutter.close(t + shot_globals.odp_ta_time)
         devices.repump_aom_digital.go_low(t + shot_globals.odp_repump_time)
+        devices.repump_aom_analog.constant(t + shot_globals.odp_repump_time,0)
         devices.repump_shutter.close(t + shot_globals.odp_repump_time)
 
         assert shot_globals.odp_ta_time > shot_globals.odp_repump_time, "TA time should be longer than repump for atom in F = 3"
@@ -1276,10 +1293,10 @@ def optical_pumping(
         print("I'm doing optical pumping now using sigma+ beams")
         do_comparison_with_optical_pump_MOT = False
         ta_shutter_off_t = 1.74e-3
-        devices.mot_xy_shutter.close(t)
-        devices.mot_z_shutter.close(t)
-        devices.img_xy_shutter.close(t)
-        devices.img_z_shutter.close(t)
+        devices.mot_xy_shutter.close(t-1e-3)
+        devices.mot_z_shutter.close(t-1e-3)
+        devices.img_xy_shutter.close(t-1e-3)
+        devices.img_z_shutter.close(t-1e-3)
         devices.ta_aom_digital.go_low(t - ta_shutter_off_t)
         devices.ta_aom_analog.constant(t - ta_shutter_off_t, 0)
         devices.mot_coil_current_ctrl.constant(t, 0)
@@ -1287,8 +1304,8 @@ def optical_pumping(
         if do_comparison_with_optical_pump_MOT:
             devices.ta_shutter.close(t)
         else:
-            devices.ta_shutter.close(t)
-            devices.repump_shutter.close(t)
+            # devices.ta_shutter.close(t)
+            # devices.repump_shutter.close(t)
             devices.repump_aom_digital.go_low(t - ta_shutter_off_t)
             devices.repump_aom_analog.constant(t - ta_shutter_off_t, 0)
 
@@ -1347,7 +1364,9 @@ def optical_pumping(
         devices.repump_aom_analog.constant(t, shot_globals.op_repump_power)
 
         devices.ta_aom_digital.go_low(t + shot_globals.op_ta_time)
+        devices.ta_aom_analog.constant(t + shot_globals.op_ta_time, 0)
         devices.repump_aom_digital.go_low(t + shot_globals.op_repump_time)
+        devices.repump_aom_analog.constant(t + shot_globals.op_repump_time, 0)
         devices.repump_shutter.close(t + shot_globals.op_repump_time)
         if shot_globals.do_depump_pulse_after_pumping:
             # do not close the TA shutter, pulsing the TA AOM for measuring
@@ -1589,6 +1608,8 @@ def do_mot_tof_check(t):
 
     return t
 
+def do_molasses_in_situ_check():
+    labscript.start()
 
 def do_molasses_in_situ_check(t):
     mot_load_dur = 0.75
@@ -1668,22 +1689,6 @@ def do_molasses_in_situ_check(t):
 
 def do_molasses_tof_check(t):
     mot_load_dur = 0.75
-
-    # temporal for Nolan's alignment
-    # devices.local_addr_1064_aom_digital.go_high(t)
-    # devices.ipg_1064_aom_digital.go_high(t)
-    # devices.ipg_1064_aom_analog.constant(t, 1)
-    # devices.local_addr_1064_aom_analog.constant(t, 1)
-
-    # if shot_globals.do_tweezers:
-    #     print("Initializing tweezers")
-    #     devices.dds0.synthesize(t+1e-2, shot_globals.TW_y_freqs, 0.95, 0)
-    #     spectrum_manager.start_card()
-    #     t1 = spectrum_manager.start_tweezers(t) #has to be the first thing in the timing sequence (?)
-    #     print('tweezer start time:',t1)
-    #     # Turn on the tweezer
-    #     devices.tweezer_aom_digital.go_high(t)
-    #     devices.tweezer_aom_analog.constant(t, 1) #0.3) #for single tweezer
 
     do_mot(
         t,
