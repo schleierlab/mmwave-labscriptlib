@@ -424,14 +424,16 @@ def do_mot(t, dur, *, close_aom=True, close_shutter=True,
     devices.y_coil_current.constant(t, shot_globals.mot_y_coil_voltage)
     devices.z_coil_current.constant(t, shot_globals.mot_z_coil_voltage)
     devices.mot_coil_current_ctrl.constant(t + dur, 0)  # Turn off coils
+    
+    t += dur
         
     if close_aom:
-        devices.ta_aom_digital.go_low(t + dur)
-        devices.repump_aom_digital.go_low(t + dur)
+        devices.ta_aom_digital.go_low(t)
+        devices.repump_aom_digital.go_low(t)
 
     if close_shutter:
-        devices.mot_xy_shutter.close(t + dur)
-        devices.mot_z_shutter.close(t + dur)
+        devices.mot_xy_shutter.close(t)
+        devices.mot_z_shutter.close(t)
 
     return t
 
