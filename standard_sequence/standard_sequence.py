@@ -101,49 +101,6 @@ def do_repump_aom_pulse(t, dur, repump_power):
     return t
 
 
-def load_mot(t, mot_detuning, mot_coil_ctrl_voltage=10 / 6):
-    # TODO: abstract MOT laser turn on/off into a function
-    devices.ta_aom_digital.go_high(t)
-    devices.repump_aom_digital.go_high(t)
-    # devices.mot_camera_trigger.go_low(t)
-    devices.uwave_dds_switch.go_high(t)
-    devices.uwave_absorp_switch.go_low(t)
-    devices.ta_shutter.go_high(t)
-    devices.repump_shutter.go_high(t)
-    devices.mot_xy_shutter.go_high(t)
-    devices.mot_z_shutter.go_high(t)
-    devices.img_xy_shutter.go_low(t)
-    devices.img_z_shutter.go_low(t)
-    if shot_globals.do_uv:
-        devices.uv_switch.go_high(t)
-    # longer time will lead to the overall MOT atom number decay during the
-    # cycle
-    devices.uv_switch.go_low(t + 1e-2)
-
-    devices.ta_aom_analog.constant(t, shot_globals.mot_ta_power)
-    devices.repump_aom_analog.constant(t, shot_globals.mot_repump_power)
-
-    devices.ta_vco.constant(t, ta_freq_calib(
-        mot_detuning))  # 16 MHz red detuned
-    devices.repump_vco.constant(t, repump_freq_calib(0))  # on resonance
-
-    # 1/6 V/A, do not change to too high which may burn the coil
-    devices.mot_coil_current_ctrl.constant(t, mot_coil_ctrl_voltage)
-
-    devices.x_coil_current.constant(t, shot_globals.mot_x_coil_voltage)
-    devices.y_coil_current.constant(t, shot_globals.mot_y_coil_voltage)
-    devices.z_coil_current.constant(t, shot_globals.mot_z_coil_voltage)
-
-    # devices.x_coil_current.constant(t, biasx_calib(0))
-    # devices.y_coil_current.constant(t, biasy_calib(0))
-    # devices.z_coil_current.constant(t, biasz_calib(0))
-
-    # devices.x_coil_current.constant(t, biasx_calib(shot_globals.mot_biasx))
-    # devices.y_coil_current.constant(t, biasy_calib(shot_globals.mot_biasy))
-    # devices.z_coil_current.constant(t, biasz_calib(shot_globals.mot_biasz))
-    return t
-
-
 def load_molasses(t, ta_bm_detuning, repump_bm_detuning,
                   ta_last_detuning=shot_globals.mot_ta_detuning):  # -100
 
@@ -432,8 +389,40 @@ def load_molasses_img_beam(t, ta_bm_detuning, repump_bm_detuning):  # -100
     return t, ta_last_detuning, repump_last_detuning
 
 
-def do_mot(t, dur, *, close_aom=True, close_shutter=True):
-    load_mot(t, mot_detuning=shot_globals.mot_ta_detuning)
+def do_mot(t, dur, *, close_aom=True, close_shutter=True,
+           mot_coil_ctrl_voltage=10 / 6):
+    #load_mot(t, mot_detuning=shot_globals.mot_ta_detuning)
+    mot_detuning = shot_globals.mot_ta_detuning
+    devices.ta_aom_digital.go_high(t)
+    devices.repump_aom_digital.go_high(t)
+    # devices.mot_camera_trigger.go_low(t)
+    devices.uwave_dds_switch.go_high(t)
+    devices.uwave_absorp_switch.go_low(t)
+    devices.ta_shutter.go_high(t)
+    devices.repump_shutter.go_high(t)
+    devices.mot_xy_shutter.go_high(t)
+    devices.mot_z_shutter.go_high(t)
+    devices.img_xy_shutter.go_low(t)
+    devices.img_z_shutter.go_low(t)
+    if shot_globals.do_uv:
+        devices.uv_switch.go_high(t)
+    # longer time will lead to the overall MOT atom number decay during the
+    # cycle
+    devices.uv_switch.go_low(t + 1e-2)
+    
+    devices.ta_aom_analog.constant(t, shot_globals.mot_ta_power)
+    devices.repump_aom_analog.constant(t, shot_globals.mot_repump_power)
+    
+    devices.ta_vco.constant(t, ta_freq_calib(
+        mot_detuning))  # 16 MHz red detuned
+    devices.repump_vco.constant(t, repump_freq_calib(0))  # on resonance
+    
+    # 1/6 V/A, do not change to too high which may burn the coil
+    devices.mot_coil_current_ctrl.constant(t, mot_coil_ctrl_voltage)
+    
+    devices.x_coil_current.constant(t, shot_globals.mot_x_coil_voltage)
+    devices.y_coil_current.constant(t, shot_globals.mot_y_coil_voltage)
+    devices.z_coil_current.constant(t, shot_globals.mot_z_coil_voltage)
     devices.mot_coil_current_ctrl.constant(t + dur, 0)  # Turn off coils
         
     if close_aom:
@@ -1536,7 +1525,8 @@ def intensity_servo_keep_on(t):
 def do_mot_in_situ_check(t):
     mot_load_dur = 0.5
     
-    do_mot(t, mot_load_dur, close_aom=True, close_shutter=False)
+    do_mot(t, mot_load_dur, close_aom=True, close_shutter=False,
+           mot_coil_ctrl_voltage=10 / 6)
     t += mot_load_dur  # MOT loading time 500 ms
 
     t += CONST_COIL_OFF_TIME  # wait for the coil fully off
@@ -1557,7 +1547,8 @@ def do_mot_in_situ_check(t):
 def do_mot_tof_check(t):
     mot_load_dur = 0.5
     
-    do_mot(t, mot_load_dur, close_aom=True, close_shutter=False)
+    do_mot(t, mot_load_dur, close_aom=True, close_shutter=False,
+           mot_coil_ctrl_voltage=10 / 6)
     t += mot_load_dur  # MOT loading time 500 ms
 
     assert shot_globals.mot_tof_imaging_delay > CONST_MIN_SHUTTER_OFF_TIME, "time of flight too short for shutter"
@@ -1595,7 +1586,8 @@ def do_molasses_in_situ_check(t):
     else:
         turn_off_dipole_trap(t)
     
-    do_mot(t, mot_load_dur, close_aom=False, close_shutter=False)
+    do_mot(t, mot_load_dur, close_aom=False, close_shutter=False,
+           mot_coil_ctrl_voltage=10 / 6)
     t += mot_load_dur  # how long MOT last
 
     molasses_dur = shot_globals.bm_time
@@ -1652,7 +1644,8 @@ def do_molasses_in_situ_check(t):
 def do_molasses_tof_check(t):
     mot_load_dur = 0.75
     
-    do_mot(t, mot_load_dur, close_aom=False, close_shutter=False)
+    do_mot(t, mot_load_dur, close_aom=False, close_shutter=False,
+           mot_coil_ctrl_voltage=10 / 6)
     t += mot_load_dur  # how long MOT last
 
     molasses_dur = shot_globals.bm_time
@@ -1739,7 +1732,8 @@ def do_field_calib_in_molasses_check(t):
                                     use_ext_clock=True,
                                     ext_clock_freq=10)
     
-    do_mot(t, mot_load_dur, close_aom=False, close_shutter=False)
+    do_mot(t, mot_load_dur, close_aom=False, close_shutter=False,
+           mot_coil_ctrl_voltage=10 / 6)
     t += mot_load_dur  # how long MOT last
 
     molasses_dur = shot_globals.bm_time
@@ -1935,7 +1929,8 @@ def do_dipole_trap_tof_check(t):
                                         ext_clock_freq=10)
 
     mot_load_dur = 1  # 0.75
-    do_mot(t, mot_load_dur, close_aom=False, close_shutter=False)
+    do_mot(t, mot_load_dur, close_aom=False, close_shutter=False,
+           mot_coil_ctrl_voltage=10 / 6)
     t += mot_load_dur  # how long MOT last
 
     molasses_dur = shot_globals.bm_time
@@ -2076,7 +2071,8 @@ def do_img_beam_alignment_check(t):
         devices.tweezer_aom_analog.constant(t, 0.25)  # 1) #for single tweezer
 
     mot_load_dur = 0.75
-    do_mot(t, mot_load_dur, close_aom=False, close_shutter=False)
+    do_mot(t, mot_load_dur, close_aom=False, close_shutter=False,
+           mot_coil_ctrl_voltage=10 / 6)
     t += mot_load_dur  # how long MOT last
 
     molasses_dur = shot_globals.bm_time
