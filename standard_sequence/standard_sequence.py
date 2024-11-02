@@ -18,15 +18,6 @@ root_path = r"X:\userlib\labscriptlib"
 if root_path not in sys.path:
     sys.path.append(root_path)
 
-import labscript
-
-from connection_table import devices
-from calibration import ta_freq_calib, repump_freq_calib, biasx_calib, biasy_calib, biasz_calib
-from spectrum_manager import spectrum_manager
-from spectrum_manager_fifo import spectrum_manager_fifo
-from labscriptlib.shot_globals import shot_globals
-import numpy as np
-
 spcm_sequence_mode = shot_globals.do_sequence_mode
 
 if __name__ == "__main__":
@@ -457,25 +448,6 @@ def do_mot(t, dur, *, use_coil, close_aom=True, close_shutter=True):
     if close_shutter:
         devices.mot_xy_shutter.close(t + dur)
         devices.mot_z_shutter.close(t + dur)
-
-    return t
-
-
-def do_MOT(t, dur, coils_bool):
-    # TODO: compare this method to do_mot() above
-    if coils_bool:
-        load_mot(t, mot_detuning=CONST_MOT_DETUNING)
-    else:
-        load_mot(t, mot_detuning=CONST_MOT_DETUNING, mot_coil_ctrl_voltage=0)
-
-    if shot_globals.do_molasses_img_beam:
-        devices.mot_xy_shutter.close(t + dur)
-        devices.mot_z_shutter.close(t + dur)
-
-    # MOT coils ramped down in load_molasses
-
-    ta_last_detuning = CONST_MOT_DETUNING
-    repump_last_detuning = 0
 
     return t
 
