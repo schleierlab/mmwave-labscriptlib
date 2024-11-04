@@ -32,45 +32,45 @@ CONST_MIN_SHUTTER_OFF_TIME = 6.28e-3  # minimum time for shutter to be off and o
 def open_mot_shutters(t, label=None):
     """Open the specified MOT shutters, else open all the MOT shutters"""
     if label == "z":
-        devices.mot_z_shutter.go_high(t)
+        devices.mot_z_shutter.open(t)
     elif label == "xy":
-        devices.mot_xy_shutter.go_high(t)
+        devices.mot_xy_shutter.open(t)
     else:
-        devices.mot_z_shutter.go_high(t)
-        devices.mot_xy_shutter.go_high(t)
+        devices.mot_z_shutter.open(t)
+        devices.mot_xy_shutter.open(t)
 
 
 def close_mot_shutters(t, label=None):
     """Close the specified MOT shutters, else open all the MOT shutters"""
     if label == "z":
-        devices.mot_z_shutter.go_low(t)
+        devices.mot_z_shutter.close(t)
     elif label == "xy":
-        devices.mot_xy_shutter.go_low(t)
+        devices.mot_xy_shutter.close(t)
     else:
-        devices.mot_z_shutter.go_low(t)
-        devices.mot_xy_shutter.go_low(t)
+        devices.mot_z_shutter.close(t)
+        devices.mot_xy_shutter.close(t)
 
 
 def open_img_shutters(t, label=None):
     """Open the specified IMG shutters, else open all the IMG shutters"""
     if label == "z":
-        devices.img_z_shutter.go_high(t)
+        devices.img_z_shutter.open(t)
     elif label == "xy":
-        devices.img_xy_shutter.go_high(t)
+        devices.img_xy_shutter.open(t)
     else:
-        devices.img_z_shutter.go_high(t)
-        devices.img_xy_shutter.go_high(t)
+        devices.img_z_shutter.open(t)
+        devices.img_xy_shutter.open(t)
 
 
 def close_img_shutters(t, label=None):
     """Open the specified IMG shutters, else open all the IMG shutters"""
     if label == "z":
-        devices.img_z_shutter.go_low(t)
+        devices.img_z_shutter.close(t)
     elif label == "xy":
-        devices.img_xy_shutter.go_low(t)
+        devices.img_xy_shutter.close(t)
     else:
-        devices.img_z_shutter.go_low(t)
-        devices.img_xy_shutter.go_low(t)
+        devices.img_z_shutter.close(t)
+        devices.img_xy_shutter.close(t)
         
 
 def ta_aom_off(t):
@@ -113,10 +113,10 @@ def repump_aom_pulse(t, dur, repump_power):
 
 def do_ta_pulse(t, dur, ta_power, hold_shutter_open=False):
     ta_aom_off(t - 3e-3)
-    devices.ta_shutter.go_high(t - 3e-3)
+    devices.ta_shutter.open(t - 3e-3)
     t = ta_aom_pulse(t, dur, ta_power)
     if not hold_shutter_open:
-        devices.ta_shutter.go_low(t)
+        devices.ta_shutter.close(t)
         ta_aom_on(t + 3e-3, 1)
     
     return t
@@ -124,10 +124,10 @@ def do_ta_pulse(t, dur, ta_power, hold_shutter_open=False):
 
 def do_repump_pulse(t, dur, repump_power, hold_shutter_open=False):
     repump_aom_off(t - 3e-3)
-    devices.repump_shutter.go_high(t - 3e-3)
+    devices.repump_shutter.open(t - 3e-3)
     t = repump_aom_pulse(t, dur, repump_power)
     if not hold_shutter_open:
-        devices.repump_shutter.go_low(t)
+        devices.repump_shutter.close(t)
         repump_aom_on(t + 3e-3, 1)
     
     return t
