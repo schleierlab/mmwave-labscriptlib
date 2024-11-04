@@ -54,7 +54,7 @@ def close_mot_shutters(t, label=None):
     else:
         devices.mot_z_shutter.close(t)
         devices.mot_xy_shutter.close(t)
-    
+
     t += CONST_SHUTTER_TURN_OFF_TIME # add the time it takes from start to close to fully close
     return t
 
@@ -85,7 +85,7 @@ def close_img_shutters(t, label=None):
         devices.img_xy_shutter.close(t)
     t += CONST_SHUTTER_TURN_OFF_TIME # add the time it takes from start to close to fully close
     return t
-        
+
 
 def ta_aom_off(t):
     """ Turn off the ta beam using aom """
@@ -127,7 +127,7 @@ def ta_aom_pulse(t, dur, ta_power):
     ta_aom_on(t, ta_power)
     t += dur
     ta_aom_off(t)
-    
+
     return t
 
 
@@ -136,8 +136,11 @@ def repump_aom_pulse(t, dur, repump_power):
     repump_aom_on(t, repump_power)
     t += dur
     repump_aom_off(t)
-    
+
     return t
+
+def example_function(t):
+    pass
 
 
 def do_ta_pulse(t, dur, ta_power, hold_shutter_open=False):
@@ -147,7 +150,7 @@ def do_ta_pulse(t, dur, ta_power, hold_shutter_open=False):
     if not hold_shutter_open:
         devices.ta_shutter.close(t)
         ta_aom_on(t + 3e-3, 1)
-    
+
     return t
 
 
@@ -158,9 +161,9 @@ def do_repump_pulse(t, dur, repump_power, hold_shutter_open=False):
     if not hold_shutter_open:
         devices.repump_shutter.close(t)
         repump_aom_on(t + 3e-3, 1)
-    
+
     return t
-    
+
 
 
 def load_molasses(t, ta_bm_detuning, repump_bm_detuning,
@@ -245,7 +248,7 @@ def load_molasses(t, ta_bm_detuning, repump_bm_detuning,
         t_x_coil = t - 4e-3
     else:
         t_x_coil = t
-        
+
     devices.x_coil_current.ramp(
         t_x_coil,
         duration=100e-6,
@@ -276,7 +279,7 @@ def load_molasses(t, ta_bm_detuning, repump_bm_detuning,
         t_z_coil = t - 4e-3
     else:
         t_z_coil = t
-        
+
     devices.z_coil_current.ramp(
         t_z_coil,
         duration=100e-6,
@@ -402,7 +405,7 @@ def load_molasses_img_beam(t, ta_bm_detuning, repump_bm_detuning):  # -100
         t_x_coil = t - 4e-3
     else:
         t_x_coil = t
-        
+
     devices.x_coil_current.ramp(
         t_x_coil,
         duration=100e-6,
@@ -433,7 +436,7 @@ def load_molasses_img_beam(t, ta_bm_detuning, repump_bm_detuning):  # -100
         t_z_coil = t - 4e-3
     else:
         t_z_coil = t
-        
+
     devices.z_coil_current.ramp(
         t_z_coil,
         duration=100e-6,
@@ -454,38 +457,38 @@ def load_molasses_img_beam(t, ta_bm_detuning, repump_bm_detuning):  # -100
 def tune_for_mot(t, dur, mot_coil_ctrl_voltage):
     devices.ta_vco.constant(t, ta_freq_calib(shot_globals.mot_ta_detuning))  # 16 MHz red detuned
     devices.repump_vco.constant(t, repump_freq_calib(0))  # on resonance
-    
+
     devices.x_coil_current.constant(t, shot_globals.mot_x_coil_voltage)
     devices.y_coil_current.constant(t, shot_globals.mot_y_coil_voltage)
     devices.z_coil_current.constant(t, shot_globals.mot_z_coil_voltage)
-    
+
     # 1/6 V/A, do not change to too high which may burn the coil
     devices.mot_coil_current_ctrl.constant(t, mot_coil_ctrl_voltage)
     t += dur
     devices.mot_coil_current_ctrl.constant(t, 0)  # Turn off coils
-    
+
     return t
 
 
 def do_mot(t, dur, *, close_shutter=True, mot_coil_ctrl_voltage=10 / 6):
     devices.uwave_dds_switch.go_high(t)
     devices.uwave_absorp_switch.go_low(t)
-    
+
     if shot_globals.do_uv:
         devices.uv_switch.go_high(t)
         devices.uv_switch.go_low(t + 1e-2)
         # longer time will lead to the overall MOT atom number decay during the
         # cycle
-    
+
     open_mot_shutters(t)
-    
+
     _ = do_ta_pulse(t, dur, shot_globals.mot_ta_power, hold_shutter_open=not
                     close_shutter)
     _ = do_repump_pulse(t, dur, shot_globals.mot_repump_power,
                         hold_shutter_open=not close_shutter)
-    
+
     _ = tune_for_mot(t, dur, mot_coil_ctrl_voltage)
-    
+
     t += dur
 
     if close_shutter:
@@ -607,7 +610,7 @@ def do_molasses_dipole_trap_imaging(
         exposure=shot_globals.bm_exposure_time,
         do_repump=True,
         close_shutter=True):
-    
+
     # define quantization axis
     devices.x_coil_current.constant(t, biasx_calib(0))
     devices.y_coil_current.constant(t, biasy_calib(0))
@@ -1582,7 +1585,7 @@ def intensity_servo_keep_on(t):
 
 def do_mot_in_situ_check(t):
     mot_load_dur = 0.5
-    
+
     do_mot(t, mot_load_dur, close_aom=True, close_shutter=False,
            mot_coil_ctrl_voltage=10 / 6)
     t += mot_load_dur  # MOT loading time 500 ms
@@ -1604,7 +1607,7 @@ def do_mot_in_situ_check(t):
 
 def do_mot_tof_check(t):
     mot_load_dur = 0.5
-    
+
     do_mot(t, mot_load_dur, close_aom=True, close_shutter=False,
            mot_coil_ctrl_voltage=10 / 6)
     t += mot_load_dur  # MOT loading time 500 ms
@@ -1643,7 +1646,7 @@ def do_molasses_in_situ_check(t):
         turn_on_dipole_trap(t)
     else:
         turn_off_dipole_trap(t)
-    
+
     do_mot(t, mot_load_dur, close_aom=False, close_shutter=False,
            mot_coil_ctrl_voltage=10 / 6)
     t += mot_load_dur  # how long MOT last
@@ -1701,7 +1704,7 @@ def do_molasses_in_situ_check(t):
 
 def do_molasses_tof_check(t):
     mot_load_dur = 0.75
-    
+
     do_mot(t, mot_load_dur, close_aom=False, close_shutter=False,
            mot_coil_ctrl_voltage=10 / 6)
     t += mot_load_dur  # how long MOT last
@@ -1789,7 +1792,7 @@ def do_field_calib_in_molasses_check(t):
                                     clock_freq=625,
                                     use_ext_clock=True,
                                     ext_clock_freq=10)
-    
+
     do_mot(t, mot_load_dur, close_aom=False, close_shutter=False,
            mot_coil_ctrl_voltage=10 / 6)
     t += mot_load_dur  # how long MOT last
@@ -2707,7 +2710,7 @@ def do_tweezer_check_fifo(t):
             t2 = spectrum_manager_fifo.stop_tweezers(t)
             print('tweezer stop time:', t2)
             spectrum_manager_fifo.stop_tweezer_card()
-            
+
     return t
 
 
@@ -3279,7 +3282,7 @@ def do_optical_pump_in_microtrap_check(t):
 if __name__ == "__main__":
     labscript.start()
     t = 0
-    
+
     if shot_globals.do_mot_in_situ_check:
         t = do_mot_in_situ_check()
 
@@ -3315,5 +3318,5 @@ if __name__ == "__main__":
 
     if shot_globals.do_optical_pump_in_microtrap_check:
         t = do_optical_pump_in_microtrap_check()
-    
+
     labscript.stop(t + 1e-2)
