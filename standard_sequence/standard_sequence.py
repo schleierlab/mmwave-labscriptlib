@@ -1579,8 +1579,10 @@ def intensity_servo_keep_on(t):
     devices.moglabs_456_aom_digital.go_high(t)
 
 
-def do_mot_in_situ_check(t):
+def do_mot_in_situ_check():
     mot_load_dur = 0.5
+    labscript.start()
+    t = 0
 
     do_mot(t, mot_load_dur, close_aom=True, close_shutter=False,
            mot_coil_ctrl_voltage=10 / 6)
@@ -1598,11 +1600,13 @@ def do_mot_in_situ_check(t):
     t += 1e-2
     t = reset_mot(t, ta_last_detuning=0)
 
-    return t
+    labscript.stop(t + 1e-2)
 
 
-def do_mot_tof_check(t):
+def do_mot_tof_check():
     mot_load_dur = 0.5
+    labscript.start()
+    t = 0
 
     do_mot(t, mot_load_dur, close_aom=True, close_shutter=False,
            mot_coil_ctrl_voltage=10 / 6)
@@ -1621,13 +1625,13 @@ def do_mot_tof_check(t):
     t += 1e-2
     t = reset_mot(t, ta_last_detuning=0)
 
-    return t
+    labscript.stop(t + 1e-2)
+
 
 def do_molasses_in_situ_check():
-    labscript.start()
-
-def do_molasses_in_situ_check(t):
     mot_load_dur = 0.75
+    labscript.start()
+    t = 0
 
     # if shot_globals.do_tweezers:
     #     print("Initializing tweezers")
@@ -1695,11 +1699,14 @@ def do_molasses_in_situ_check(t):
     #     #t += 1e-3################
     #     spectrum_manager.stop_card(t)
 
-    return t
+    labscript.stop(t + 1e-2)
 
 
-def do_molasses_tof_check(t):
+def do_molasses_tof_check():
     mot_load_dur = 0.75
+
+    labscript.start()
+    t = 0
 
     do_mot(t, mot_load_dur, close_aom=False, close_shutter=False,
            mot_coil_ctrl_voltage=10 / 6)
@@ -1746,14 +1753,14 @@ def do_molasses_tof_check(t):
 
     labscript.stop(t + 1e-2)
 
-    return t
 
-
-def do_field_calib_in_molasses_check(t):
+def do_field_calib_in_molasses_check():
     mot_load_dur = 0.5
     spectrum_uwave_cable_atten = 4.4  # dB at 300 MHz
     spectrum_uwave_power = -1  # -3 # dBm
 
+    labscript.start()
+    t = 0
     # temproral for Nolan's alignment
     # devices.ipg_1064_aom_digital.go_high(t)
     # devices.ipg_1064_aom_analog.constant(t, 1)
@@ -1911,10 +1918,12 @@ def do_field_calib_in_molasses_check(t):
     t += 1e-2
     t = reset_mot(t, ta_last_detuning)
 
-    return t
+    labscript.stop(t + 1e-2)
 
 
-def do_dipole_trap_tof_check(t):
+def do_dipole_trap_tof_check():
+    labscript.start()
+    t = 0
     intensity_servo_keep_on(t)
     devices.mirror_1_horizontal.constant(t, 0)
     devices.mirror_1_vertical.constant(t, 0)
@@ -2108,10 +2117,10 @@ def do_dipole_trap_tof_check(t):
         # stop tweezers
         devices.local_addr_1064_aom_digital.go_low(t)
 
-    return t
+    labscript.stop(t + 1e-2)
 
 
-def do_img_beam_alignment_check(t):
+def do_img_beam_alignment_check():
     if shot_globals.do_dipole_trap:
         turn_on_dipole_trap(t)
     else:
@@ -2213,10 +2222,12 @@ def do_img_beam_alignment_check(t):
     return t
 
 
-def do_tweezer_position_check(t):
+def do_tweezer_position_check():
     check_on_vimba_viewer = True  # False
     # look at the trap intensity distribution on the tweezer camera
     # look at it's relative position to the molasses
+    labscript.start()
+    t = 0
 
     intensity_servo_keep_on(t)
 
@@ -2298,13 +2309,15 @@ def do_tweezer_position_check(t):
         # stop tweezers
         devices.local_addr_1064_aom_digital.go_low(t)
 
-    return t
+    labscript.stop(t + 1e-2)
 
 
-def do_tweezer_check(t):
+def do_tweezer_check():
     import numpy as np
     MOT_load_dur = 0.5
     molasses_dur = shot_globals.bm_time
+    labscript.start()
+    t = 0
 
     intensity_servo_keep_on(t)
     devices.mirror_1_horizontal.constant(
@@ -2491,12 +2504,14 @@ def do_tweezer_check(t):
         # t += 1e-3################
         spectrum_manager.stop_card(t)
 
-    return t
+    labscript.stop(t + 1e-2)
 
 
-def do_tweezer_check_fifo(t):
+def do_tweezer_check_fifo():
     MOT_load_dur = 0.5  # 0.5
     molasses_dur = shot_globals.bm_time
+    labscript.start()
+    t = 0
 
     intensity_servo_keep_on(t)
 
@@ -2707,13 +2722,15 @@ def do_tweezer_check_fifo(t):
             print('tweezer stop time:', t2)
             spectrum_manager_fifo.stop_tweezer_card()
 
-    return t
+    labscript.stop(t + 1e-2)
 
 
-def do_optical_pump_in_tweezer_check(t):
+def do_optical_pump_in_tweezer_check():
 
     MOT_load_dur = 0.5  # 0.5
     molasses_dur = shot_globals.bm_time
+    labscript.start()
+    t = 0
 
     intensity_servo_keep_on(t)
     devices.mirror_1_horizontal.constant(
@@ -3038,13 +3055,15 @@ def do_optical_pump_in_tweezer_check(t):
             print('tweezer stop time:', t2)
             spectrum_manager_fifo.stop_tweezer_card()
 
-    return t
+    labscript.stop(t + 1e-2)
 
 
-def do_optical_pump_in_microtrap_check(t):
+def do_optical_pump_in_microtrap_check():
     MOT_load_dur = 0.5  # 0.5
     molasses_dur = shot_globals.bm_time
+    labscript.start()
 
+    t = 0
     intensity_servo_keep_on(t)
 
     if spcm_sequence_mode:
@@ -3272,47 +3291,43 @@ def do_optical_pump_in_microtrap_check(t):
         # stop tweezers
         devices.local_addr_1064_aom_digital.go_low(t)
 
-    return t
+    labscript.stop(t + 1e-2)
 
 
 if __name__ == "__main__":
-    labscript.start()
-    t = 0
 
     if shot_globals.do_mot_in_situ_check:
-        t = do_mot_in_situ_check()
+        do_mot_in_situ_check()
 
     if shot_globals.do_mot_tof_check:
-        t = do_mot_tof_check()
+        do_mot_tof_check()
 
     if shot_globals.do_molasses_in_situ_check:
-        t = do_molasses_in_situ_check()
+        do_molasses_in_situ_check()
 
     if shot_globals.do_molasses_tof_check:
-        t = do_molasses_tof_check()
+        do_molasses_tof_check()
 
     if shot_globals.do_field_calib_in_molasses_check:
-        t = do_field_calib_in_molasses_check()
+        do_field_calib_in_molasses_check()
 
     if shot_globals.do_dipole_trap_tof_check:
-        t = do_dipole_trap_tof_check()
+        do_dipole_trap_tof_check()
 
     if shot_globals.do_img_beam_alignment_check:
-        t = do_img_beam_alignment_check()
+        do_img_beam_alignment_check()
 
     if shot_globals.do_tweezer_position_check:
-        t = do_tweezer_position_check()
+        do_tweezer_position_check()
 
     if shot_globals.do_tweezer_check:
-        t = do_tweezer_check()
+        do_tweezer_check()
 
     if shot_globals.do_tweezer_check_fifo:
-        t = do_tweezer_check_fifo()
+        do_tweezer_check_fifo()
 
     if shot_globals.do_optical_pump_in_tweezer_check:
-        t = do_optical_pump_in_tweezer_check()
+        do_optical_pump_in_tweezer_check()
 
     if shot_globals.do_optical_pump_in_microtrap_check:
-        t = do_optical_pump_in_microtrap_check()
-
-    labscript.stop(t + 1e-2)
+        do_optical_pump_in_microtrap_check()
