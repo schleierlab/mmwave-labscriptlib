@@ -139,9 +139,6 @@ def repump_aom_pulse(t, dur, repump_power):
 
     return t
 
-def example_function(t):
-    pass
-
 
 def do_ta_pulse(t, dur, ta_power, hold_shutter_open=False):
     ta_aom_off(t - 3e-3)
