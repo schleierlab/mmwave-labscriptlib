@@ -33,9 +33,6 @@ CONST_SHUTTER_TURN_OFF_TIME = 2e-3 # for shutter take from start to open to full
 
 def open_mot_shutters(t, label=None):
     """Open the specified MOT shutters, else open all the MOT shutters"""
-    t -= CONST_SHUTTER_TURN_ON_TIME
-    mot_aom_off(t)  # turn off all light during the time when shutter start to open
-    t += CONST_SHUTTER_TURN_ON_TIME
     if label == "z":
         devices.mot_z_shutter.open(t)
     elif label == "xy":
@@ -43,6 +40,8 @@ def open_mot_shutters(t, label=None):
     else:
         devices.mot_z_shutter.open(t)
         devices.mot_xy_shutter.open(t)
+
+    return t
 
 
 def close_mot_shutters(t, label=None):
@@ -55,16 +54,12 @@ def close_mot_shutters(t, label=None):
         devices.mot_z_shutter.close(t)
         devices.mot_xy_shutter.close(t)
 
-    t += CONST_SHUTTER_TURN_OFF_TIME # add the time it takes from start to close to fully close
     return t
 
 
 
 def open_img_shutters(t, label=None):
     """Open the specified IMG shutters, else open all the IMG shutters"""
-    t -= CONST_SHUTTER_TURN_ON_TIME
-    mot_aom_off(t)  # turn off all light during the time when shutter start to open
-    t += CONST_SHUTTER_TURN_ON_TIME
     if label == "z":
         devices.img_z_shutter.open(t)
     elif label == "xy":
@@ -72,6 +67,8 @@ def open_img_shutters(t, label=None):
     else:
         devices.img_z_shutter.open(t)
         devices.img_xy_shutter.open(t)
+
+    return t
 
 
 def close_img_shutters(t, label=None):
@@ -83,7 +80,7 @@ def close_img_shutters(t, label=None):
     else:
         devices.img_z_shutter.close(t)
         devices.img_xy_shutter.close(t)
-    t += CONST_SHUTTER_TURN_OFF_TIME # add the time it takes from start to close to fully close
+
     return t
 
 
@@ -141,23 +138,25 @@ def repump_aom_pulse(t, dur, repump_power):
 
 
 def do_ta_pulse(t, dur, ta_power, hold_shutter_open=False):
-    ta_aom_off(t - 3e-3)
-    devices.ta_shutter.open(t - 3e-3)
+    ta_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
+    devices.ta_shutter.open(t) # labscript already account for the shutter open time
     t = ta_aom_pulse(t, dur, ta_power)
     if not hold_shutter_open:
         devices.ta_shutter.close(t)
-        ta_aom_on(t + 3e-3, 1)
+        t += CONST_SHUTTER_TURN_OFF_TIME
+        ta_aom_on(t, 1)
 
     return t
 
 
 def do_repump_pulse(t, dur, repump_power, hold_shutter_open=False):
-    repump_aom_off(t - 3e-3)
-    devices.repump_shutter.open(t - 3e-3)
+    repump_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
+    devices.repump_shutter.open(t)
     t = repump_aom_pulse(t, dur, repump_power)
     if not hold_shutter_open:
         devices.repump_shutter.close(t)
-        repump_aom_on(t + 3e-3, 1)
+        t += CONST_SHUTTER_TURN_OFF_TIME
+        repump_aom_on(t, 1)
 
     return t
 
