@@ -27,10 +27,15 @@ if __name__ == "__main__":
 CONST_COIL_OFF_TIME = 1.4e-3  # minimum time for the MOT coil to be off
 CONST_TA_VCO_RAMP_TIME = 1.2e-4
 CONST_MIN_SHUTTER_OFF_TIME = 6.28e-3  # minimum time for shutter to be off and on again
+CONST_SHUTTER_TURN_ON_TIME  = 2e-3 # for shutter take from start to close to fully close
+CONST_SHUTTER_TURN_OFF_TIME = 2e-3 # for shutter take from start to open to fully open
 
 
 def open_mot_shutters(t, label=None):
     """Open the specified MOT shutters, else open all the MOT shutters"""
+    t -= CONST_SHUTTER_TURN_ON_TIME
+    mot_aom_off(t)  # turn off all light during the time when shutter start to open
+    t += CONST_SHUTTER_TURN_ON_TIME
     if label == "z":
         devices.mot_z_shutter.open(t)
     elif label == "xy":
@@ -49,10 +54,17 @@ def close_mot_shutters(t, label=None):
     else:
         devices.mot_z_shutter.close(t)
         devices.mot_xy_shutter.close(t)
+    
+    t += CONST_SHUTTER_TURN_OFF_TIME # add the time it takes from start to close to fully close
+    return t
+
 
 
 def open_img_shutters(t, label=None):
     """Open the specified IMG shutters, else open all the IMG shutters"""
+    t -= CONST_SHUTTER_TURN_ON_TIME
+    mot_aom_off(t)  # turn off all light during the time when shutter start to open
+    t += CONST_SHUTTER_TURN_ON_TIME
     if label == "z":
         devices.img_z_shutter.open(t)
     elif label == "xy":
@@ -71,26 +83,43 @@ def close_img_shutters(t, label=None):
     else:
         devices.img_z_shutter.close(t)
         devices.img_xy_shutter.close(t)
+    t += CONST_SHUTTER_TURN_OFF_TIME # add the time it takes from start to close to fully close
+    return t
         
 
 def ta_aom_off(t):
+    """ Turn off the ta beam using aom """
     devices.ta_aom_digital.go_low(t)  # digital off
     devices.ta_aom_analog.constant(t, 0)  # analog off
 
 
 def ta_aom_on(t, const):
+    """ Turn on the ta beam using aom """
     devices.ta_aom_digital.go_high(t)  # digital on
     devices.ta_aom_analog.constant(t, const)  # analog to const
 
 
 def repump_aom_off(t):
+    """ Turn off the repump beam using aom """
     devices.repump_aom_digital.go_low(t)  # digital off
     devices.repump_aom_analog.constant(t, 0)  # analog off
 
 
 def repump_aom_on(t, const):
+    """ Turn on the repump beam using aom """
     devices.repump_aom_digital.go_high(t)  # digital on
     devices.repump_aom_analog.constant(t, const)  # analog to const
+
+
+def mot_aom_on(t, ta_const, repump_const):
+    """ Turn on both the ta & repump beam using aom """
+    ta_aom_on(t, ta_const)  # ta beam off
+    repump_aom_on(t, repump_const)  # repump beam off
+
+def mot_aom_off(t):
+    """ Turn off both the ta & repump beam using aom """
+    ta_aom_off(t)  # ta beam off
+    repump_aom_off(t)  # repump beam off
 
 
 def ta_aom_pulse(t, dur, ta_power):
