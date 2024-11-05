@@ -53,6 +53,7 @@ def close_mot_shutters(t, label=None):
     else:
         devices.mot_z_shutter.close(t)
         devices.mot_xy_shutter.close(t)
+    # t += CONST_SHUTTER_TURN_OFF_TIME # add the time it takes from start to close to fully close
 
     return t
 
@@ -543,6 +544,7 @@ def reset_mot(t, ta_last_detuning):
     )  # ramp to MOT loading
 
     # set the default value into MOT loading value
+
     if shot_globals.do_mot_coil:
         load_mot(t, mot_detuning=shot_globals.mot_ta_detuning)
     else:
