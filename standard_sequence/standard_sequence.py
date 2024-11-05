@@ -172,6 +172,7 @@ def do_mot_pulse(t, dur, ta_power, repump_power, hold_shutter_open=False, label=
         t += CONST_SHUTTER_TURN_OFF_TIME
     return t
 
+
 def do_img_pulse(t, dur, ta_power, repump_power, hold_shutter_open=False, label=None):
     open_img_shutters(t, label)
     _ = do_ta_pulse(t, dur, ta_power, hold_shutter_open)
@@ -181,6 +182,7 @@ def do_img_pulse(t, dur, ta_power, repump_power, hold_shutter_open=False, label=
         close_img_shutters(t)
         t += CONST_SHUTTER_TURN_OFF_TIME
     return t
+
 
 def load_molasses(t, ta_bm_detuning, repump_bm_detuning,
                   ta_last_detuning=shot_globals.mot_ta_detuning):  # -100
@@ -471,6 +473,7 @@ def load_molasses_img_beam(t, ta_bm_detuning, repump_bm_detuning):  # -100
 
 
 def setup_mot(t, mot_coil_ctrl_voltage):
+
     devices.ta_vco.constant(t, ta_freq_calib(shot_globals.mot_ta_detuning))  # 16 MHz red detuned
     devices.repump_vco.constant(t, repump_freq_calib(0))  # on resonance
 
@@ -483,14 +486,13 @@ def setup_mot(t, mot_coil_ctrl_voltage):
 
     return t
 
-def initialize_lab(t):
-    # set the coil and vco to mot setting
-    devices.uwave_dds_switch.go_high(t)
-    devices.uwave_absorp_switch.go_low(t)
-
-
+# def initialize_lab(t):
+#     # set the coil and vco to mot setting
+#     devices.uwave_dds_switch.go_high(t)
+#     devices.uwave_absorp_switch.go_low(t)
 
 def do_mot(t, dur, *, close_shutter=True, mot_coil_ctrl_voltage=10 / 6):
+
     devices.uwave_dds_switch.go_high(t)
     devices.uwave_absorp_switch.go_low(t)
 
@@ -500,14 +502,16 @@ def do_mot(t, dur, *, close_shutter=True, mot_coil_ctrl_voltage=10 / 6):
         # longer time will lead to the overall MOT atom number decay during the
         # cycle
 
-    open_mot_shutters(t)
-
-    _ = do_ta_pulse(t, dur, shot_globals.mot_ta_power, hold_shutter_open=not
-                    close_shutter)
-    _ = do_repump_pulse(t, dur, shot_globals.mot_repump_power,
-                        hold_shutter_open=not close_shutter)
-
     setup_mot(t, mot_coil_ctrl_voltage)
+    _ = do_mot_pulse(t, dur, shot_globals.mot_ta_power, hold_shutter_open=not
+                    close_shutter)
+
+    # open_mot_shutters(t)
+
+    # _ = do_ta_pulse(t, dur, shot_globals.mot_ta_power, hold_shutter_open=not
+    #                 close_shutter)
+    # _ = do_repump_pulse(t, dur, shot_globals.mot_repump_power,
+    #                     hold_shutter_open=not close_shutter)
 
     t += dur
 
@@ -517,7 +521,7 @@ def do_mot(t, dur, *, close_shutter=True, mot_coil_ctrl_voltage=10 / 6):
     return t
 
 
-def do_mot_imaging(t, *, use_shutter=True):
+def do_mot_imaging(t, close_shutter=True):
     devices.ta_vco.ramp(
         t - CONST_TA_VCO_RAMP_TIME,
         duration=CONST_TA_VCO_RAMP_TIME,
@@ -526,34 +530,14 @@ def do_mot_imaging(t, *, use_shutter=True):
         samplerate=4e5,
     )  # ramp to imaging
 
-    # set ta and repump to full power
-    devices.ta_aom_analog.constant(t, 1)
-    devices.repump_aom_analog.constant(t, 1)
-
-    devices.ta_aom_digital.go_high(t)
-    devices.repump_aom_digital.go_high(t)
-
-    if use_shutter:
-        devices.mot_xy_shutter.open(t)
-        devices.mot_z_shutter.open(t)
+    _ = do_mot_pulse(t, shot_globals.mot_exposure_time,
+                     shot_globals.mot_ta_power, hold_shutter_open=not close_shutter)
 
     devices.manta419b_mot.expose(
         'manta419b',
         t,
         'atoms',
         exposure_time=shot_globals.mot_exposure_time)
-
-    t += shot_globals.mot_exposure_time
-
-
-    devices.ta_aom_digital.go_low(t)
-    devices.repump_aom_digital.go_low(t)
-
-    if use_shutter:
-        devices.mot_xy_shutter.close(t)
-        devices.mot_z_shutter.close(t)
-
-    return t
 
 
 def reset_mot(t, ta_last_detuning):
