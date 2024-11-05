@@ -162,6 +162,25 @@ def do_repump_pulse(t, dur, repump_power, hold_shutter_open=False):
     return t
 
 
+def do_mot_pulse(t, dur, ta_power, repump_power, hold_shutter_open=False, label=None):
+    open_mot_shutters(t, label)
+    _ = do_ta_pulse(t, dur, ta_power, hold_shutter_open)
+    _ = do_repump_pulse(t, dur, repump_power, hold_shutter_open)
+    t += dur
+    if not hold_shutter_open:
+        close_mot_shutters(t)
+        t += CONST_SHUTTER_TURN_OFF_TIME
+    return t
+
+def do_img_pulse(t, dur, ta_power, repump_power, hold_shutter_open=False, label=None):
+    open_img_shutters(t, label)
+    _ = do_ta_pulse(t, dur, ta_power, hold_shutter_open)
+    _ = do_repump_pulse(t, dur, repump_power, hold_shutter_open)
+    t += dur
+    if not hold_shutter_open:
+        close_img_shutters(t)
+        t += CONST_SHUTTER_TURN_OFF_TIME
+    return t
 
 def load_molasses(t, ta_bm_detuning, repump_bm_detuning,
                   ta_last_detuning=shot_globals.mot_ta_detuning):  # -100
@@ -451,7 +470,7 @@ def load_molasses_img_beam(t, ta_bm_detuning, repump_bm_detuning):  # -100
     return t, ta_last_detuning, repump_last_detuning
 
 
-def tune_for_mot(t, dur, mot_coil_ctrl_voltage):
+def setup_mot(t, mot_coil_ctrl_voltage):
     devices.ta_vco.constant(t, ta_freq_calib(shot_globals.mot_ta_detuning))  # 16 MHz red detuned
     devices.repump_vco.constant(t, repump_freq_calib(0))  # on resonance
 
@@ -461,10 +480,14 @@ def tune_for_mot(t, dur, mot_coil_ctrl_voltage):
 
     # 1/6 V/A, do not change to too high which may burn the coil
     devices.mot_coil_current_ctrl.constant(t, mot_coil_ctrl_voltage)
-    t += dur
-    devices.mot_coil_current_ctrl.constant(t, 0)  # Turn off coils
 
     return t
+
+def initialize_lab(t):
+    # set the coil and vco to mot setting
+    devices.uwave_dds_switch.go_high(t)
+    devices.uwave_absorp_switch.go_low(t)
+
 
 
 def do_mot(t, dur, *, close_shutter=True, mot_coil_ctrl_voltage=10 / 6):
@@ -484,7 +507,7 @@ def do_mot(t, dur, *, close_shutter=True, mot_coil_ctrl_voltage=10 / 6):
     _ = do_repump_pulse(t, dur, shot_globals.mot_repump_power,
                         hold_shutter_open=not close_shutter)
 
-    _ = tune_for_mot(t, dur, mot_coil_ctrl_voltage)
+    setup_mot(t, mot_coil_ctrl_voltage)
 
     t += dur
 
@@ -3063,9 +3086,7 @@ def do_optical_pump_in_tweezer_check():
 def do_optical_pump_in_microtrap_check():
     MOT_load_dur = 0.5  # 0.5
     molasses_dur = shot_globals.bm_time
-    labscript.start()
 
-    t = 0
     intensity_servo_keep_on(t)
 
     if spcm_sequence_mode:
@@ -3292,44 +3313,51 @@ def do_optical_pump_in_microtrap_check():
     if shot_globals.do_local_addr:
         # stop tweezers
         devices.local_addr_1064_aom_digital.go_low(t)
-
-    labscript.stop(t + 1e-2)
+    return t
 
 
 if __name__ == "__main__":
+    labscript.start()
+    t = 0
+
+    initialize_lab(t)
+
+    # Insert "stay on" statements for alignment here...
 
     if shot_globals.do_mot_in_situ_check:
-        do_mot_in_situ_check()
+        t = do_mot_in_situ_check(t)
 
     if shot_globals.do_mot_tof_check:
-        do_mot_tof_check()
+        t = do_mot_tof_check(t)
 
     if shot_globals.do_molasses_in_situ_check:
-        do_molasses_in_situ_check()
+        t = do_molasses_in_situ_check(t)
 
     if shot_globals.do_molasses_tof_check:
-        do_molasses_tof_check()
+        t = do_molasses_tof_check(t)
 
     if shot_globals.do_field_calib_in_molasses_check:
-        do_field_calib_in_molasses_check()
+        t = do_field_calib_in_molasses_check(t)
 
     if shot_globals.do_dipole_trap_tof_check:
-        do_dipole_trap_tof_check()
+        t = do_dipole_trap_tof_check(t)
 
     if shot_globals.do_img_beam_alignment_check:
-        do_img_beam_alignment_check()
+        t = do_img_beam_alignment_check(t)
 
     if shot_globals.do_tweezer_position_check:
-        do_tweezer_position_check()
+        t = do_tweezer_position_check(t)
 
     if shot_globals.do_tweezer_check:
-        do_tweezer_check()
+        t = do_tweezer_check(t)
 
     if shot_globals.do_tweezer_check_fifo:
-        do_tweezer_check_fifo()
+        t = do_tweezer_check_fifo(t)
 
     if shot_globals.do_optical_pump_in_tweezer_check:
-        do_optical_pump_in_tweezer_check()
+        t = do_optical_pump_in_tweezer_check(t)
 
     if shot_globals.do_optical_pump_in_microtrap_check:
-        do_optical_pump_in_microtrap_check()
+        t = do_optical_pump_in_microtrap_check(t)
+
+    labscript.stop(t + 1e-2)
