@@ -505,14 +505,6 @@ def do_mot(t, dur, *, close_shutter=True, mot_coil_ctrl_voltage=10 / 6):
     setup_mot(t, mot_coil_ctrl_voltage)
     _ = do_mot_pulse(t, dur, shot_globals.mot_ta_power, hold_shutter_open=not
                     close_shutter)
-
-    # open_mot_shutters(t)
-
-    # _ = do_ta_pulse(t, dur, shot_globals.mot_ta_power, hold_shutter_open=not
-    #                 close_shutter)
-    # _ = do_repump_pulse(t, dur, shot_globals.mot_repump_power,
-    #                     hold_shutter_open=not close_shutter)
-
     t += dur
 
     if close_shutter:
