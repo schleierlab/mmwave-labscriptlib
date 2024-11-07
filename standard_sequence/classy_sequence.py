@@ -30,8 +30,9 @@ CONST_MIN_SHUTTER_OFF_TIME = 6.28e-3  # minimum time for shutter to be off and o
 CONST_SHUTTER_TURN_ON_TIME  = 2e-3 # for shutter take from start to close to fully close
 CONST_SHUTTER_TURN_OFF_TIME = 2e-3 # for shutter take from start to open to fully open
 
-# Should there be a parent class for lasers? Seems like they're sufficiently hardware-different that this might be tough
-class Dline_lasers:
+# Hardware control classes
+#-------------------------------------------------------------------------------
+class D2Lasers:
     def __init__(self):
         # What's the best way to use these? Should we use them to set "const" in, for example, ta_aom_on, or the other way around?
         self.ta_freq = shot_globals.mot_ta_detuning
@@ -173,7 +174,7 @@ class Dline_lasers:
         return t
 
 
-    def do_ta_pulse(self.t, dur, ta_power, hold_shutter_open=False):
+    def do_ta_pulse(self, t, dur, ta_power, hold_shutter_open=False):
         self.ta_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
         devices.ta_shutter.open(t) # labscript already account for the shutter open time
         t = self.ta_aom_pulse(t, dur, ta_power)
@@ -217,9 +218,24 @@ class Dline_lasers:
             self.close_img_shutters(t)
             t += CONST_SHUTTER_TURN_OFF_TIME
         return t
+    
+class TweezerLaser:
+    def __init__(self):
+        pass
+    
+class Microwave:
+    def __init__(self):
+        pass
+    
+class RydLasers:
+    def __init__(self):
+        pass
 
+class UVLamps:
+    def __init__(self):
+        pass
 
-class B_field_control:
+class BField:
     def __init__(self):
         self.bias_x_voltage = shot_globals.mot_x_coil_voltage
         self.bias_y_voltage = shot_globals.mot_y_coil_voltage
@@ -299,16 +315,20 @@ class B_field_control:
                 samplerate=1e5,
             )
             self.mot_coils_on = True
+            
+class EField:
+    def __init__(self):
+        pass
 
 #Sequence Classes
 #-------------------------------------------------------------------------------
 
-class MOT_sequences:
+class MOTSequence:
     def __init__(self):
 
         #Will child classes of this also initialize their own MOT_lasers and BV_field_controllers? That would mess this up a bit given how I initialized things
-        self.MOT_lasers = Dline_lasers()
-        self.B_field_controllers = B_field_control()
+        self.MOT_lasers = D2Lasers()
+        self.B_field_controllers = BField()
 
     def do_mot(self, t, dur):
 
@@ -326,12 +346,20 @@ class MOT_sequences:
 
         return t
 
-#example class
-class Tweezer_sequences(MOT_sequences):
+class TweezerSequence(MOTSequence):
 
     def __init__(self):
-        MOT_sequences.__init__(self)
+        super(TweezerSequence, self).__init__()
 
+class RydSequence(TweezerSequence):
+
+    def __init__(self):
+        super(RydSequence, self).__init__()
+        
+class ScienceSequence(RydSequence):
+
+    def __init__(self):
+        super(ScienceSequence, self).__init__()
 
 #sequences functions without classes
 #-------------------------------------------------------------------------------
