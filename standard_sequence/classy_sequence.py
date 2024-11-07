@@ -31,7 +31,7 @@ CONST_SHUTTER_TURN_ON_TIME  = 2e-3 # for shutter take from start to close to ful
 CONST_SHUTTER_TURN_OFF_TIME = 2e-3 # for shutter take from start to open to fully open
 
 # Should there be a parent class for lasers? Seems like they're sufficiently hardware-different that this might be tough
-class D2_lasers:
+class Dline_lasers:
     def __init__(self):
         # What's the best way to use these? Should we use them to set "const" in, for example, ta_aom_on, or the other way around?
         self.ta_freq = shot_globals.mot_ta_detuning
@@ -39,6 +39,7 @@ class D2_lasers:
         self.ta_power = shot_globals.mot_ta_power
         self.repump_power = shot_globals.mot_repump_power
 
+        #Do we want to automatically set these when we initialize?
         devices.ta_vco.constant(t, ta_freq_calib(self.ta_freq))
         devices.repump_vco.constant(t, repump_freq_calib(self.repump_freq))
         devices.ta_aom_analog.constant(t, shot_globals.mot_ta_power)
@@ -226,7 +227,9 @@ class B_field_control:
         self.mot_coils_on = shot_globals.do_mot_coil
         self.mot_coils_on_current = 10/6
 
-        #should be inverse of bias_i_calib function, depending on mot_i_coil_voltage
+        #Same question as for Dline_lasers, should we automatically initialize the hardware here or in a separate function we can call?
+
+        #this isn't quite right, we should have an inverse of bias_i_calib function that gives B depending on mot_i_coil_voltage
         self.B_field = (0,0,0)
 
         devices.x_coil_current.constant(t, self.bias_x_voltage)
@@ -240,6 +243,8 @@ class B_field_control:
 
     def ramp_B_field(self, t, B_field):
         #B_field should be a tuple of the form (x,y,z)
+
+        #Should we tep time by ramp duration?
 
         t_x_coil, t_y_coil, t_z_coil = (t - 4e-3*int(shot_globals.mot_x_coil_voltage < 0),
                                         t - 4e-3*int(shot_globals.mot_y_coil_voltage < 0),
@@ -275,6 +280,7 @@ class B_field_control:
         self.bias_z_voltage = biasz_calib(B_field[2])
 
     def switch_mot_coils(self, t):
+        #Should we step time by ramp duration. Do we need to ramp this?
         if self.mot_coils_on:
             devices.mot_coil_current_ctrl.ramp(
                 t,
@@ -294,13 +300,14 @@ class B_field_control:
             )
             self.mot_coils_on = True
 
+#Sequence Classes
 #-------------------------------------------------------------------------------
 
 class MOT_sequences:
     def __init__(self):
 
         #Will child classes of this also initialize their own MOT_lasers and BV_field_controllers? That would mess this up a bit given how I initialized things
-        self.MOT_lasers = D2_lasers()
+        self.MOT_lasers = Dline_lasers()
         self.B_field_controllers = B_field_control()
 
     def do_mot(self, t, dur):
@@ -319,9 +326,41 @@ class MOT_sequences:
 
         return t
 
+#example class
+class Tweezer_sequences(MOT_sequences):
+
+    def __init__(self):
+        MOT_sequences.__init__(self)
+
+
+#sequences functions without classes
+#-------------------------------------------------------------------------------
+
+def do_mot(t, dur, MOT_lasers, B_field_controllers):
+
+    if B_field_controllers.mot_coils_on  == False:
+        B_field_controllers.switch_mot_coils(t)
+
+    #Add microwave class?
+    devices.uwave_dds_switch.go_high(t)
+    devices.uwave_absorp_switch.go_low(t)
+
+    if shot_globals.do_uv:
+        devices.uv_switch.go_high(t)
+        devices.uv_switch.go_low(t + 1e-2)
+        # longer time will lead to the overall MOT atom number decay during the
+        # cycle
+
+    t = MOT_lasers.do_mot_pulse(t, dur, shot_globals.ta_power, shot_globals.repump_power)
+
+    #should we return t?
+    return t
+
+def load_molasses(t, ta_bm_detuning, repump_bm_detuning, MOT_lasers, B_field_controllers):
 
 
 
+#Old sequence functions
 def load_molasses(t, ta_bm_detuning, repump_bm_detuning,
                   ta_last_detuning=shot_globals.mot_ta_detuning):  # -100
 
