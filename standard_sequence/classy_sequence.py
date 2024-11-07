@@ -30,160 +30,337 @@ CONST_MIN_SHUTTER_OFF_TIME = 6.28e-3  # minimum time for shutter to be off and o
 CONST_SHUTTER_TURN_ON_TIME  = 2e-3 # for shutter take from start to close to fully close
 CONST_SHUTTER_TURN_OFF_TIME = 2e-3 # for shutter take from start to open to fully open
 
+# Should there be a parent class for lasers? Seems like they're sufficiently hardware-different that this might be tough
+class Dline_lasers:
+    def __init__(self):
+        # What's the best way to use these? Should we use them to set "const" in, for example, ta_aom_on, or the other way around?
+        self.ta_freq = shot_globals.mot_ta_detuning
+        self.repump_freq = shot_globals.mot_repump_detuning
+        self.ta_power = shot_globals.mot_ta_power
+        self.repump_power = shot_globals.mot_repump_power
 
-def open_mot_shutters(t, label=None):
-    """Open the specified MOT shutters, else open all the MOT shutters"""
-    if label == "z":
-        devices.mot_z_shutter.open(t)
-    elif label == "xy":
-        devices.mot_xy_shutter.open(t)
-    else:
-        devices.mot_z_shutter.open(t)
-        devices.mot_xy_shutter.open(t)
+        #Do we want to automatically set these when we initialize?
+        devices.ta_vco.constant(t, ta_freq_calib(self.ta_freq))
+        devices.repump_vco.constant(t, repump_freq_calib(self.repump_freq))
+        devices.ta_aom_analog.constant(t, shot_globals.mot_ta_power)
+        devices.repump_aom_analog.constant(t, shot_globals.mot_repump_power)
 
+        #close shutters too?
+
+
+    def ramp_ta_freq(self, t, duration, final, samplerate=1e5):
+        devices.ta_vco.ramp(
+            t,
+            duration=duration,
+            initial=ta_freq_calib(self.ta_freq),
+            final=ta_freq_calib(final),
+            samplerate=samplerate,
+        )
+        self.ta_freq = final
+
+    def ramp_repump_freq(self, t, duration, final, samplerate=1e5):
+        devices.repump_vco.ramp(
+            t,
+            duration=duration,
+            initial=repump_freq_calib(self.repump_freq),
+            final=repump_freq_calib(final),
+            samplerate=samplerate,
+        )
+        self.repump_freq = final
+
+    def open_mot_shutters(t, label=None):
+        """Open the specified MOT shutters, else open all the MOT shutters"""
+        if label == "z":
+            devices.mot_z_shutter.open(t)
+        elif label == "xy":
+            devices.mot_xy_shutter.open(t)
+        else:
+            devices.mot_z_shutter.open(t)
+            devices.mot_xy_shutter.open(t)
+
+        return t
+
+    def close_mot_shutters(t, label=None):
+        """Close the specified MOT shutters, else open all the MOT shutters"""
+        if label == "z":
+            devices.mot_z_shutter.close(t)
+        elif label == "xy":
+            devices.mot_xy_shutter.close(t)
+        else:
+            devices.mot_z_shutter.close(t)
+            devices.mot_xy_shutter.close(t)
+        # t += CONST_SHUTTER_TURN_OFF_TIME # add the time it takes from start to close to fully close
+
+        return t
+
+    def open_img_shutters(t, label=None):
+        """Open the specified IMG shutters, else open all the IMG shutters"""
+        if label == "z":
+            devices.img_z_shutter.open(t)
+        elif label == "xy":
+            devices.img_xy_shutter.open(t)
+        else:
+            devices.img_z_shutter.open(t)
+            devices.img_xy_shutter.open(t)
+
+        return t
+
+    def close_img_shutters(t, label=None):
+        """Open the specified IMG shutters, else open all the IMG shutters"""
+        if label == "z":
+            devices.img_z_shutter.close(t)
+        elif label == "xy":
+            devices.img_xy_shutter.close(t)
+        else:
+            devices.img_z_shutter.close(t)
+            devices.img_xy_shutter.close(t)
+
+        return t
+
+    def ta_aom_off(self, t):
+        """ Turn off the ta beam using aom """
+        devices.ta_aom_digital.go_low(t)  # digital off
+        devices.ta_aom_analog.constant(t, 0)  # analog off
+        self.ta_power = 0
+
+
+    def ta_aom_on(self, t, const):
+        """ Turn on the ta beam using aom """
+        devices.ta_aom_digital.go_high(t)  # digital on
+        devices.ta_aom_analog.constant(t, const)  # analog to const
+        self.ta_power = const
+
+
+    def repump_aom_off(self, t):
+        """ Turn off the repump beam using aom """
+        devices.repump_aom_digital.go_low(t)  # digital off
+        devices.repump_aom_analog.constant(t, 0)  # analog off
+        self.repump_power = 0
+
+
+    def repump_aom_on(self, t, const):
+        """ Turn on the repump beam using aom """
+        devices.repump_aom_digital.go_high(t)  # digital on
+        devices.repump_aom_analog.constant(t, const)  # analog to const
+        self.repump_power = const
+
+    def mot_aom_on(self, t, ta_const, repump_const):
+        """ Turn on both the ta & repump beam using aom """
+        self.ta_aom_on(t, ta_const)  # ta beam off
+        self.repump_aom_on(t, repump_const)  # repump beam off
+
+    def mot_aom_off(self, t):
+        """ Turn off both the ta & repump beam using aom """
+        self.ta_aom_off(t)  # ta beam off
+        self.repump_aom_off(t)  # repump beam off
+
+#Do we want to set these so that they default to the self.x_power values?
+    def ta_aom_pulse(self,t, dur, ta_power):
+        """Set AOMs to do a TA pulse, no shutter action"""
+        self.ta_aom_on(t, ta_power)
+        t += dur
+        self.ta_aom_off(t)
+
+        return t
+
+
+    def repump_aom_pulse(self, t, dur, repump_power):
+        """Set AOMs to do a repump pulse, no shutter action"""
+        self.repump_aom_on(t, repump_power)
+        t += dur
+        self.repump_aom_off(t)
+
+        return t
+
+
+    def do_ta_pulse(self.t, dur, ta_power, hold_shutter_open=False):
+        self.ta_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
+        devices.ta_shutter.open(t) # labscript already account for the shutter open time
+        t = self.ta_aom_pulse(t, dur, ta_power)
+        if not hold_shutter_open:
+            devices.ta_shutter.close(t)
+            t += CONST_SHUTTER_TURN_OFF_TIME
+            self.ta_aom_on(t, 1)
+
+        return t
+
+
+    def do_repump_pulse(self, t, dur, repump_power, hold_shutter_open=False):
+        self.repump_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
+        devices.repump_shutter.open(t)
+        t = self.repump_aom_pulse(t, dur, repump_power)
+        if not hold_shutter_open:
+            devices.repump_shutter.close(t)
+            t += CONST_SHUTTER_TURN_OFF_TIME
+            self.repump_aom_on(t, 1)
+
+        return t
+
+
+    def do_mot_pulse(self, t, dur, ta_power, repump_power, hold_shutter_open=False, label=None):
+        self.open_mot_shutters(t, label)
+        _ = self.do_ta_pulse(t, dur, ta_power, hold_shutter_open)
+        _ = self.do_repump_pulse(t, dur, repump_power, hold_shutter_open)
+        t += dur
+        if not hold_shutter_open:
+            self.close_mot_shutters(t)
+            t += CONST_SHUTTER_TURN_OFF_TIME
+        return t
+
+
+    def do_img_pulse(self, t, dur, ta_power, repump_power, hold_shutter_open=False, label=None):
+        self.open_img_shutters(t, label)
+        _ = self.do_ta_pulse(t, dur, ta_power, hold_shutter_open)
+        _ = self.do_repump_pulse(t, dur, repump_power, hold_shutter_open)
+        t += dur
+        if not hold_shutter_open:
+            self.close_img_shutters(t)
+            t += CONST_SHUTTER_TURN_OFF_TIME
+        return t
+
+
+class B_field_control:
+    def __init__(self):
+        self.bias_x_voltage = shot_globals.mot_x_coil_voltage
+        self.bias_y_voltage = shot_globals.mot_y_coil_voltage
+        self.bias_z_voltage = shot_globals.mot_z_coil_voltage
+        self.mot_coils_on = shot_globals.do_mot_coil
+        self.mot_coils_on_current = 10/6
+
+        #Same question as for Dline_lasers, should we automatically initialize the hardware here or in a separate function we can call?
+
+        #this isn't quite right, we should have an inverse of bias_i_calib function that gives B depending on mot_i_coil_voltage
+        self.B_field = (0,0,0)
+
+        devices.x_coil_current.constant(t, self.bias_x_voltage)
+        devices.y_coil_current.constant(t, self.bias_y_voltage)
+        devices.z_coil_current.constant(t, self.bias_z_voltage)
+
+        if self.mot_coils_on:
+            devices.mot_coil_current_ctrl.constant(t, self.mot_coils_on_current)
+        else:
+            devices.mot_coil_current_ctrl.constant(t, 0)
+
+    def ramp_B_field(self, t, B_field):
+        #B_field should be a tuple of the form (x,y,z)
+
+        #Should we tep time by ramp duration?
+
+        t_x_coil, t_y_coil, t_z_coil = (t - 4e-3*int(shot_globals.mot_x_coil_voltage < 0),
+                                        t - 4e-3*int(shot_globals.mot_y_coil_voltage < 0),
+                                        t - 4e-3*int(shot_globals.mot_z_coil_voltage < 0))
+
+        devices.x_coil_current.ramp(
+            t_x_coil,
+            duration=100e-6,
+            initial=self.bias_x_voltage,
+            final=biasx_calib(B_field[0]),
+            samplerate=1e5,
+        )
+
+        devices.y_coil_current.ramp(
+            t_y_coil,
+            duration=100e-6,
+            initial=shot_globals.mot_y_coil_voltage,
+            final=biasy_calib(B_field[1]),  # 0 mG
+            samplerate=1e5,
+        )
+
+        devices.z_coil_current.ramp(
+            t_z_coil,
+            duration=100e-6,
+            initial=shot_globals.mot_z_coil_voltage,
+            final=biasz_calib(B_field[2]),  # 0 mG
+            samplerate=1e5,
+        )
+
+        self.B_field = B_field
+        self.bias_x_voltage = biasx_calib(B_field[0])
+        self.bias_y_voltage = biasy_calib(B_field[1])
+        self.bias_z_voltage = biasz_calib(B_field[2])
+
+    def switch_mot_coils(self, t):
+        #Should we step time by ramp duration. Do we need to ramp this?
+        if self.mot_coils_on:
+            devices.mot_coil_current_ctrl.ramp(
+                t,
+                duration=100e-6,
+                initial= self.mot_coils_on_current,
+                final=0,
+                samplerate=1e5,
+            )
+            self.mot_coils_on = False
+        else:
+            devices.mot_coil_current_ctrl.ramp(
+                t,
+                duration=100e-6,
+                initial=0,
+                final = self.mot_coils_on_current,
+                samplerate=1e5,
+            )
+            self.mot_coils_on = True
+
+#Sequence Classes
+#-------------------------------------------------------------------------------
+
+class MOT_sequences:
+    def __init__(self):
+
+        #Will child classes of this also initialize their own MOT_lasers and BV_field_controllers? That would mess this up a bit given how I initialized things
+        self.MOT_lasers = Dline_lasers()
+        self.B_field_controllers = B_field_control()
+
+    def do_mot(self, t, dur):
+
+        #Add microwave class?
+        devices.uwave_dds_switch.go_high(t)
+        devices.uwave_absorp_switch.go_low(t)
+
+        if shot_globals.do_uv:
+            devices.uv_switch.go_high(t)
+            devices.uv_switch.go_low(t + 1e-2)
+            # longer time will lead to the overall MOT atom number decay during the
+            # cycle
+
+        t = self.MOT_lasers.do_mot_pulse(t, dur, shot_globals.ta_power, shot_globals.repump_power)
+
+        return t
+
+#example class
+class Tweezer_sequences(MOT_sequences):
+
+    def __init__(self):
+        MOT_sequences.__init__(self)
+
+
+#sequences functions without classes
+#-------------------------------------------------------------------------------
+
+def do_mot(t, dur, MOT_lasers, B_field_controllers):
+
+    if B_field_controllers.mot_coils_on  == False:
+        B_field_controllers.switch_mot_coils(t)
+
+    #Add microwave class?
+    devices.uwave_dds_switch.go_high(t)
+    devices.uwave_absorp_switch.go_low(t)
+
+    if shot_globals.do_uv:
+        devices.uv_switch.go_high(t)
+        devices.uv_switch.go_low(t + 1e-2)
+        # longer time will lead to the overall MOT atom number decay during the
+        # cycle
+
+    t = MOT_lasers.do_mot_pulse(t, dur, shot_globals.ta_power, shot_globals.repump_power)
+
+    #should we return t?
     return t
 
-
-def close_mot_shutters(t, label=None):
-    """Close the specified MOT shutters, else open all the MOT shutters"""
-    if label == "z":
-        devices.mot_z_shutter.close(t)
-    elif label == "xy":
-        devices.mot_xy_shutter.close(t)
-    else:
-        devices.mot_z_shutter.close(t)
-        devices.mot_xy_shutter.close(t)
-    # t += CONST_SHUTTER_TURN_OFF_TIME # add the time it takes from start to close to fully close
-
-    return t
+def load_molasses(t, ta_bm_detuning, repump_bm_detuning, MOT_lasers, B_field_controllers):
 
 
 
-def open_img_shutters(t, label=None):
-    """Open the specified IMG shutters, else open all the IMG shutters"""
-    if label == "z":
-        devices.img_z_shutter.open(t)
-    elif label == "xy":
-        devices.img_xy_shutter.open(t)
-    else:
-        devices.img_z_shutter.open(t)
-        devices.img_xy_shutter.open(t)
-
-    return t
-
-
-def close_img_shutters(t, label=None):
-    """Open the specified IMG shutters, else open all the IMG shutters"""
-    if label == "z":
-        devices.img_z_shutter.close(t)
-    elif label == "xy":
-        devices.img_xy_shutter.close(t)
-    else:
-        devices.img_z_shutter.close(t)
-        devices.img_xy_shutter.close(t)
-
-    return t
-
-
-def ta_aom_off(t):
-    """ Turn off the ta beam using aom """
-    devices.ta_aom_digital.go_low(t)  # digital off
-    devices.ta_aom_analog.constant(t, 0)  # analog off
-
-
-def ta_aom_on(t, const):
-    """ Turn on the ta beam using aom """
-    devices.ta_aom_digital.go_high(t)  # digital on
-    devices.ta_aom_analog.constant(t, const)  # analog to const
-
-
-def repump_aom_off(t):
-    """ Turn off the repump beam using aom """
-    devices.repump_aom_digital.go_low(t)  # digital off
-    devices.repump_aom_analog.constant(t, 0)  # analog off
-
-
-def repump_aom_on(t, const):
-    """ Turn on the repump beam using aom """
-    devices.repump_aom_digital.go_high(t)  # digital on
-    devices.repump_aom_analog.constant(t, const)  # analog to const
-
-
-def mot_aom_on(t, ta_const, repump_const):
-    """ Turn on both the ta & repump beam using aom """
-    ta_aom_on(t, ta_const)  # ta beam off
-    repump_aom_on(t, repump_const)  # repump beam off
-
-def mot_aom_off(t):
-    """ Turn off both the ta & repump beam using aom """
-    ta_aom_off(t)  # ta beam off
-    repump_aom_off(t)  # repump beam off
-
-
-def ta_aom_pulse(t, dur, ta_power):
-    """Set AOMs to do a TA pulse, no shutter action"""
-    ta_aom_on(t, ta_power)
-    t += dur
-    ta_aom_off(t)
-
-    return t
-
-
-def repump_aom_pulse(t, dur, repump_power):
-    """Set AOMs to do a repump pulse, no shutter action"""
-    repump_aom_on(t, repump_power)
-    t += dur
-    repump_aom_off(t)
-
-    return t
-
-
-def do_ta_pulse(t, dur, ta_power, hold_shutter_open=False):
-    ta_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
-    devices.ta_shutter.open(t) # labscript already account for the shutter open time
-    t = ta_aom_pulse(t, dur, ta_power)
-    if not hold_shutter_open:
-        devices.ta_shutter.close(t)
-        t += CONST_SHUTTER_TURN_OFF_TIME
-        ta_aom_on(t, 1)
-
-    return t
-
-
-def do_repump_pulse(t, dur, repump_power, hold_shutter_open=False):
-    repump_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
-    devices.repump_shutter.open(t)
-    t = repump_aom_pulse(t, dur, repump_power)
-    if not hold_shutter_open:
-        devices.repump_shutter.close(t)
-        t += CONST_SHUTTER_TURN_OFF_TIME
-        repump_aom_on(t, 1)
-
-    return t
-
-
-def do_mot_pulse(t, dur, ta_power, repump_power, hold_shutter_open=False, label=None):
-    open_mot_shutters(t, label)
-    _ = do_ta_pulse(t, dur, ta_power, hold_shutter_open)
-    _ = do_repump_pulse(t, dur, repump_power, hold_shutter_open)
-    t += dur
-    if not hold_shutter_open:
-        close_mot_shutters(t)
-        t += CONST_SHUTTER_TURN_OFF_TIME
-    return t
-
-
-def do_img_pulse(t, dur, ta_power, repump_power, hold_shutter_open=False, label=None):
-    open_img_shutters(t, label)
-    _ = do_ta_pulse(t, dur, ta_power, hold_shutter_open)
-    _ = do_repump_pulse(t, dur, repump_power, hold_shutter_open)
-    t += dur
-    if not hold_shutter_open:
-        close_img_shutters(t)
-        t += CONST_SHUTTER_TURN_OFF_TIME
-    return t
-
-
+#Old sequence functions
 def load_molasses(t, ta_bm_detuning, repump_bm_detuning,
                   ta_last_detuning=shot_globals.mot_ta_detuning):  # -100
 
@@ -505,6 +682,7 @@ def do_mot(t, dur, *, close_shutter=True, mot_coil_ctrl_voltage=10 / 6):
     setup_mot(t, mot_coil_ctrl_voltage)
     _ = do_mot_pulse(t, dur, shot_globals.mot_ta_power, hold_shutter_open=not
                     close_shutter)
+
     t += dur
 
     if close_shutter:
