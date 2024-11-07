@@ -1420,6 +1420,7 @@ def killing_pulse(t, ta_last_detuning, repump_last_detuning):
 
 
     devices.repump_aom_digital.go_low(t-time_offset)
+    devices.repump_aom_analog.constant(t-time_offset, 0)
     devices.repump_shutter.close(t-time_offset)
     devices.ta_aom_digital.go_low(t-time_offset)
     devices.ta_aom_analog.constant(t-time_offset, 0)
@@ -1431,7 +1432,7 @@ def killing_pulse(t, ta_last_detuning, repump_last_detuning):
         t-time_offset,
         duration=ta_vco_ramp_t,
         initial=ta_freq_calib(ta_last_detuning),
-        final=ta_freq_calib(0),#-45), #ta_bm_detuning),
+        final=ta_freq_calib(shot_globals.killing_pulse_detuning),#0),#-45), #ta_bm_detuning),
         samplerate=4e5,
     )
 
@@ -1445,7 +1446,7 @@ def killing_pulse(t, ta_last_detuning, repump_last_detuning):
     devices.optical_pump_shutter.close(t)
     devices.ta_shutter.close(t)
 
-    ta_last_detuning = 0 #-45
+    ta_last_detuning = shot_globals.killing_pulse_detuning #0 #-45
     repump_last_detuning = repump_last_detuning
 
     return t, ta_last_detuning, repump_last_detuning
@@ -2710,7 +2711,7 @@ def do_optical_pump_in_tweezer_check():
         devices.tweezer_aom_digital.go_low(t)
         # devices,tweezer_aom_analog.constant(t, 0.15)
         t, ta_last_detuning, repump_last_detuning = killing_pulse(t, ta_last_detuning, repump_last_detuning)
-
+        t += 2.5e-6
         devices.tweezer_aom_digital.go_high(t)
         devices.tweezer_aom_analog.constant(t,shot_globals.tw_power)
         t += 1e-3 #10e-3
