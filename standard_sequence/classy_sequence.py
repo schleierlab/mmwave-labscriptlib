@@ -33,39 +33,37 @@ CONST_SHUTTER_TURN_OFF_TIME = 2e-3 # for shutter take from start to open to full
 # Hardware control classes
 #-------------------------------------------------------------------------------
 class D2Lasers:
-    def __init__(self):
-        # What's the best way to use these? Should we use them to set "const" in, for example, ta_aom_on, or the other way around?
+    def __init__(self, t):
+        # Tune to MOT frequency, full power
         self.ta_freq = shot_globals.mot_ta_detuning
         self.repump_freq = shot_globals.mot_repump_detuning
-        self.ta_power = shot_globals.mot_ta_power
-        self.repump_power = shot_globals.mot_repump_power
+        self.ta_power = 1
+        self.repump_power = 1
 
-        #Do we want to automatically set these when we initialize?
         devices.ta_vco.constant(t, ta_freq_calib(self.ta_freq))
         devices.repump_vco.constant(t, repump_freq_calib(self.repump_freq))
-        devices.ta_aom_analog.constant(t, shot_globals.mot_ta_power)
-        devices.repump_aom_analog.constant(t, shot_globals.mot_repump_power)
+        devices.ta_aom_analog.constant(t, self.ta_power)
+        devices.repump_aom_analog.constant(t, self.repump_power)
 
         #close shutters too?
 
-
-    def ramp_ta_freq(self, t, duration, final, samplerate=1e5):
+    def ramp_ta_freq(self, t, duration, final):
         devices.ta_vco.ramp(
             t,
             duration=duration,
             initial=ta_freq_calib(self.ta_freq),
             final=ta_freq_calib(final),
-            samplerate=samplerate,
+            samplerate=1e5,
         )
         self.ta_freq = final
 
-    def ramp_repump_freq(self, t, duration, final, samplerate=1e5):
+    def ramp_repump_freq(self, t, duration, final):
         devices.repump_vco.ramp(
             t,
             duration=duration,
             initial=repump_freq_calib(self.repump_freq),
             final=repump_freq_calib(final),
-            samplerate=samplerate,
+            samplerate=1e5,
         )
         self.repump_freq = final
 
@@ -90,7 +88,6 @@ class D2Lasers:
         else:
             devices.mot_z_shutter.close(t)
             devices.mot_xy_shutter.close(t)
-        # t += CONST_SHUTTER_TURN_OFF_TIME # add the time it takes from start to close to fully close
 
         return t
 
@@ -124,20 +121,17 @@ class D2Lasers:
         devices.ta_aom_analog.constant(t, 0)  # analog off
         self.ta_power = 0
 
-
     def ta_aom_on(self, t, const):
         """ Turn on the ta beam using aom """
         devices.ta_aom_digital.go_high(t)  # digital on
         devices.ta_aom_analog.constant(t, const)  # analog to const
         self.ta_power = const
 
-
     def repump_aom_off(self, t):
         """ Turn off the repump beam using aom """
         devices.repump_aom_digital.go_low(t)  # digital off
         devices.repump_aom_analog.constant(t, 0)  # analog off
         self.repump_power = 0
-
 
     def repump_aom_on(self, t, const):
         """ Turn on the repump beam using aom """
@@ -220,23 +214,34 @@ class D2Lasers:
         return t
     
 class TweezerLaser:
-    def __init__(self):
+    def __init__(self, t):
         pass
     
 class Microwave:
-    def __init__(self):
-        pass
+    def __init__(self, t):
+        # Shutoff microwaves?
+        devices.uwave_dds_switch.go_high(t)
+        devices.uwave_absorp_switch.go_low(t)
     
 class RydLasers:
-    def __init__(self):
+    def __init__(self, t):
         pass
 
 class UVLamps:
-    def __init__(self):
-        pass
+    def __init__(self, t):
+        # Turn off UV lamps
+        devices.uv_switch.go_low(t)
+    
+    def uv_pulse(self, t, dur):
+        """Flash the UV LED lamps for dur seconds"""
+        devices.uv_switch.go_high(t)
+        t += dur
+        devices.uv_switch.go_low(t)
+        return t
+    
 
 class BField:
-    def __init__(self):
+    def __init__(self, t):
         self.bias_x_voltage = shot_globals.mot_x_coil_voltage
         self.bias_y_voltage = shot_globals.mot_y_coil_voltage
         self.bias_z_voltage = shot_globals.mot_z_coil_voltage
@@ -257,11 +262,8 @@ class BField:
         else:
             devices.mot_coil_current_ctrl.constant(t, 0)
 
-    def ramp_B_field(self, t, B_field):
-        #B_field should be a tuple of the form (x,y,z)
-
-        #Should we tep time by ramp duration?
-
+    def ramp_B_field(self, t, B_field_vector):
+        #B_field_vector should be a tuple of the form (x,y,z)
         t_x_coil, t_y_coil, t_z_coil = (t - 4e-3*int(shot_globals.mot_x_coil_voltage < 0),
                                         t - 4e-3*int(shot_globals.mot_y_coil_voltage < 0),
                                         t - 4e-3*int(shot_globals.mot_z_coil_voltage < 0))
@@ -270,7 +272,7 @@ class BField:
             t_x_coil,
             duration=100e-6,
             initial=self.bias_x_voltage,
-            final=biasx_calib(B_field[0]),
+            final=biasx_calib(B_field_vector[0]),
             samplerate=1e5,
         )
 
@@ -278,7 +280,7 @@ class BField:
             t_y_coil,
             duration=100e-6,
             initial=shot_globals.mot_y_coil_voltage,
-            final=biasy_calib(B_field[1]),  # 0 mG
+            final=biasy_calib(B_field_vector[1]),  # 0 mG
             samplerate=1e5,
         )
 
@@ -286,14 +288,14 @@ class BField:
             t_z_coil,
             duration=100e-6,
             initial=shot_globals.mot_z_coil_voltage,
-            final=biasz_calib(B_field[2]),  # 0 mG
+            final=biasz_calib(B_field_vector[2]),  # 0 mG
             samplerate=1e5,
         )
 
-        self.B_field = B_field
-        self.bias_x_voltage = biasx_calib(B_field[0])
-        self.bias_y_voltage = biasy_calib(B_field[1])
-        self.bias_z_voltage = biasz_calib(B_field[2])
+        self.B_field = B_field_vector
+        self.bias_x_voltage = biasx_calib(B_field_vector[0])
+        self.bias_y_voltage = biasy_calib(B_field_vector[1])
+        self.bias_z_voltage = biasz_calib(B_field_vector[2])
 
     def switch_mot_coils(self, t):
         #Should we step time by ramp duration. Do we need to ramp this?
@@ -317,32 +319,29 @@ class BField:
             self.mot_coils_on = True
             
 class EField:
-    def __init__(self):
+    def __init__(self, t):
         pass
 
 #Sequence Classes
 #-------------------------------------------------------------------------------
 
 class MOTSequence:
-    def __init__(self):
-
-        #Will child classes of this also initialize their own MOT_lasers and BV_field_controllers? That would mess this up a bit given how I initialized things
-        self.MOT_lasers = D2Lasers()
-        self.B_field_controllers = BField()
+    def __init__(self, t):
+        # Standard initialization for hardware objects puts everything in
+        # correct state/tuning to start loading the MOT
+        self.D2Lasers_obj = D2Lasers(t)
+        self.BField_obj = BField(t)
+        self.Microwave_obj = Microwave(t)
+        self.UVLamps_obj = UVLamps(t)
 
     def do_mot(self, t, dur):
-
-        #Add microwave class?
-        devices.uwave_dds_switch.go_high(t)
-        devices.uwave_absorp_switch.go_low(t)
-
         if shot_globals.do_uv:
-            devices.uv_switch.go_high(t)
-            devices.uv_switch.go_low(t + 1e-2)
-            # longer time will lead to the overall MOT atom number decay during the
-            # cycle
+            _ = self.UVLamps_obj.uv_pulse(t, dur=1e-2)
+            # longer duration than 1e-2 will lead to the overall MOT atom
+            # number decay during the cycle
 
-        t = self.MOT_lasers.do_mot_pulse(t, dur, shot_globals.ta_power, shot_globals.repump_power)
+        t = self.D2Lasers_obj.do_mot_pulse(t, dur, shot_globals.ta_power,
+                                shot_globals.repump_power)
 
         return t
 
@@ -363,28 +362,6 @@ class ScienceSequence(RydSequence):
 
 #sequences functions without classes
 #-------------------------------------------------------------------------------
-
-def do_mot(t, dur, MOT_lasers, B_field_controllers):
-
-    if B_field_controllers.mot_coils_on  == False:
-        B_field_controllers.switch_mot_coils(t)
-
-    #Add microwave class?
-    devices.uwave_dds_switch.go_high(t)
-    devices.uwave_absorp_switch.go_low(t)
-
-    if shot_globals.do_uv:
-        devices.uv_switch.go_high(t)
-        devices.uv_switch.go_low(t + 1e-2)
-        # longer time will lead to the overall MOT atom number decay during the
-        # cycle
-
-    t = MOT_lasers.do_mot_pulse(t, dur, shot_globals.ta_power, shot_globals.repump_power)
-
-    #should we return t?
-    return t
-
-def load_molasses(t, ta_bm_detuning, repump_bm_detuning, MOT_lasers, B_field_controllers):
 
 
 
