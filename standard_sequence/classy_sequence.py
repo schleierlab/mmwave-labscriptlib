@@ -39,12 +39,20 @@ class D2_lasers:
         self.ta_power = shot_globals.mot_ta_power
         self.repump_power = shot_globals.mot_repump_power
 
+        devices.ta_vco.constant(t, ta_freq_calib(self.ta_freq))
+        devices.repump_vco.constant(t, repump_freq_calib(self.repump_freq))
+        devices.ta_aom_analog.constant(t, shot_globals.mot_ta_power)
+        devices.repump_aom_analog.constant(t, shot_globals.mot_repump_power)
+
+        #close shutters too?
+
+
     def ramp_ta_freq(self, t, duration, final, samplerate=1e5):
         devices.ta_vco.ramp(
             t,
             duration=duration,
-            initial=self.ta_freq,
-            final=final,
+            initial=ta_freq_calib(self.ta_freq),
+            final=ta_freq_calib(final),
             samplerate=samplerate,
         )
         self.ta_freq = final
@@ -53,8 +61,8 @@ class D2_lasers:
         devices.repump_vco.ramp(
             t,
             duration=duration,
-            initial=self.repump_freq,
-            final=final,
+            initial=repump_freq_calib(self.repump_freq),
+            final=repump_freq_calib(final),
             samplerate=samplerate,
         )
         self.repump_freq = final
@@ -145,6 +153,7 @@ class D2_lasers:
         self.ta_aom_off(t)  # ta beam off
         self.repump_aom_off(t)  # repump beam off
 
+#Do we want to set these so that they default to the self.x_power values?
     def ta_aom_pulse(self,t, dur, ta_power):
         """Set AOMs to do a TA pulse, no shutter action"""
         self.ta_aom_on(t, ta_power)
@@ -214,7 +223,20 @@ class B_field_control:
         self.bias_x_voltage = shot_globals.mot_x_coil_voltage
         self.bias_y_voltage = shot_globals.mot_y_coil_voltage
         self.bias_z_voltage = shot_globals.mot_z_coil_voltage
+        self.mot_coils_on = shot_globals.do_mot_coil
+        self.mot_coils_on_current = 10/6
+
+        #should be inverse of bias_i_calib function, depending on mot_i_coil_voltage
         self.B_field = (0,0,0)
+
+        devices.x_coil_current.constant(t, self.bias_x_voltage)
+        devices.y_coil_current.constant(t, self.bias_y_voltage)
+        devices.z_coil_current.constant(t, self.bias_z_voltage)
+
+        if self.mot_coils_on:
+            devices.mot_coil_current_ctrl.constant(t, self.mot_coils_on_current)
+        else:
+            devices.mot_coil_current_ctrl.constant(t, 0)
 
     def ramp_B_field(self, t, B_field):
         #B_field should be a tuple of the form (x,y,z)
@@ -252,18 +274,52 @@ class B_field_control:
         self.bias_y_voltage = biasy_calib(B_field[1])
         self.bias_z_voltage = biasz_calib(B_field[2])
 
-
-
-class Rydberg_lasers
-
+    def switch_mot_coils(self, t):
+        if self.mot_coils_on:
+            devices.mot_coil_current_ctrl.ramp(
+                t,
+                duration=100e-6,
+                initial= self.mot_coils_on_current,
+                final=0,
+                samplerate=1e5,
+            )
+            self.mot_coils_on = False
+        else:
+            devices.mot_coil_current_ctrl.ramp(
+                t,
+                duration=100e-6,
+                initial=0,
+                final = self.mot_coils_on_current,
+                samplerate=1e5,
+            )
+            self.mot_coils_on = True
 
 #-------------------------------------------------------------------------------
 
-labscript.start()
-mot_lasers = D2_lasers()
-coil_controlers = B_field_control
+class MOT_sequences:
+    def __init__(self):
 
-load_molasses(t, mot_lasers, coil_controlers)
+        #Will child classes of this also initialize their own MOT_lasers and BV_field_controllers? That would mess this up a bit given how I initialized things
+        self.MOT_lasers = D2_lasers()
+        self.B_field_controllers = B_field_control()
+
+    def do_mot(self, t, dur):
+
+        #Add microwave class?
+        devices.uwave_dds_switch.go_high(t)
+        devices.uwave_absorp_switch.go_low(t)
+
+        if shot_globals.do_uv:
+            devices.uv_switch.go_high(t)
+            devices.uv_switch.go_low(t + 1e-2)
+            # longer time will lead to the overall MOT atom number decay during the
+            # cycle
+
+        t = self.MOT_lasers.do_mot_pulse(t, dur, shot_globals.ta_power, shot_globals.repump_power)
+
+        return t
+
+
 
 
 def load_molasses(t, ta_bm_detuning, repump_bm_detuning,
