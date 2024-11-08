@@ -36,9 +36,9 @@ class D2Lasers:
     def __init__(self, t):
         # Tune to MOT frequency, full power
         self.ta_freq = shot_globals.mot_ta_detuning
-        self.repump_freq = shot_globals.mot_repump_detuning
-        self.ta_power = 1
-        self.repump_power = 1
+        self.repump_freq = 0# shot_globals.mot_repump_detuning
+        self.ta_power = shot_globals.mot_ta_power
+        self.repump_power = shot_globals.mot_repump_power
 
         devices.ta_vco.constant(t, ta_freq_calib(self.ta_freq))
         devices.repump_vco.constant(t, repump_freq_calib(self.repump_freq))
@@ -47,6 +47,7 @@ class D2Lasers:
 
         #close shutters too?
 
+    #Move freq_calib to a function within here? Probably not needed.
     def ramp_ta_freq(self, t, duration, final):
         devices.ta_vco.ramp(
             t,
@@ -115,6 +116,19 @@ class D2Lasers:
 
         return t
 
+    #Do I need these? Probably not but it might be nice for consistent code?
+    def open_ta_shutter(t):
+        devices.ta_shutter.open(t)
+
+    def close_ta_shutter(t):
+        devices.ta_shutter.close(t)
+
+    def open_repump_shutter(t):
+        devices.repump_shutter.open(t)
+
+    def close_repump_shutter(t):
+        devices.repump_shutter.close(t)
+
     def ta_aom_off(self, t):
         """ Turn off the ta beam using aom """
         devices.ta_aom_digital.go_low(t)  # digital off
@@ -138,6 +152,24 @@ class D2Lasers:
         devices.repump_aom_digital.go_high(t)  # digital on
         devices.repump_aom_analog.constant(t, const)  # analog to const
         self.repump_power = const
+
+    def ramp_ta_aom(self, t, dur, final_power):
+        devices.ta_aom_analog.ramp(
+            t,
+            duration=dur,
+            initial=self.ta_power,
+            final=final_power,
+            samplerate=1e5,
+        )
+
+    def ramp_repump_aom(self, t, dur, final_power):
+        devices.repump_aom_analog.ramp(
+            t,
+            duration=dur,
+            initial=self.repump_power,
+            final=final_power,
+            samplerate=1e5,
+        )
 
     def mot_aom_on(self, t, ta_const, repump_const):
         """ Turn on both the ta & repump beam using aom """
@@ -212,17 +244,17 @@ class D2Lasers:
             self.close_img_shutters(t)
             t += CONST_SHUTTER_TURN_OFF_TIME
         return t
-    
+
 class TweezerLaser:
     def __init__(self, t):
         pass
-    
+
 class Microwave:
     def __init__(self, t):
         # Shutoff microwaves?
         devices.uwave_dds_switch.go_high(t)
         devices.uwave_absorp_switch.go_low(t)
-    
+
 class RydLasers:
     def __init__(self, t):
         pass
@@ -231,14 +263,14 @@ class UVLamps:
     def __init__(self, t):
         # Turn off UV lamps
         devices.uv_switch.go_low(t)
-    
+
     def uv_pulse(self, t, dur):
         """Flash the UV LED lamps for dur seconds"""
         devices.uv_switch.go_high(t)
         t += dur
         devices.uv_switch.go_low(t)
         return t
-    
+
 
 class BField:
     def __init__(self, t):
@@ -317,7 +349,7 @@ class BField:
                 samplerate=1e5,
             )
             self.mot_coils_on = True
-            
+
 class EField:
     def __init__(self, t):
         pass
@@ -345,20 +377,111 @@ class MOTSequence:
 
         return t
 
+    def image_mot(self, t, close_shutter=True):
+        self.D2Lasers_obj.ramp_ta_freq(t - CONST_TA_VCO_RAMP_TIME,
+            CONST_TA_VCO_RAMP_TIME,
+            ta_freq_calib(0)
+        )
+
+        _ = self.D2Lasers_obj.do_mot_pulse(t, shot_globals.mot_exposure_time,
+                        shot_globals.mot_ta_power, hold_shutter_open=not close_shutter)
+
+        #Camera class...?
+        devices.manta419b_mot.expose(
+            'manta419b',
+            t,
+            'atoms',
+            exposure_time=shot_globals.mot_exposure_time)
+
+        #return t ?
+
+    def ramp_to_molasses(self, t, ta_bm_detuning, repump_bm_detuning):
+
+        self.D2Lasers_obj.ramp_ta_freq(t, 1e-3, ta_bm_detuning)
+        self.D2Lasers_obj.ramp_repump_freq(t, 1e-3, repump_bm_detuning)
+
+        self.D2Lasers_obj.ramp_ta_aom(self, t, 100e-6, shot_globals.bm_ta_power)
+        self.D2Lasers_obj.ramp_repump_aom(self, t, 100e-6, shot_globals.bm_repump_power)
+
+        self.BField_obj.switch_mot_coils(t)
+        self.BField_obj.ramp_B_field(t, (0,0,0))
+
+        print('Molasses stage')
+        print(f'ta_last_detuning = {self.D2Lasers_obj.ta_freq}')
+        print(f'repump_last_detuning = {self.D2Lasers_obj.ta_freq}')
+
+        return t
+
+    def do_molasses(self, t, dur, close_shutter=True):
+        assert (shot_globals.do_molasses_img_beam or shot_globals.do_molasses_mot_beam), "either do_molasses_img_beam or do_molasses_mot_beam has to be on"
+        #TODO: what does this assert statement mean?
+        assert shot_globals.bm_ta_detuning != 0, "bright molasses detuning = 0, did you forget to correct for the new case?"
+        print(f"molasses detuning is {shot_globals.bm_ta_detuning}")
+
+        #Should we do this in-sequence?
+        self.ramp_to_molasses(t, shot_globals.bm_ta_detuning, shot_globals.bm_repump_detuning)
+        self.D2Lasers_obj.open_ta_shutter(t)
+        self.D2Lasers_obj.open_repump_shutter(t)
+
+        if shot_globals.do_molasses_mot_beam:
+            self.D2Lasers_obj.open_mot_shutters(t)
+            self.D2Lasers_obj.close_img_shutters(t)
+
+            if close_shutter:
+                self.D2Lasers_obj.close_mot_shutters(t+dur)
+
+        if shot_globals.do_molasses_img_beam:
+            self.D2Lasers_obj.mot_aom_off(t)
+            self.D2Lasers_obj.close_mot_shutters(t)
+            self.D2Lasers_obj.open_img_shutters(t)
+
+            # TODO: what does this assert statement mean?
+            assert shot_globals.bm_ta_detuning != 0, "bright molasses detuning = 0, did you forget to correct for the new case ?"
+            _, ta_last_detuning, repump_last_detuning = load_molasses_img_beam(t, shot_globals.bm_img_ta_detuning, shot_globals.bm_img_repump_detuning)
+            if close_shutter:
+                devices.img_xy_shutter.close(t + dur)
+                devices.img_z_shutter.close(t + dur)
+
+        # turn off coil and light for TOF measurement, coil is already off in
+        # load_molasses
+        devices.ta_aom_digital.go_low(t + dur)
+        devices.repump_aom_digital.go_low(t + dur)
+
+
+
 class TweezerSequence(MOTSequence):
 
     def __init__(self):
         super(TweezerSequence, self).__init__()
+        self.TweezerLaser_obj = TweezerLaser()
 
-class RydSequence(TweezerSequence):
+
+# I think we should leave both 456 and 1064 stuff here because really the only debugging
+# we would need to do is checking their overlap or looking for a Rydberg loss signal in the dipole trap
+class RydSequence(TrappingSequence):
 
     def __init__(self):
         super(RydSequence, self).__init__()
-        
+        self.RydLasers_obj = RydLasers()
+
+    def pulse_blue(self, t, dur):
+        pass
+    def pulse_1064(self, t, dur):
+        pass
+
+
+
+#Full Sequences, we'll see if we really want all these in a class or just separate sequence files?
 class ScienceSequence(RydSequence):
 
     def __init__(self):
         super(ScienceSequence, self).__init__()
+
+#Should we separate this from ScienceSequence?
+class DiagnosticSequence(RydSequence):
+
+    def __init__(self):
+        super(DiagnosticSequence, self).__init__()
 
 #sequences functions without classes
 #-------------------------------------------------------------------------------
@@ -368,7 +491,7 @@ class ScienceSequence(RydSequence):
 #Old sequence functions
 def load_molasses(t, ta_bm_detuning, repump_bm_detuning,
                   ta_last_detuning=shot_globals.mot_ta_detuning):  # -100
-
+    #Ramp TA and repump VCO
     devices.ta_vco.ramp(
         t,
         duration=1e-3,
@@ -654,6 +777,7 @@ def load_molasses_img_beam(t, ta_bm_detuning, repump_bm_detuning):  # -100
     return t, ta_last_detuning, repump_last_detuning
 
 
+#Replaced with initialization of sequence object
 def setup_mot(t, mot_coil_ctrl_voltage):
 
     devices.ta_vco.constant(t, ta_freq_calib(shot_globals.mot_ta_detuning))  # 16 MHz red detuned
@@ -715,6 +839,7 @@ def do_mot_imaging(t, close_shutter=True):
         exposure_time=shot_globals.mot_exposure_time)
 
 
+#Do we need this one?
 def reset_mot(t, ta_last_detuning):
     print(f"time in diagnostics python {t}")
     t += devices.ta_vco.ramp(
