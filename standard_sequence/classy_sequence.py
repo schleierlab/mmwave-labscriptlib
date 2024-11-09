@@ -420,6 +420,7 @@ class MOTSequence:
 
         #Should we do this in-sequence?
         self.ramp_to_molasses(t, shot_globals.bm_ta_detuning, shot_globals.bm_repump_detuning)
+
         self.D2Lasers_obj.open_ta_shutter(t)
         self.D2Lasers_obj.open_repump_shutter(t)
 
@@ -427,25 +428,78 @@ class MOTSequence:
             self.D2Lasers_obj.open_mot_shutters(t)
             self.D2Lasers_obj.close_img_shutters(t)
 
+            self.D2Lasers_obj.mot_aom_on(t)
+
             if close_shutter:
                 self.D2Lasers_obj.close_mot_shutters(t+dur)
 
         if shot_globals.do_molasses_img_beam:
             self.D2Lasers_obj.mot_aom_off(t)
             self.D2Lasers_obj.close_mot_shutters(t)
-            self.D2Lasers_obj.open_img_shutters(t)
 
-            # TODO: what does this assert statement mean?
-            assert shot_globals.bm_ta_detuning != 0, "bright molasses detuning = 0, did you forget to correct for the new case ?"
-            _, ta_last_detuning, repump_last_detuning = load_molasses_img_beam(t, shot_globals.bm_img_ta_detuning, shot_globals.bm_img_repump_detuning)
+            self.D2Lasers_obj.open_img_shutters(t+CONST_SHUTTER_TURN_OFF_TIME)
+            self.D2Lasers_obj.mot_aom_on(t+CONST_SHUTTER_TURN_OFF_TIME)
+
             if close_shutter:
-                devices.img_xy_shutter.close(t + dur)
-                devices.img_z_shutter.close(t + dur)
+                 self.D2Lasers_obj.close_img_shutters(t+dur)
 
-        # turn off coil and light for TOF measurement, coil is already off in
-        # load_molasses
-        devices.ta_aom_digital.go_low(t + dur)
-        devices.repump_aom_digital.go_low(t + dur)
+        self.D2Lasers_obj.mot_aom_off(t+dur)
+
+    def do_kinetix_imaging(self, t, shot_number):
+        self.D2Lasers_obj.open_ta_shutter(t)
+        self.D2Lasers_obj.open_repump_shutter(t)
+
+        # TODO: Change globals away from "do_mot_xy_beams_during_imaging" to label as in open_mot_shutters(t, label=None)
+        if shot_number == 1:
+            if shot_globals.do_mot_beams_during_imaging:
+                self.D2Lasers_obj.open_mot_shutters(t, label=shot_globals.mot_beam_imaging_label)
+            if shot_globals.do_img_beams_during_imaging:
+                self.D2Lasers_obj.open_img_shutters(t, label=shot_globals.img_beam_imaging_label)
+
+        elif shot_number == 2:
+            # pulse for the second shots and wait for the first shot to finish the
+            # first reading
+            kinetix_readout_time = shot_globals.kinetix_roi_row[1] * 4.7065e-6
+            print('kinetix readout time:', kinetix_readout_time)
+            # need extra 7 ms for shutter to close on the second shot
+            t += kinetix_readout_time + shot_globals.kinetix_extra_readout_time
+
+            # TODO: was previously called "do_shutter_close_on_second_shot" but this is a confusing name so
+            # we need to change it in the globals files to what is written here:
+            if shot_globals.shutter_close_after_first_shot:
+                if shot_globals.do_mot_beams_during_imaging:
+                    self.D2Lasers_obj.open_mot_shutters(t, label=shot_globals.mot_beam_imaging_label)
+                if shot_globals.do_img_beams_during_imaging:
+                    self.D2Lasers_obj.open_img_shutters(t, label=shot_globals.img_beam_imaging_label)
+
+        self.D2Lasers_obj.mot_aom_on(t)
+
+        # TODO: what does this assert mean?
+        assert shot_globals.img_exposure_time != 0, ("Imaging exposure time = 0, "
+                                                    "did you forget to adjust "
+                                                    "for the case?")
+
+        #Replace with camera object
+        if shot_globals.do_kinetix_camera:
+            devices.kinetix.expose(
+                'Kinetix',
+                t,
+                'atoms',
+                exposure_time=max(shot_globals.img_exposure_time, 1e-3),
+            )
+
+            t += shot_globals.img_exposure_time
+
+        self.D2Lasers_obj.mot_aom_off(t)
+
+        if (shot_number == 1 and shot_globals.shutter_close_after_first_shot) or shot_number == 2:
+            if shot_globals.do_mot_beams_during_imaging:
+                self.D2Lasers_obj.close_mot_shutters(t, label=shot_globals.mot_beam_imaging_label)
+
+            if shot_globals.do_img_beams_during_imaging:
+                self.D2Lasers_obj.close_img_shutters(t, label=shot_globals.img_beam_imaging_label)
+
+        return t
 
 
 
