@@ -301,9 +301,11 @@ class BField:
                                         t - 4e-3*int(shot_globals.mot_y_coil_voltage < 0),
                                         t - 4e-3*int(shot_globals.mot_z_coil_voltage < 0))
 
+        ramp_dur = 100e-6
+
         devices.x_coil_current.ramp(
             t_x_coil,
-            duration=100e-6,
+            duration=ramp_dur,
             initial=self.bias_x_voltage,
             final=biasx_calib(B_field_vector[0]),
             samplerate=1e5,
@@ -311,7 +313,7 @@ class BField:
 
         devices.y_coil_current.ramp(
             t_y_coil,
-            duration=100e-6,
+            duration=ramp_dur,
             initial=shot_globals.mot_y_coil_voltage,
             final=biasy_calib(B_field_vector[1]),  # 0 mG
             samplerate=1e5,
@@ -319,7 +321,7 @@ class BField:
 
         devices.z_coil_current.ramp(
             t_z_coil,
-            duration=100e-6,
+            duration=ramp_dur,
             initial=shot_globals.mot_z_coil_voltage,
             final=biasz_calib(B_field_vector[2]),  # 0 mG
             samplerate=1e5,
@@ -330,12 +332,15 @@ class BField:
         self.bias_y_voltage = biasy_calib(B_field_vector[1])
         self.bias_z_voltage = biasz_calib(B_field_vector[2])
 
+        t += ramp_dur
+        return t
+
     def switch_mot_coils(self, t):
-        #Should we step time by ramp duration. Do we need to ramp this?
+        ramp_dur = 100e-6
         if self.mot_coils_on:
             devices.mot_coil_current_ctrl.ramp(
                 t,
-                duration=100e-6,
+                duration=ramp_dur,
                 initial= self.mot_coils_on_current,
                 final=0,
                 samplerate=1e5,
@@ -344,12 +349,18 @@ class BField:
         else:
             devices.mot_coil_current_ctrl.ramp(
                 t,
-                duration=100e-6,
+                duration=ramp_dur,
                 initial=0,
                 final = self.mot_coils_on_current,
                 samplerate=1e5,
             )
             self.mot_coils_on = True
+
+        t += ramp_dur
+        t += CONST_COIL_OFF_TIME
+        return t
+
+
 
 class EField:
     def __init__(self, t):
@@ -367,25 +378,27 @@ class MOTSequence:
         self.Microwave_obj = Microwave(t)
         self.UVLamps_obj = UVLamps(t)
 
-    def do_mot(self, t, dur):
+    def do_mot(self, t, dur, hold_shutter_open=False):
         if shot_globals.do_uv:
             _ = self.UVLamps_obj.uv_pulse(t, dur=1e-2)
             # longer duration than 1e-2 will lead to the overall MOT atom
             # number decay during the cycle
 
         t = self.D2Lasers_obj.do_mot_pulse(t, dur, shot_globals.ta_power,
-                                shot_globals.repump_power)
+                                shot_globals.repump_power, hold_shutter_open=hold_shutter_open)
 
         return t
 
-    def image_mot(self, t, close_shutter=True):
+    def image_mot(self, t, hold_shutter_open=False):
+        # Move to on resonance, make sure AOM is off
         self.D2Lasers_obj.ramp_ta_freq(t - CONST_TA_VCO_RAMP_TIME,
-            CONST_TA_VCO_RAMP_TIME,
-            ta_freq_calib(0)
-        )
+                    CONST_TA_VCO_RAMP_TIME,
+                    ta_freq_calib(0)
+                )
 
-        _ = self.D2Lasers_obj.do_mot_pulse(t, shot_globals.mot_exposure_time,
-                        shot_globals.mot_ta_power, hold_shutter_open=not close_shutter)
+        # Make sure coils are off
+        if BField_obj.mot_coils_on:
+            t = self.BField_obj.switch_mot_coils(t)
 
         #Camera class...?
         devices.manta419b_mot.expose(
@@ -394,7 +407,27 @@ class MOTSequence:
             'atoms',
             exposure_time=shot_globals.mot_exposure_time)
 
-        #return t ?
+        t = self.D2Lasers_obj.do_mot_pulse(t, shot_globals.mot_exposure_time,
+                        shot_globals.mot_ta_power, hold_shutter_open=hold_shutter_open)
+
+        return t
+
+    def do_mot_in_situ_sequence(t):
+        print("Running do_mot_in_situ_check")
+
+        # MOT loading time 500 ms
+        mot_load_dur = 0.5
+
+        t = self.do_mot(t, mot_load_dur, hold_shutter_open=True)
+
+        t = self.image_mot(t)
+        # Shutter does not need to be held open
+
+        # Turn off MOT for taking background images
+        t += 0.1  # Wait until the MOT disappear
+        t = self.image_mot(t)
+
+        return t
 
     def ramp_to_molasses(self, t, ta_bm_detuning, repump_bm_detuning):
 
@@ -3664,7 +3697,9 @@ if __name__ == "__main__":
     # Insert "stay on" statements for alignment here...
 
     if shot_globals.do_mot_in_situ_check:
-        t = do_mot_in_situ_check(t)
+        #t = do_mot_in_situ_check(t)
+        MOTSeq_obj = MOTSequence(t)
+        MOTSeq_obj.do_mot_in_situ_sequence(t)
 
     if shot_globals.do_mot_tof_check:
         t = do_mot_tof_check(t)
