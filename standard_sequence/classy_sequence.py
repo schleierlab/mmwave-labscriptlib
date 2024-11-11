@@ -4,19 +4,20 @@ Created on Thu Feb 16 11:33:13 2023
 
 @author: sslab
 """
-
-import numpy as np
-from labscriptlib.shot_globals import shot_globals
-from spectrum_manager_fifo import spectrum_manager_fifo
-from spectrum_manager import spectrum_manager
-from calibration import ta_freq_calib, repump_freq_calib, biasx_calib, biasy_calib, biasz_calib
-from connection_table import devices
-import labscript
 import sys
 root_path = r"X:\userlib\labscriptlib"
 
 if root_path not in sys.path:
     sys.path.append(root_path)
+
+import numpy as np
+from labscriptlib.shot_globals import shot_globals
+#from shot_globals import shot_globals
+from spectrum_manager_fifo import spectrum_manager_fifo
+from spectrum_manager import spectrum_manager
+from calibration import ta_freq_calib, repump_freq_calib, biasx_calib, biasy_calib, biasz_calib
+from connection_table import devices
+import labscript
 
 spcm_sequence_mode = shot_globals.do_sequence_mode
 
@@ -512,7 +513,7 @@ class TweezerSequence(MOTSequence):
 
 # I think we should leave both 456 and 1064 stuff here because really the only debugging
 # we would need to do is checking their overlap or looking for a Rydberg loss signal in the dipole trap
-class RydSequence(TrappingSequence):
+class RydSequence(TweezerSequence):
 
     def __init__(self):
         super(RydSequence, self).__init__()
