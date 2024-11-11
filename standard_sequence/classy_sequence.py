@@ -69,7 +69,7 @@ class D2Lasers:
         )
         self.repump_freq = final
 
-    def open_mot_shutters(t, label=None):
+    def open_mot_shutters(self, t, label=None):
         """Open the specified MOT shutters, else open all the MOT shutters"""
         if label == "z":
             devices.mot_z_shutter.open(t)
@@ -81,7 +81,7 @@ class D2Lasers:
 
         return t
 
-    def close_mot_shutters(t, label=None):
+    def close_mot_shutters(self, t, label=None):
         """Close the specified MOT shutters, else open all the MOT shutters"""
         if label == "z":
             devices.mot_z_shutter.close(t)
@@ -93,7 +93,7 @@ class D2Lasers:
 
         return t
 
-    def open_img_shutters(t, label=None):
+    def open_img_shutters(self, t, label=None):
         """Open the specified IMG shutters, else open all the IMG shutters"""
         if label == "z":
             devices.img_z_shutter.open(t)
@@ -105,7 +105,7 @@ class D2Lasers:
 
         return t
 
-    def close_img_shutters(t, label=None):
+    def close_img_shutters(self, t, label=None):
         """Open the specified IMG shutters, else open all the IMG shutters"""
         if label == "z":
             devices.img_z_shutter.close(t)
@@ -118,16 +118,16 @@ class D2Lasers:
         return t
 
     #Do I need these? Probably not but it might be nice for consistent code?
-    def open_ta_shutter(t):
+    def open_ta_shutter(self, t):
         devices.ta_shutter.open(t)
 
-    def close_ta_shutter(t):
+    def close_ta_shutter(self, t):
         devices.ta_shutter.close(t)
 
-    def open_repump_shutter(t):
+    def open_repump_shutter(self, t):
         devices.repump_shutter.open(t)
 
-    def close_repump_shutter(t):
+    def close_repump_shutter(self, t):
         devices.repump_shutter.close(t)
 
     def ta_aom_off(self, t):
@@ -183,7 +183,7 @@ class D2Lasers:
         self.repump_aom_off(t)  # repump beam off
 
 #Do we want to set these so that they default to the self.x_power values?
-    def ta_aom_pulse(self,t, dur, ta_power):
+    def ta_aom_pulse(self, t, dur, ta_power):
         """Set AOMs to do a TA pulse, no shutter action"""
         self.ta_aom_on(t, ta_power)
         t += dur
@@ -224,17 +224,16 @@ class D2Lasers:
 
         return t
 
-
     def do_mot_pulse(self, t, dur, ta_power, repump_power, hold_shutter_open=False, label=None):
         self.open_mot_shutters(t, label)
         _ = self.do_ta_pulse(t, dur, ta_power, hold_shutter_open)
         _ = self.do_repump_pulse(t, dur, repump_power, hold_shutter_open)
         t += dur
+        print("Hold shutter open = ", hold_shutter_open)
         if not hold_shutter_open:
             self.close_mot_shutters(t)
             t += CONST_SHUTTER_TURN_OFF_TIME
         return t
-
 
     def do_img_pulse(self, t, dur, ta_power, repump_power, hold_shutter_open=False, label=None):
         self.open_img_shutters(t, label)
@@ -244,6 +243,14 @@ class D2Lasers:
         if not hold_shutter_open:
             self.close_img_shutters(t)
             t += CONST_SHUTTER_TURN_OFF_TIME
+        return t
+
+    def reset_to_mot_freq(self, t):
+        self.ramp_repump_freq(t, duration=CONST_TA_VCO_RAMP_TIME,
+                              final=0)
+        self.ramp_ta_freq(t, duration=CONST_TA_VCO_RAMP_TIME,
+                          final=shot_globals.mot_ta_detuning)
+        t += CONST_TA_VCO_RAMP_TIME
         return t
 
 class TweezerLaser:
@@ -384,20 +391,18 @@ class MOTSequence:
             # longer duration than 1e-2 will lead to the overall MOT atom
             # number decay during the cycle
 
-        t = self.D2Lasers_obj.do_mot_pulse(t, dur, shot_globals.ta_power,
-                                shot_globals.repump_power, hold_shutter_open=hold_shutter_open)
+        t = self.D2Lasers_obj.do_mot_pulse(t, dur, shot_globals.mot_ta_power,
+                                shot_globals.mot_repump_power, hold_shutter_open=hold_shutter_open)
 
         return t
 
     def image_mot(self, t, hold_shutter_open=False):
         # Move to on resonance, make sure AOM is off
-        self.D2Lasers_obj.ramp_ta_freq(t - CONST_TA_VCO_RAMP_TIME,
-                    CONST_TA_VCO_RAMP_TIME,
-                    ta_freq_calib(0)
-                )
+        self.D2Lasers_obj.ramp_ta_freq(t, CONST_TA_VCO_RAMP_TIME, ta_freq_calib(0))
+        t += CONST_TA_VCO_RAMP_TIME
 
         # Make sure coils are off
-        if BField_obj.mot_coils_on:
+        if self.BField_obj.mot_coils_on:
             t = self.BField_obj.switch_mot_coils(t)
 
         #Camera class...?
@@ -407,25 +412,30 @@ class MOTSequence:
             'atoms',
             exposure_time=shot_globals.mot_exposure_time)
 
-        t = self.D2Lasers_obj.do_mot_pulse(t, shot_globals.mot_exposure_time,
-                        shot_globals.mot_ta_power, hold_shutter_open=hold_shutter_open)
+        t = self.D2Lasers_obj.do_mot_pulse(t, shot_globals.img_exposure_time,
+                        shot_globals.img_ta_power, shot_globals.img_repump_power, hold_shutter_open=hold_shutter_open)
 
         return t
 
-    def do_mot_in_situ_sequence(t):
+    def do_mot_in_situ_sequence(self, t):
         print("Running do_mot_in_situ_check")
 
         # MOT loading time 500 ms
-        mot_load_dur = 0.5
+        mot_load_dur = 0.5 # 0.5
+
+        t += CONST_SHUTTER_TURN_ON_TIME
 
         t = self.do_mot(t, mot_load_dur, hold_shutter_open=True)
 
         t = self.image_mot(t)
         # Shutter does not need to be held open
 
-        # Turn off MOT for taking background images
-        t += 0.1  # Wait until the MOT disappear
+        # Wait until the MOT disappear for background image
+        t += 0.1
         t = self.image_mot(t)
+
+        # Reset laser frequency so lasers do not jump frequency and come unlocked
+        t = self.D2Lasers_obj.reset_to_mot_freq(t)
 
         return t
 
@@ -1689,11 +1699,11 @@ def optical_pumping(
             samplerate=1e5,
         )
 
-        print(
-            f'OP bias x, y, z voltage = {
-                biasx_calib(op_biasx_field)}, {
-                biasy_calib(op_biasy_field)}, {
-                biasz_calib(op_biasz_field)}')
+        # print(
+        #     f'OP bias x, y, z voltage = {
+        #         biasx_calib(op_biasx_field)}, {
+        #         biasy_calib(op_biasy_field)}, {
+        #         biasz_calib(op_biasz_field)}')
 
         ta_last_detuning = ta_pumping_detuning
         repump_last_detuning = repump_depumping_detuning
@@ -1823,11 +1833,11 @@ def optical_pumping(
                 final=biasz_calib(final_biasz_field),  # 0 mG
                 samplerate=1e5,
             )
-            print(
-                f'OP bias x, y, z voltage = {
-                    biasx_calib(op_biasx_field)}, {
-                    biasy_calib(op_biasy_field)}, {
-                    biasz_calib(op_biasz_field)}')
+            # print(
+            #     f'OP bias x, y, z voltage = {
+            #         biasx_calib(op_biasx_field)}, {
+            #         biasy_calib(op_biasy_field)}, {
+            #         biasz_calib(op_biasz_field)}')
 
     # ###### pump all atom into F = 4, mF = 4 level by using sigma+ beam #####
     # if shot_globals.do_optical_pump_sigma_plus: # use sigma + polarized light for optical pumping
@@ -1943,8 +1953,8 @@ def spectrum_microwave_sweep(t):
             phase=0,
             ch=0,
             freq_ramp_type='linear')
-        print(f'Start the sweep from {shot_globals.mw_detuning_start} MHz to {
-              shot_globals.mw_detuning_end} MHz within {mw_sweep_duration}s ')
+        # print(f'Start the sweep from {shot_globals.mw_detuning_start} MHz to {
+        #       shot_globals.mw_detuning_end} MHz within {mw_sweep_duration}s ')
     else:
         mw_sweep_range = shot_globals.mw_sweep_range
         mw_detuning_center = shot_globals.mw_detuning_center
@@ -1964,8 +1974,8 @@ def spectrum_microwave_sweep(t):
             phase=0,
             ch=0,
             freq_ramp_type='linear')
-        print(f'Sweep around center {shot_globals.mw_sweep_range} MHz for a range of {
-              shot_globals.mw_detuning_end} MHz within {mw_sweep_duration}s ')
+        # print(f'Sweep around center {shot_globals.mw_sweep_range} MHz for a range of {
+        #       shot_globals.mw_detuning_end} MHz within {mw_sweep_duration}s ')
 
     return mw_sweep_duration
 
@@ -2238,11 +2248,11 @@ def do_field_calib_in_molasses_check():
             phase=0,
             ch=0,
             loops=1)
-        print(
-            f'Spectrum card freq = {
-                local_oscillator_freq_mhz -
-                uwave_clock -
-                shot_globals.mw_detuning}')
+        # print(
+        #     f'Spectrum card freq = {
+        #         local_oscillator_freq_mhz -
+        #         uwave_clock -
+        #         shot_globals.mw_detuning}')
         devices.uwave_absorp_switch.go_low(t + shot_globals.mw_time)
         t += shot_globals.mw_time
 
@@ -2266,11 +2276,11 @@ def do_field_calib_in_molasses_check():
             phase=0,
             ch=0,
             loops=1)
-        print(
-            f'Spectrum card freq = {
-                local_oscillator_freq_mhz -
-                uwave_clock -
-                shot_globals.mw_detuning}')
+        # print(
+        #     f'Spectrum card freq = {
+        #         local_oscillator_freq_mhz -
+        #         uwave_clock -
+        #         shot_globals.mw_detuning}')
         t_pulse = shot_globals.mw_time / shot_globals.mw_num_pulses
         print(f't_pulse = {t_pulse * 1e6}us')
         print(f't before microwave pulse = {t}')
@@ -2433,11 +2443,11 @@ def do_dipole_trap_tof_check():
             phase=0,
             ch=0,
             loops=1)
-        print(
-            f'Spectrum card freq = {
-                local_oscillator_freq_mhz -
-                uwave_clock -
-                shot_globals.mw_detuning}')
+        # print(
+        #     f'Spectrum card freq = {
+        #         local_oscillator_freq_mhz -
+        #         uwave_clock -
+        #         shot_globals.mw_detuning}')
         devices.uwave_absorp_switch.go_low(t + shot_globals.mw_time)
         t += shot_globals.mw_time
 
@@ -3321,11 +3331,11 @@ def do_optical_pump_in_tweezer_check():
             phase=0,
             ch=0,
             loops=1)
-        print(
-            f'Spectrum card freq = {
-                local_oscillator_freq_mhz -
-                uwave_clock -
-                shot_globals.mw_detuning}')
+        # print(
+        #     f'Spectrum card freq = {
+        #         local_oscillator_freq_mhz -
+        #         uwave_clock -
+        #         shot_globals.mw_detuning}')
         devices.uwave_absorp_switch.go_low(t + shot_globals.mw_time)
         t += shot_globals.mw_time
 
@@ -3570,11 +3580,11 @@ def do_optical_pump_in_microtrap_check():
             phase=0,
             ch=0,
             loops=1)
-        print(
-            f'Spectrum card freq = {
-                local_oscillator_freq_mhz -
-                uwave_clock -
-                shot_globals.mw_detuning}')
+        # print(
+        #     f'Spectrum card freq = {
+        #         local_oscillator_freq_mhz -
+        #         uwave_clock -
+        #         shot_globals.mw_detuning}')
         devices.uwave_absorp_switch.go_low(t + shot_globals.mw_time)
         t += shot_globals.mw_time
     else:
@@ -3692,14 +3702,12 @@ if __name__ == "__main__":
     labscript.start()
     t = 0
 
-    initialize_lab(t)
-
     # Insert "stay on" statements for alignment here...
 
     if shot_globals.do_mot_in_situ_check:
         #t = do_mot_in_situ_check(t)
         MOTSeq_obj = MOTSequence(t)
-        MOTSeq_obj.do_mot_in_situ_sequence(t)
+        t = MOTSeq_obj.do_mot_in_situ_sequence(t)
 
     if shot_globals.do_mot_tof_check:
         t = do_mot_tof_check(t)
