@@ -20,7 +20,7 @@ autodoc_mock_imports = ['labscript', 'labscript_devices', 'PyQt5', 'qtutils',
                         'user_devices.NI_PXIe_6739', 'user_devices.manta419b',
                         'user_devices.spcm', 'user_devices.DDS',
                         'user_devices.kinetix', 'labscriptlib.shot_globals',
-                        'runmanager']
+                        'runmanager', 'labscriptlib']
 
 templates_path = ['_templates']
 exclude_patterns = []
