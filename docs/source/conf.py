@@ -16,7 +16,7 @@ extensions = [
 ]
 
 autodoc_mock_imports = ['labscript', 'labscript_devices', 'PyQt5', 'qtutils',
-                        'imp', 'user_devices.NI_PXIe_6363',
+                        'imp', 'user_devices.NI_PXIe_6363', 'user_devices',
                         'user_devices.NI_PXIe_6739', 'user_devices.manta419b',
                         'user_devices.spcm', 'user_devices.DDS',
                         'user_devices.kinetix', 'labscriptlib.shot_globals',
