@@ -1051,7 +1051,7 @@ def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'micr
         devices.y_coil_current.ramp(
                 t,
                 duration=100e-6,
-                initial=biasx_calib(0),
+                initial=biasy_calib(0),
                 final=  biasy_calib(final_biasy_field),# 0 mG
                 samplerate=1e5,
             )
@@ -1109,7 +1109,7 @@ def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'micr
         devices.y_coil_current.ramp(
                 t,
                 duration=100e-6,
-                initial=biasx_calib(0),
+                initial=biasy_calib(0),
                 final=  biasy_calib(final_biasy_field),# 0 mG
                 samplerate=1e5,
             )
@@ -1246,7 +1246,7 @@ def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'micr
         devices.ta_aom_analog.constant(t - ta_shutter_off_t, 0)
         devices.mot_coil_current_ctrl.constant(t, 0)
 
-        if do_comparison_with_optical_pump_MOT == True:
+        if  do_comparison_with_optical_pump_MOT == True:
             devices.ta_shutter.close(t)
         else:
             # devices.ta_shutter.close(t)
@@ -1257,6 +1257,7 @@ def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'micr
             op_biasx_field = shot_globals.op_bias_amp * np.cos(shot_globals.op_bias_phi/180*np.pi) * np.sin(shot_globals.op_bias_theta/180*np.pi)
             op_biasy_field = shot_globals.op_bias_amp * np.sin(shot_globals.op_bias_phi/180*np.pi) * np.sin(shot_globals.op_bias_theta/180*np.pi)
             op_biasz_field = shot_globals.op_bias_amp * np.cos(shot_globals.op_bias_theta/180*np.pi)
+
             devices.x_coil_current.ramp(
                     t,
                     duration=100e-6,
@@ -1296,11 +1297,15 @@ def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'micr
             repump_last_detuning = repump_pumping_detuning
 
             t += max(ta_vco_ramp_t, 100e-6, shot_globals.op_ramp_delay)
-            devices.ta_shutter.open(t)
-            devices.ta_aom_digital.go_high(t)
+            if shot_globals.do_op_sigma_plus_with_repumper_only == True:
+                devices.ta_shutter.close(t)
+            else:
+                devices.ta_shutter.open(t)
+                devices.ta_aom_digital.go_high(t)
+                devices.ta_aom_analog.constant(t, shot_globals.op_ta_power)
 
         devices.optical_pump_shutter.open(t)
-        devices.ta_aom_analog.constant(t, shot_globals.op_ta_power)
+        # devices.ta_aom_analog.constant(t, shot_globals.op_ta_power)
         devices.repump_shutter.open(t)
         devices.repump_aom_digital.go_high(t)
         devices.repump_aom_analog.constant(t, shot_globals.op_repump_power)
@@ -1353,6 +1358,7 @@ def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'micr
                     final= biasz_calib(final_biasz_field),# 0 mG
                     samplerate=1e5,
                 )
+            print('OP bias phi = ', shot_globals.op_bias_phi)
             print(f'OP bias x, y, z voltage = {biasx_calib(op_biasx_field)}, {biasy_calib(op_biasy_field)}, {biasz_calib(op_biasz_field)}')
 
     # ###### pump all atom into F = 4, mF = 4 level by using sigma+ beam #########
