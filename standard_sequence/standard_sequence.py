@@ -468,17 +468,17 @@ def do_MOT(t, dur, coils_bool):
     return t
 
 
-def do_mot_imaging(t, *, use_shutter=True):
+def do_mot_imaging(t, *, ta_last_detuning, use_shutter=True):
     devices.ta_vco.ramp(
         t - ta_vco_ramp_t,
         duration=ta_vco_ramp_t,
-        initial=ta_freq_calib(shot_globals.mot_ta_detuning),
-        final=ta_freq_calib(0),
+        initial=ta_freq_calib(ta_last_detuning),
+        final=ta_freq_calib(shot_globals.mot_ta_image_detuning),  #0),
         samplerate=4e5,
     )  # ramp to imaging
 
     # set ta and repump to full power
-    mot_aom_on(t, ta_const=1, repump_const=1)
+    mot_aom_on(t, ta_const=0.1, repump_const=1)
     # devices.ta_aom_analog.constant(t, 1)
     # devices.repump_aom_analog.constant(t, 1)
     # devices.ta_aom_digital.go_high(t)
@@ -501,7 +501,8 @@ def do_mot_imaging(t, *, use_shutter=True):
         # devices.mot_xy_shutter.close(t)
         # devices.mot_z_shutter.close(t)
 
-    return t
+    ta_last_detuning = shot_globals.mot_ta_image_detuning
+    return t, ta_last_detuning
 
 
 def reset_mot(t, ta_last_detuning):
@@ -1506,17 +1507,17 @@ def do_mot_in_situ_check():
 
     t += coil_off_time  # wait for the coil fully off
 
-    t = do_mot_imaging(t, use_shutter=False)
+    t, ta_last_detuning = do_mot_imaging(t, ta_last_detuning=shot_globals.mot_ta_detuning, use_shutter=False)
     print(f"after 1st mot image t = {t}")
 
     # Turn off MOT for taking background imagess
     t += 0.1  # Wait until the MOT disappear
-    t = do_mot_imaging(t, use_shutter=False)
+    t, ta_last_detuning = do_mot_imaging(t, ta_last_detuning=ta_last_detuning, use_shutter=False)
     print(f"after 2nd mot image t = {t}")
 
     # set back to initial value
     t += 1e-2
-    t = reset_mot(t, ta_last_detuning=0)
+    t = reset_mot(t, ta_last_detuning=ta_last_detuning)#0)
 
     labscript.stop(t + 1e-2)
 
