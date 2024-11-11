@@ -71,6 +71,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.D2Lasers.repump_aom_off"><code class="docutils literal notranslate"><span class="pre">D2Lasers.repump_aom_off()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.D2Lasers.repump_aom_on"><code class="docutils literal notranslate"><span class="pre">D2Lasers.repump_aom_on()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.D2Lasers.repump_aom_pulse"><code class="docutils literal notranslate"><span class="pre">D2Lasers.repump_aom_pulse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.D2Lasers.reset_to_mot_freq"><code class="docutils literal notranslate"><span class="pre">D2Lasers.reset_to_mot_freq()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.D2Lasers.ta_aom_off"><code class="docutils literal notranslate"><span class="pre">D2Lasers.ta_aom_off()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.D2Lasers.ta_aom_on"><code class="docutils literal notranslate"><span class="pre">D2Lasers.ta_aom_on()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.D2Lasers.ta_aom_pulse"><code class="docutils literal notranslate"><span class="pre">D2Lasers.ta_aom_pulse()</span></code></a></li>
@@ -82,6 +83,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.MOTSequence.do_kinetix_imaging"><code class="docutils literal notranslate"><span class="pre">MOTSequence.do_kinetix_imaging()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.MOTSequence.do_molasses"><code class="docutils literal notranslate"><span class="pre">MOTSequence.do_molasses()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.MOTSequence.do_mot"><code class="docutils literal notranslate"><span class="pre">MOTSequence.do_mot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.MOTSequence.do_mot_in_situ_sequence"><code class="docutils literal notranslate"><span class="pre">MOTSequence.do_mot_in_situ_sequence()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.MOTSequence.image_mot"><code class="docutils literal notranslate"><span class="pre">MOTSequence.image_mot()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.MOTSequence.ramp_to_molasses"><code class="docutils literal notranslate"><span class="pre">MOTSequence.ramp_to_molasses()</span></code></a></li>
 </ul>
@@ -190,24 +192,24 @@
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.D2Lasers.close_img_shutters">
-<span class="sig-name descname"><span class="pre">close_img_shutters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#D2Lasers.close_img_shutters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.D2Lasers.close_img_shutters" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">close_img_shutters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#D2Lasers.close_img_shutters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.D2Lasers.close_img_shutters" title="Link to this definition"></a></dt>
 <dd><p>Open the specified IMG shutters, else open all the IMG shutters</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.D2Lasers.close_mot_shutters">
-<span class="sig-name descname"><span class="pre">close_mot_shutters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#D2Lasers.close_mot_shutters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.D2Lasers.close_mot_shutters" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">close_mot_shutters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#D2Lasers.close_mot_shutters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.D2Lasers.close_mot_shutters" title="Link to this definition"></a></dt>
 <dd><p>Close the specified MOT shutters, else open all the MOT shutters</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.D2Lasers.close_repump_shutter">
-<span class="sig-name descname"><span class="pre">close_repump_shutter</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#D2Lasers.close_repump_shutter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.D2Lasers.close_repump_shutter" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">close_repump_shutter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#D2Lasers.close_repump_shutter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.D2Lasers.close_repump_shutter" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.D2Lasers.close_ta_shutter">
-<span class="sig-name descname"><span class="pre">close_ta_shutter</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#D2Lasers.close_ta_shutter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.D2Lasers.close_ta_shutter" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">close_ta_shutter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#D2Lasers.close_ta_shutter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.D2Lasers.close_ta_shutter" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -244,24 +246,24 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.D2Lasers.open_img_shutters">
-<span class="sig-name descname"><span class="pre">open_img_shutters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#D2Lasers.open_img_shutters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.D2Lasers.open_img_shutters" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">open_img_shutters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#D2Lasers.open_img_shutters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.D2Lasers.open_img_shutters" title="Link to this definition"></a></dt>
 <dd><p>Open the specified IMG shutters, else open all the IMG shutters</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.D2Lasers.open_mot_shutters">
-<span class="sig-name descname"><span class="pre">open_mot_shutters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#D2Lasers.open_mot_shutters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.D2Lasers.open_mot_shutters" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">open_mot_shutters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#D2Lasers.open_mot_shutters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.D2Lasers.open_mot_shutters" title="Link to this definition"></a></dt>
 <dd><p>Open the specified MOT shutters, else open all the MOT shutters</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.D2Lasers.open_repump_shutter">
-<span class="sig-name descname"><span class="pre">open_repump_shutter</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#D2Lasers.open_repump_shutter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.D2Lasers.open_repump_shutter" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">open_repump_shutter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#D2Lasers.open_repump_shutter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.D2Lasers.open_repump_shutter" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.D2Lasers.open_ta_shutter">
-<span class="sig-name descname"><span class="pre">open_ta_shutter</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#D2Lasers.open_ta_shutter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.D2Lasers.open_ta_shutter" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">open_ta_shutter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#D2Lasers.open_ta_shutter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.D2Lasers.open_ta_shutter" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -301,6 +303,11 @@
 <span class="sig-name descname"><span class="pre">repump_aom_pulse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dur</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repump_power</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#D2Lasers.repump_aom_pulse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.D2Lasers.repump_aom_pulse" title="Link to this definition"></a></dt>
 <dd><p>Set AOMs to do a repump pulse, no shutter action</p>
 </dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="standard_sequence.classy_sequence.D2Lasers.reset_to_mot_freq">
+<span class="sig-name descname"><span class="pre">reset_to_mot_freq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#D2Lasers.reset_to_mot_freq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.D2Lasers.reset_to_mot_freq" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.D2Lasers.ta_aom_off">
@@ -350,12 +357,17 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.MOTSequence.do_mot">
-<span class="sig-name descname"><span class="pre">do_mot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dur</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#MOTSequence.do_mot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.MOTSequence.do_mot" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">do_mot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dur</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hold_shutter_open</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#MOTSequence.do_mot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.MOTSequence.do_mot" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="standard_sequence.classy_sequence.MOTSequence.do_mot_in_situ_sequence">
+<span class="sig-name descname"><span class="pre">do_mot_in_situ_sequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#MOTSequence.do_mot_in_situ_sequence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.MOTSequence.do_mot_in_situ_sequence" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.MOTSequence.image_mot">
-<span class="sig-name descname"><span class="pre">image_mot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close_shutter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#MOTSequence.image_mot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.MOTSequence.image_mot" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">image_mot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hold_shutter_open</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#MOTSequence.image_mot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.MOTSequence.image_mot" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">

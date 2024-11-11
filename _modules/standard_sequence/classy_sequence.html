@@ -150,7 +150,7 @@
 
 <div class="viewcode-block" id="D2Lasers.open_mot_shutters">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.D2Lasers.open_mot_shutters">[docs]</a>
-    <span class="k">def</span> <span class="nf">open_mot_shutters</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">open_mot_shutters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Open the specified MOT shutters, else open all the MOT shutters&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span>
             <span class="n">devices</span><span class="o">.</span><span class="n">mot_z_shutter</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
@@ -165,7 +165,7 @@
 
 <div class="viewcode-block" id="D2Lasers.close_mot_shutters">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.D2Lasers.close_mot_shutters">[docs]</a>
-    <span class="k">def</span> <span class="nf">close_mot_shutters</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">close_mot_shutters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Close the specified MOT shutters, else open all the MOT shutters&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span>
             <span class="n">devices</span><span class="o">.</span><span class="n">mot_z_shutter</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
@@ -180,7 +180,7 @@
 
 <div class="viewcode-block" id="D2Lasers.open_img_shutters">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.D2Lasers.open_img_shutters">[docs]</a>
-    <span class="k">def</span> <span class="nf">open_img_shutters</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">open_img_shutters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Open the specified IMG shutters, else open all the IMG shutters&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span>
             <span class="n">devices</span><span class="o">.</span><span class="n">img_z_shutter</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
@@ -195,7 +195,7 @@
 
 <div class="viewcode-block" id="D2Lasers.close_img_shutters">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.D2Lasers.close_img_shutters">[docs]</a>
-    <span class="k">def</span> <span class="nf">close_img_shutters</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">close_img_shutters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Open the specified IMG shutters, else open all the IMG shutters&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span>
             <span class="n">devices</span><span class="o">.</span><span class="n">img_z_shutter</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
@@ -211,25 +211,25 @@
     <span class="c1">#Do I need these? Probably not but it might be nice for consistent code?</span>
 <div class="viewcode-block" id="D2Lasers.open_ta_shutter">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.D2Lasers.open_ta_shutter">[docs]</a>
-    <span class="k">def</span> <span class="nf">open_ta_shutter</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">open_ta_shutter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
         <span class="n">devices</span><span class="o">.</span><span class="n">ta_shutter</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="D2Lasers.close_ta_shutter">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.D2Lasers.close_ta_shutter">[docs]</a>
-    <span class="k">def</span> <span class="nf">close_ta_shutter</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">close_ta_shutter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
         <span class="n">devices</span><span class="o">.</span><span class="n">ta_shutter</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="D2Lasers.open_repump_shutter">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.D2Lasers.open_repump_shutter">[docs]</a>
-    <span class="k">def</span> <span class="nf">open_repump_shutter</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">open_repump_shutter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
         <span class="n">devices</span><span class="o">.</span><span class="n">repump_shutter</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="D2Lasers.close_repump_shutter">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.D2Lasers.close_repump_shutter">[docs]</a>
-    <span class="k">def</span> <span class="nf">close_repump_shutter</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">close_repump_shutter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
         <span class="n">devices</span><span class="o">.</span><span class="n">repump_shutter</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></div>
 
 
@@ -312,7 +312,7 @@
 <span class="c1">#Do we want to set these so that they default to the self.x_power values?</span>
 <div class="viewcode-block" id="D2Lasers.ta_aom_pulse">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.D2Lasers.ta_aom_pulse">[docs]</a>
-    <span class="k">def</span> <span class="nf">ta_aom_pulse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="p">,</span> <span class="n">ta_power</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">ta_aom_pulse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="p">,</span> <span class="n">ta_power</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set AOMs to do a TA pulse, no shutter action&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ta_aom_on</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">ta_power</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">+=</span> <span class="n">dur</span>
@@ -363,7 +363,6 @@
         <span class="k">return</span> <span class="n">t</span></div>
 
 
-
 <div class="viewcode-block" id="D2Lasers.do_mot_pulse">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.D2Lasers.do_mot_pulse">[docs]</a>
     <span class="k">def</span> <span class="nf">do_mot_pulse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="p">,</span> <span class="n">ta_power</span><span class="p">,</span> <span class="n">repump_power</span><span class="p">,</span> <span class="n">hold_shutter_open</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -371,11 +370,11 @@
         <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_ta_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="p">,</span> <span class="n">ta_power</span><span class="p">,</span> <span class="n">hold_shutter_open</span><span class="p">)</span>
         <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_repump_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="p">,</span> <span class="n">repump_power</span><span class="p">,</span> <span class="n">hold_shutter_open</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">+=</span> <span class="n">dur</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Hold shutter open = &quot;</span><span class="p">,</span> <span class="n">hold_shutter_open</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">hold_shutter_open</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">close_mot_shutters</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
             <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_SHUTTER_TURN_OFF_TIME</span>
         <span class="k">return</span> <span class="n">t</span></div>
-
 
 
 <div class="viewcode-block" id="D2Lasers.do_img_pulse">
@@ -388,6 +387,17 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">hold_shutter_open</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">close_img_shutters</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
             <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_SHUTTER_TURN_OFF_TIME</span>
+        <span class="k">return</span> <span class="n">t</span></div>
+
+
+<div class="viewcode-block" id="D2Lasers.reset_to_mot_freq">
+<a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.D2Lasers.reset_to_mot_freq">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset_to_mot_freq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ramp_repump_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="n">CONST_TA_VCO_RAMP_TIME</span><span class="p">,</span>
+                              <span class="n">final</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ramp_ta_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="n">CONST_TA_VCO_RAMP_TIME</span><span class="p">,</span>
+                          <span class="n">final</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_ta_detuning</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_TA_VCO_RAMP_TIME</span>
         <span class="k">return</span> <span class="n">t</span></div>
 </div>
 
@@ -466,9 +476,11 @@
                                         <span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_y_coil_voltage</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">),</span>
                                         <span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_z_coil_voltage</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">))</span>
 
+        <span class="n">ramp_dur</span> <span class="o">=</span> <span class="mf">100e-6</span>
+
         <span class="n">devices</span><span class="o">.</span><span class="n">x_coil_current</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span>
             <span class="n">t_x_coil</span><span class="p">,</span>
-            <span class="n">duration</span><span class="o">=</span><span class="mf">100e-6</span><span class="p">,</span>
+            <span class="n">duration</span><span class="o">=</span><span class="n">ramp_dur</span><span class="p">,</span>
             <span class="n">initial</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_x_voltage</span><span class="p">,</span>
             <span class="n">final</span><span class="o">=</span><span class="n">biasx_calib</span><span class="p">(</span><span class="n">B_field_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
             <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
@@ -476,7 +488,7 @@
 
         <span class="n">devices</span><span class="o">.</span><span class="n">y_coil_current</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span>
             <span class="n">t_y_coil</span><span class="p">,</span>
-            <span class="n">duration</span><span class="o">=</span><span class="mf">100e-6</span><span class="p">,</span>
+            <span class="n">duration</span><span class="o">=</span><span class="n">ramp_dur</span><span class="p">,</span>
             <span class="n">initial</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_y_coil_voltage</span><span class="p">,</span>
             <span class="n">final</span><span class="o">=</span><span class="n">biasy_calib</span><span class="p">(</span><span class="n">B_field_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>  <span class="c1"># 0 mG</span>
             <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
@@ -484,7 +496,7 @@
 
         <span class="n">devices</span><span class="o">.</span><span class="n">z_coil_current</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span>
             <span class="n">t_z_coil</span><span class="p">,</span>
-            <span class="n">duration</span><span class="o">=</span><span class="mf">100e-6</span><span class="p">,</span>
+            <span class="n">duration</span><span class="o">=</span><span class="n">ramp_dur</span><span class="p">,</span>
             <span class="n">initial</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_z_coil_voltage</span><span class="p">,</span>
             <span class="n">final</span><span class="o">=</span><span class="n">biasz_calib</span><span class="p">(</span><span class="n">B_field_vector</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>  <span class="c1"># 0 mG</span>
             <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
@@ -493,17 +505,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">B_field</span> <span class="o">=</span> <span class="n">B_field_vector</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bias_x_voltage</span> <span class="o">=</span> <span class="n">biasx_calib</span><span class="p">(</span><span class="n">B_field_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bias_y_voltage</span> <span class="o">=</span> <span class="n">biasy_calib</span><span class="p">(</span><span class="n">B_field_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bias_z_voltage</span> <span class="o">=</span> <span class="n">biasz_calib</span><span class="p">(</span><span class="n">B_field_vector</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bias_z_voltage</span> <span class="o">=</span> <span class="n">biasz_calib</span><span class="p">(</span><span class="n">B_field_vector</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">ramp_dur</span>
+        <span class="k">return</span> <span class="n">t</span></div>
 
 
 <div class="viewcode-block" id="BField.switch_mot_coils">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.BField.switch_mot_coils">[docs]</a>
     <span class="k">def</span> <span class="nf">switch_mot_coils</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
-        <span class="c1">#Should we step time by ramp duration. Do we need to ramp this?</span>
+        <span class="n">ramp_dur</span> <span class="o">=</span> <span class="mf">100e-6</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mot_coils_on</span><span class="p">:</span>
             <span class="n">devices</span><span class="o">.</span><span class="n">mot_coil_current_ctrl</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span>
                 <span class="n">t</span><span class="p">,</span>
-                <span class="n">duration</span><span class="o">=</span><span class="mf">100e-6</span><span class="p">,</span>
+                <span class="n">duration</span><span class="o">=</span><span class="n">ramp_dur</span><span class="p">,</span>
                 <span class="n">initial</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mot_coils_on_current</span><span class="p">,</span>
                 <span class="n">final</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                 <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
@@ -512,13 +527,19 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">devices</span><span class="o">.</span><span class="n">mot_coil_current_ctrl</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span>
                 <span class="n">t</span><span class="p">,</span>
-                <span class="n">duration</span><span class="o">=</span><span class="mf">100e-6</span><span class="p">,</span>
+                <span class="n">duration</span><span class="o">=</span><span class="n">ramp_dur</span><span class="p">,</span>
                 <span class="n">initial</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                 <span class="n">final</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mot_coils_on_current</span><span class="p">,</span>
                 <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mot_coils_on</span> <span class="o">=</span> <span class="kc">True</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mot_coils_on</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">ramp_dur</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_COIL_OFF_TIME</span>
+        <span class="k">return</span> <span class="n">t</span></div>
 </div>
+
+
 
 
 <div class="viewcode-block" id="EField">
@@ -544,38 +565,66 @@
 
 <div class="viewcode-block" id="MOTSequence.do_mot">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.do_mot">[docs]</a>
-    <span class="k">def</span> <span class="nf">do_mot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">do_mot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="p">,</span> <span class="n">hold_shutter_open</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_uv</span><span class="p">:</span>
             <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">UVLamps_obj</span><span class="o">.</span><span class="n">uv_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">)</span>
             <span class="c1"># longer duration than 1e-2 will lead to the overall MOT atom</span>
             <span class="c1"># number decay during the cycle</span>
 
-        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">do_mot_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">ta_power</span><span class="p">,</span>
-                                <span class="n">shot_globals</span><span class="o">.</span><span class="n">repump_power</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">do_mot_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_ta_power</span><span class="p">,</span>
+                                <span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_repump_power</span><span class="p">,</span> <span class="n">hold_shutter_open</span><span class="o">=</span><span class="n">hold_shutter_open</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">t</span></div>
 
 
 <div class="viewcode-block" id="MOTSequence.image_mot">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.image_mot">[docs]</a>
-    <span class="k">def</span> <span class="nf">image_mot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">close_shutter</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_ta_freq</span><span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">CONST_TA_VCO_RAMP_TIME</span><span class="p">,</span>
-            <span class="n">CONST_TA_VCO_RAMP_TIME</span><span class="p">,</span>
-            <span class="n">ta_freq_calib</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">image_mot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">hold_shutter_open</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="c1"># Move to on resonance, make sure AOM is off</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_ta_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">CONST_TA_VCO_RAMP_TIME</span><span class="p">,</span> <span class="n">ta_freq_calib</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_TA_VCO_RAMP_TIME</span>
 
-        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">do_mot_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_exposure_time</span><span class="p">,</span>
-                        <span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_ta_power</span><span class="p">,</span> <span class="n">hold_shutter_open</span><span class="o">=</span><span class="ow">not</span> <span class="n">close_shutter</span><span class="p">)</span>
+        <span class="c1"># Make sure coils are off</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">mot_coils_on</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">switch_mot_coils</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
         <span class="c1">#Camera class...?</span>
         <span class="n">devices</span><span class="o">.</span><span class="n">manta419b_mot</span><span class="o">.</span><span class="n">expose</span><span class="p">(</span>
             <span class="s1">&#39;manta419b&#39;</span><span class="p">,</span>
             <span class="n">t</span><span class="p">,</span>
             <span class="s1">&#39;atoms&#39;</span><span class="p">,</span>
-            <span class="n">exposure_time</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_exposure_time</span><span class="p">)</span></div>
+            <span class="n">exposure_time</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_exposure_time</span><span class="p">)</span>
+
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">do_mot_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">img_exposure_time</span><span class="p">,</span>
+                        <span class="n">shot_globals</span><span class="o">.</span><span class="n">img_ta_power</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">img_repump_power</span><span class="p">,</span> <span class="n">hold_shutter_open</span><span class="o">=</span><span class="n">hold_shutter_open</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">t</span></div>
 
 
-        <span class="c1">#return t ?</span>
+<div class="viewcode-block" id="MOTSequence.do_mot_in_situ_sequence">
+<a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.do_mot_in_situ_sequence">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_mot_in_situ_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running do_mot_in_situ_check&quot;</span><span class="p">)</span>
+
+        <span class="c1"># MOT loading time 500 ms</span>
+        <span class="n">mot_load_dur</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="c1"># 0.5</span>
+
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_SHUTTER_TURN_ON_TIME</span>
+
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_mot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">mot_load_dur</span><span class="p">,</span> <span class="n">hold_shutter_open</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_mot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="c1"># Shutter does not need to be held open</span>
+
+        <span class="c1"># Wait until the MOT disappear for background image</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="mf">0.1</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_mot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="c1"># Reset laser frequency so lasers do not jump frequency and come unlocked</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">reset_to_mot_freq</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">t</span></div>
+
 
 <div class="viewcode-block" id="MOTSequence.ramp_to_molasses">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.ramp_to_molasses">[docs]</a>
@@ -1915,11 +1964,11 @@
             <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">&#39;OP bias x, y, z voltage = </span><span class="si">{</span>
-<span class="w">                </span><span class="n">biasx_calib</span><span class="p">(</span><span class="n">op_biasx_field</span><span class="p">)</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span>
-<span class="w">                </span><span class="n">biasy_calib</span><span class="p">(</span><span class="n">op_biasy_field</span><span class="p">)</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span>
-<span class="w">                </span><span class="n">biasz_calib</span><span class="p">(</span><span class="n">op_biasz_field</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># print(</span>
+        <span class="c1">#     f&#39;OP bias x, y, z voltage = {</span>
+        <span class="c1">#         biasx_calib(op_biasx_field)}, {</span>
+        <span class="c1">#         biasy_calib(op_biasy_field)}, {</span>
+        <span class="c1">#         biasz_calib(op_biasz_field)}&#39;)</span>
 
         <span class="n">ta_last_detuning</span> <span class="o">=</span> <span class="n">ta_pumping_detuning</span>
         <span class="n">repump_last_detuning</span> <span class="o">=</span> <span class="n">repump_depumping_detuning</span>
@@ -2049,11 +2098,11 @@
                 <span class="n">final</span><span class="o">=</span><span class="n">biasz_calib</span><span class="p">(</span><span class="n">final_biasz_field</span><span class="p">),</span>  <span class="c1"># 0 mG</span>
                 <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s1">&#39;OP bias x, y, z voltage = </span><span class="si">{</span>
-<span class="w">                    </span><span class="n">biasx_calib</span><span class="p">(</span><span class="n">op_biasx_field</span><span class="p">)</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span>
-<span class="w">                    </span><span class="n">biasy_calib</span><span class="p">(</span><span class="n">op_biasy_field</span><span class="p">)</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span>
-<span class="w">                    </span><span class="n">biasz_calib</span><span class="p">(</span><span class="n">op_biasz_field</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="c1"># print(</span>
+            <span class="c1">#     f&#39;OP bias x, y, z voltage = {</span>
+            <span class="c1">#         biasx_calib(op_biasx_field)}, {</span>
+            <span class="c1">#         biasy_calib(op_biasy_field)}, {</span>
+            <span class="c1">#         biasz_calib(op_biasz_field)}&#39;)</span>
 
     <span class="c1"># ###### pump all atom into F = 4, mF = 4 level by using sigma+ beam #####</span>
     <span class="c1"># if shot_globals.do_optical_pump_sigma_plus: # use sigma + polarized light for optical pumping</span>
@@ -2175,8 +2224,8 @@
             <span class="n">phase</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="n">ch</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="n">freq_ramp_type</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Start the sweep from </span><span class="si">{</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_detuning_start</span><span class="si">}</span><span class="s1"> MHz to </span><span class="si">{</span>
-<span class="w">              </span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_detuning_end</span><span class="si">}</span><span class="s1"> MHz within </span><span class="si">{</span><span class="n">mw_sweep_duration</span><span class="si">}</span><span class="s1">s &#39;</span><span class="p">)</span>
+        <span class="c1"># print(f&#39;Start the sweep from {shot_globals.mw_detuning_start} MHz to {</span>
+        <span class="c1">#       shot_globals.mw_detuning_end} MHz within {mw_sweep_duration}s &#39;)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">mw_sweep_range</span> <span class="o">=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_sweep_range</span>
         <span class="n">mw_detuning_center</span> <span class="o">=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_detuning_center</span>
@@ -2196,8 +2245,8 @@
             <span class="n">phase</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="n">ch</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="n">freq_ramp_type</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Sweep around center </span><span class="si">{</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_sweep_range</span><span class="si">}</span><span class="s1"> MHz for a range of </span><span class="si">{</span>
-<span class="w">              </span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_detuning_end</span><span class="si">}</span><span class="s1"> MHz within </span><span class="si">{</span><span class="n">mw_sweep_duration</span><span class="si">}</span><span class="s1">s &#39;</span><span class="p">)</span>
+        <span class="c1"># print(f&#39;Sweep around center {shot_globals.mw_sweep_range} MHz for a range of {</span>
+        <span class="c1">#       shot_globals.mw_detuning_end} MHz within {mw_sweep_duration}s &#39;)</span>
 
     <span class="k">return</span> <span class="n">mw_sweep_duration</span></div>
 
@@ -2488,11 +2537,11 @@
             <span class="n">phase</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="n">ch</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="n">loops</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">&#39;Spectrum card freq = </span><span class="si">{</span>
-<span class="w">                </span><span class="n">local_oscillator_freq_mhz</span><span class="w"> </span><span class="o">-</span>
-<span class="w">                </span><span class="n">uwave_clock</span><span class="w"> </span><span class="o">-</span>
-<span class="w">                </span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_detuning</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># print(</span>
+        <span class="c1">#     f&#39;Spectrum card freq = {</span>
+        <span class="c1">#         local_oscillator_freq_mhz -</span>
+        <span class="c1">#         uwave_clock -</span>
+        <span class="c1">#         shot_globals.mw_detuning}&#39;)</span>
         <span class="n">devices</span><span class="o">.</span><span class="n">uwave_absorp_switch</span><span class="o">.</span><span class="n">go_low</span><span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_time</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">+=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_time</span>
 
@@ -2516,11 +2565,11 @@
             <span class="n">phase</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="n">ch</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="n">loops</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">&#39;Spectrum card freq = </span><span class="si">{</span>
-<span class="w">                </span><span class="n">local_oscillator_freq_mhz</span><span class="w"> </span><span class="o">-</span>
-<span class="w">                </span><span class="n">uwave_clock</span><span class="w"> </span><span class="o">-</span>
-<span class="w">                </span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_detuning</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># print(</span>
+        <span class="c1">#     f&#39;Spectrum card freq = {</span>
+        <span class="c1">#         local_oscillator_freq_mhz -</span>
+        <span class="c1">#         uwave_clock -</span>
+        <span class="c1">#         shot_globals.mw_detuning}&#39;)</span>
         <span class="n">t_pulse</span> <span class="o">=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_time</span> <span class="o">/</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_num_pulses</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;t_pulse = </span><span class="si">{</span><span class="n">t_pulse</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e6</span><span class="si">}</span><span class="s1">us&#39;</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;t before microwave pulse = </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -2686,11 +2735,11 @@
             <span class="n">phase</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="n">ch</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="n">loops</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">&#39;Spectrum card freq = </span><span class="si">{</span>
-<span class="w">                </span><span class="n">local_oscillator_freq_mhz</span><span class="w"> </span><span class="o">-</span>
-<span class="w">                </span><span class="n">uwave_clock</span><span class="w"> </span><span class="o">-</span>
-<span class="w">                </span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_detuning</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># print(</span>
+        <span class="c1">#     f&#39;Spectrum card freq = {</span>
+        <span class="c1">#         local_oscillator_freq_mhz -</span>
+        <span class="c1">#         uwave_clock -</span>
+        <span class="c1">#         shot_globals.mw_detuning}&#39;)</span>
         <span class="n">devices</span><span class="o">.</span><span class="n">uwave_absorp_switch</span><span class="o">.</span><span class="n">go_low</span><span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_time</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">+=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_time</span>
 
@@ -3589,11 +3638,11 @@
             <span class="n">phase</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="n">ch</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="n">loops</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">&#39;Spectrum card freq = </span><span class="si">{</span>
-<span class="w">                </span><span class="n">local_oscillator_freq_mhz</span><span class="w"> </span><span class="o">-</span>
-<span class="w">                </span><span class="n">uwave_clock</span><span class="w"> </span><span class="o">-</span>
-<span class="w">                </span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_detuning</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># print(</span>
+        <span class="c1">#     f&#39;Spectrum card freq = {</span>
+        <span class="c1">#         local_oscillator_freq_mhz -</span>
+        <span class="c1">#         uwave_clock -</span>
+        <span class="c1">#         shot_globals.mw_detuning}&#39;)</span>
         <span class="n">devices</span><span class="o">.</span><span class="n">uwave_absorp_switch</span><span class="o">.</span><span class="n">go_low</span><span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_time</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">+=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_time</span>
 
@@ -3841,11 +3890,11 @@
             <span class="n">phase</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="n">ch</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="n">loops</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">&#39;Spectrum card freq = </span><span class="si">{</span>
-<span class="w">                </span><span class="n">local_oscillator_freq_mhz</span><span class="w"> </span><span class="o">-</span>
-<span class="w">                </span><span class="n">uwave_clock</span><span class="w"> </span><span class="o">-</span>
-<span class="w">                </span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_detuning</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># print(</span>
+        <span class="c1">#     f&#39;Spectrum card freq = {</span>
+        <span class="c1">#         local_oscillator_freq_mhz -</span>
+        <span class="c1">#         uwave_clock -</span>
+        <span class="c1">#         shot_globals.mw_detuning}&#39;)</span>
         <span class="n">devices</span><span class="o">.</span><span class="n">uwave_absorp_switch</span><span class="o">.</span><span class="n">go_low</span><span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_time</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">+=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_time</span>
     <span class="k">else</span><span class="p">:</span>
@@ -3964,12 +4013,12 @@
     <span class="n">labscript</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
     <span class="n">t</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="n">initialize_lab</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-
     <span class="c1"># Insert &quot;stay on&quot; statements for alignment here...</span>
 
     <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_mot_in_situ_check</span><span class="p">:</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="n">do_mot_in_situ_check</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="c1">#t = do_mot_in_situ_check(t)</span>
+        <span class="n">MOTSeq_obj</span> <span class="o">=</span> <span class="n">MOTSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">MOTSeq_obj</span><span class="o">.</span><span class="n">do_mot_in_situ_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_mot_tof_check</span><span class="p">:</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">do_mot_tof_check</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
