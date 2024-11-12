@@ -316,9 +316,10 @@ class BField:
 
     def ramp_B_field(self, t, B_field_vector):
         #B_field_vector should be a tuple of the form (x,y,z)
-        t_x_coil, t_y_coil, t_z_coil = (t - 4e-3*int(shot_globals.mot_x_coil_voltage < 0),
-                                        t - 4e-3*int(shot_globals.mot_y_coil_voltage < 0),
-                                        t - 4e-3*int(shot_globals.mot_z_coil_voltage < 0))
+        # Need to start the ramp earlier if the voltage changes sign
+        t_x_coil, t_y_coil, t_z_coil = (t - 4e-3*int(self.bias_x_voltage * biasx_calib(B_field_vector[0]) < 0),
+                                        t - 4e-3*int(self.bias_y_voltage * biasy_calib(B_field_vector[1]) < 0),
+                                        t - 4e-3*int(self.bias_z_voltage * biasz_calib(B_field_vector[2]) < 0))
 
         ramp_dur = 100e-6
 
@@ -356,9 +357,10 @@ class BField:
 
     def ramp_B_field_voltage(self, t, voltage_vector):
         #B_field_vector should be a tuple of the form (x,y,z)
-        t_x_coil, t_y_coil, t_z_coil = (t - 4e-3*int(shot_globals.mot_x_coil_voltage < 0),
-                                        t - 4e-3*int(shot_globals.mot_y_coil_voltage < 0),
-                                        t - 4e-3*int(shot_globals.mot_z_coil_voltage < 0))
+        # Need to start the ramp earlier if the voltage changes sign
+        t_x_coil, t_y_coil, t_z_coil = (t - 4e-3*int(self.bias_x_voltage * voltage_vector[0] < 0),
+                                        t - 4e-3*int(self.bias_y_voltage * voltage_vector[1] < 0),
+                                        t - 4e-3*int(self.bias_z_voltage * voltage_vector[2] < 0))
 
         ramp_dur = 100e-6
 
@@ -419,6 +421,19 @@ class BField:
         t += CONST_COIL_OFF_TIME
         return t
 
+class Camera:
+    def __init__(self, t, type):
+        self.type = type
+
+    def expose(self, t, exposure_time):
+        if self.type == "MOT":
+            devices.manta419b_mot.expose(
+                'manta419b',
+                t,
+                'atoms',
+                exposure_time = exposure_time)
+
+        if self.type == "tweezer":
 
 
 class EField:
@@ -540,6 +555,7 @@ class MOTSequence:
 
         return t
 
+    # Molasses sequences
     def ramp_to_molasses(self, t, ta_bm_detuning, repump_bm_detuning):
 
         self.D2Lasers_obj.ramp_ta_freq(t, 1e-3, ta_bm_detuning)
@@ -589,6 +605,82 @@ class MOTSequence:
                  self.D2Lasers_obj.close_img_shutters(t+dur)
 
         self.D2Lasers_obj.mot_aom_off(t+dur)
+
+    #Which arguments are actually necessary to pass or even set as a defualt?
+    #How many of them can just be set to globals?
+    def do_molasses_dipole_trap_imaging(self, t, img_ta_detuning=0, img_repump_detuning=0, img_ta_power=1, img_repump_power=1, do_repump=True, close_shutter=True):
+
+        # define quantization axis
+        _ = self.BField_obj.ramp_B_field(t, (0,0,0))
+
+        # exposure=shot_globals.bm_exposure_time
+
+        #Is this section needed?
+        self.D2Lasers_obj.open_ta_shutter(t)
+        if do_repump:
+            self.D2Lasers_obj.open_repump_shutter(t)
+        else:
+            self.D2Lasers_obj.close_repump_shutter(t)
+
+        # Ramp to imaging frequencies
+        self.D2Lasers_obj.ramp_ta_freq(t - CONST_TA_VCO_RAMP_TIME, CONST_TA_VCO_RAMP_TIME, ta_freq_calib(img_ta_detuning))
+        self.D2Lasers_obj.ramp_repump_freq(t - CONST_TA_VCO_RAMP_TIME, CONST_TA_VCO_RAMP_TIME, repump_freq_calib(img_repump_detuning))
+
+        if shot_globals.do_mot_beams_during_imaging:
+            if not shot_globals.do_molasses_in_situ_check:
+                self.D2Lasers_obj.close_img_shutters(t)
+            self.D2Lasers_obj.open_mot_shutters(t, label=shot_globals.mot_beam_imaging_label)
+        if shot_globals.do_img_beams_during_imaging and not shot_globals.do_molasses_in_situ_check:
+            self.D2Lasers_obj.close_mot_shutters(t)
+            self.D2Lasers_obj.open_img_shutters(t, label=shot_globals.img_beam_imaging_label)
+
+        self.D2Lasers_obj.mot_aom_on(t, img_ta_power, img_repump_power)
+
+        # Replace with camera class
+        if shot_globals.do_mot_camera:
+            devices.manta419b_mot.expose(
+                'manta419b',
+                t,
+                'atoms',
+                exposure_time=max(exposure, 50e-6),
+            )
+            devices.tweezer_camera_trigger.go_high(t)
+            devices.tweezer_camera_trigger.go_low(
+                t + shot_globals.bm_exposure_time)
+
+        if shot_globals.do_tweezer_camera:
+            devices.manta419b_tweezer.expose(
+                'manta419b',
+                t,
+                'atoms',
+                exposure_time=max(exposure, 50e-6),
+            )
+
+            # send a trigger to a local manta camera: (mot camera or blue laser
+            # camera)
+            devices.mot_camera_trigger.go_high(t)
+            devices.mot_camera_trigger.go_low(t + shot_globals.bm_exposure_time)
+
+        if shot_globals.do_kinetix_camera:
+            devices.kinetix.expose(
+                'Kinetix',
+                t,
+                'atoms',
+                exposure_time=max(exposure, 1e-3),
+            )
+            print('t after exposure', t)
+            print('exposure time', max(exposure, 1e-3))
+
+        t += exposure_time
+
+        self.D2Lasers_obj.mot_aom_off(t)
+
+        if close_shutter:
+            if shot_globals.do_mot_beams_during_imaging:
+                 self.D2Lasers_obj.close_mot_shutters(t, label=shot_globals.mot_beam_imaging_label)
+            if shot_globals.do_img_beams_during_imaging:
+                self.D2Lasers_obj.close_img_shutters(t, label=shot_globals.img_beam_imaging_label)
+        return t
 
     def do_kinetix_imaging(self, t, shot_number):
         self.D2Lasers_obj.open_ta_shutter(t)
