@@ -254,6 +254,17 @@ class D2Lasers:
         t += CONST_TA_VCO_RAMP_TIME
         return t
 
+    def reset_to_mot_on(self, t):
+        self.mot_aom_on(t, shot_globals.mot_ta_power, shot_globals.mot_repump_power)
+        self.open_repump_shutter(t)
+        self.open_ta_shutter(t)
+        t = self.open_mot_shutters(t)
+        t += CONST_SHUTTER_TURN_ON_TIME
+
+        return t
+
+
+
 class TweezerLaser:
     def __init__(self, t):
         pass
@@ -343,6 +354,46 @@ class BField:
         t += ramp_dur
         return t
 
+    def ramp_B_field_voltage(self, t, voltage_vector):
+        #B_field_vector should be a tuple of the form (x,y,z)
+        t_x_coil, t_y_coil, t_z_coil = (t - 4e-3*int(shot_globals.mot_x_coil_voltage < 0),
+                                        t - 4e-3*int(shot_globals.mot_y_coil_voltage < 0),
+                                        t - 4e-3*int(shot_globals.mot_z_coil_voltage < 0))
+
+        ramp_dur = 100e-6
+
+        devices.x_coil_current.ramp(
+            t_x_coil,
+            duration=ramp_dur,
+            initial=self.bias_x_voltage,
+            final=voltage_vector[0],
+            samplerate=1e5,
+        )
+
+        devices.y_coil_current.ramp(
+            t_y_coil,
+            duration=ramp_dur,
+            initial=self.bias_y_voltage,
+            final=voltage_vector[1],
+            samplerate=1e5,
+        )
+
+        devices.z_coil_current.ramp(
+            t_z_coil,
+            duration=ramp_dur,
+            initial=self.bias_z_voltage,
+            final=voltage_vector[2],
+            samplerate=1e5,
+        )
+        # TODO: add the inverse function of bias_i_calib
+        # self.B_field = B_field_vector
+        self.bias_x_voltage = voltage_vector[0]
+        self.bias_y_voltage = voltage_vector[1]
+        self.bias_z_voltage = voltage_vector[2]
+
+        t += ramp_dur
+        return t
+
     def switch_mot_coils(self, t):
         ramp_dur = 100e-6
         if self.mot_coils_on:
@@ -397,6 +448,24 @@ class MOTSequence:
 
         return t
 
+    def reset_mot(self, t):
+        #B fields
+        if not self.BField_obj.mot_coils_on:
+            t = self.BField_obj.switch_mot_coils(t)
+
+        mot_bias_voltages = (shot_globals.mot_x_coil_voltage, shot_globals.mot_y_coil_voltage, shot_globals.mot_z_coil_voltage)
+        t = self.BField_obj.ramp_B_field_voltage(t, mot_bias_voltages)
+
+        # Reset laser frequency and configuration
+        t = self.D2Lasers_obj.reset_to_mot_freq(t)
+        t = self.D2Lasers_obj.reset_to_mot_on(t)
+
+        t += 1e-2
+
+        return t
+
+
+
     def image_mot(self, t, hold_shutter_open=False):
         # Move to on resonance, make sure AOM is off
         self.D2Lasers_obj.ramp_ta_freq(t, CONST_TA_VCO_RAMP_TIME, ta_freq_calib(0))
@@ -418,12 +487,12 @@ class MOTSequence:
 
         return t
 
-    def do_mot_in_situ_sequence(self, t):
+    def do_mot_in_situ_sequence(self, t, reset_mot = False):
         print("Running do_mot_in_situ_check")
 
         print("MOT coils = ", self.BField_obj.mot_coils_on)
         # MOT loading time 500 ms
-        mot_load_dur = 2
+        mot_load_dur = 0.5
 
         t += CONST_SHUTTER_TURN_ON_TIME
 
@@ -439,6 +508,9 @@ class MOTSequence:
         # Reset laser frequency so lasers do not jump frequency and come unlocked
         t = self.D2Lasers_obj.reset_to_mot_freq(t)
 
+        if reset_mot:
+            t = self.reset_mot(t)
+
         return t
 
     def ramp_to_molasses(self, t, ta_bm_detuning, repump_bm_detuning):
@@ -446,8 +518,8 @@ class MOTSequence:
         self.D2Lasers_obj.ramp_ta_freq(t, 1e-3, ta_bm_detuning)
         self.D2Lasers_obj.ramp_repump_freq(t, 1e-3, repump_bm_detuning)
 
-        self.D2Lasers_obj.ramp_ta_aom(self, t, 100e-6, shot_globals.bm_ta_power)
-        self.D2Lasers_obj.ramp_repump_aom(self, t, 100e-6, shot_globals.bm_repump_power)
+        self.D2Lasers_obj.ramp_ta_aom(t, 100e-6, shot_globals.bm_ta_power)
+        self.D2Lasers_obj.ramp_repump_aom(t, 100e-6, shot_globals.bm_repump_power)
 
         self.BField_obj.switch_mot_coils(t)
         self.BField_obj.ramp_B_field(t, (0,0,0))
@@ -3709,7 +3781,7 @@ if __name__ == "__main__":
     if shot_globals.do_mot_in_situ_check:
         #t = do_mot_in_situ_check(t)
         MOTSeq_obj = MOTSequence(t)
-        t = MOTSeq_obj.do_mot_in_situ_sequence(t)
+        t = MOTSeq_obj.do_mot_in_situ_sequence(t, reset_mot = False)
 
     if shot_globals.do_mot_tof_check:
         t = do_mot_tof_check(t)
