@@ -654,8 +654,6 @@
         <span class="k">return</span> <span class="n">t</span></div>
 
 
-
-
 <div class="viewcode-block" id="MOTSequence.image_mot">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.image_mot">[docs]</a>
     <span class="k">def</span> <span class="nf">image_mot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">hold_shutter_open</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -692,6 +690,38 @@
         <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_SHUTTER_TURN_ON_TIME</span>
 
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_mot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">mot_load_dur</span><span class="p">,</span> <span class="n">hold_shutter_open</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_mot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="c1"># Shutter does not need to be held open</span>
+
+        <span class="c1"># Wait until the MOT disappear for background image</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="mf">0.1</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_mot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="c1"># Reset laser frequency so lasers do not jump frequency and come unlocked</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">reset_to_mot_freq</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">reset_mot</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reset_mot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">t</span></div>
+
+
+<div class="viewcode-block" id="MOTSequence.do_mot_tof_sequence">
+<a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.do_mot_tof_sequence">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_mot_tof_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running do_mot_in_situ_check&quot;</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;MOT coils = &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">mot_coils_on</span><span class="p">)</span>
+        <span class="c1"># MOT loading time 500 ms</span>
+        <span class="n">mot_load_dur</span> <span class="o">=</span> <span class="mf">0.5</span>
+
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_SHUTTER_TURN_ON_TIME</span>
+
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_mot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">mot_load_dur</span><span class="p">,</span> <span class="n">hold_shutter_open</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_tof_imaging_delay</span> <span class="o">&gt;</span> <span class="n">CONST_MIN_SHUTTER_OFF_TIME</span><span class="p">,</span> <span class="s2">&quot;time of flight too short for shutter&quot;</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_tof_imaging_delay</span>
 
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_mot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="c1"># Shutter does not need to be held open</span>
@@ -4101,7 +4131,7 @@
     <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_mot_in_situ_check</span><span class="p">:</span>
         <span class="c1">#t = do_mot_in_situ_check(t)</span>
         <span class="n">MOTSeq_obj</span> <span class="o">=</span> <span class="n">MOTSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="n">MOTSeq_obj</span><span class="o">.</span><span class="n">do_mot_in_situ_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">MOTSeq_obj</span><span class="o">.</span><span class="n">do_mot_in_situ_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_mot_tof_check</span><span class="p">:</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">do_mot_tof_check</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
