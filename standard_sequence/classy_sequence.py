@@ -422,10 +422,19 @@ class BField:
         return t
 
 class Camera:
-    def __init__(self, t, type):
+    def __init__(self, t):
+        self.type = None
+
+    def set_type(self, type):
+        # type = "MOT" or "tweezer" or "kinetix"
         self.type = type
 
-    def expose(self, t, exposure_time):
+    def expose(self, t, exposure_time, trigger_local_manta = False):
+
+        if trigger_local_manta:
+            devices.mot_camera_trigger.go_high(t)
+            devices.mot_camera_trigger.go_low(t + exposure_time)
+
         if self.type == "MOT":
             devices.manta419b_mot.expose(
                 'manta419b',
@@ -434,7 +443,20 @@ class Camera:
                 exposure_time = exposure_time)
 
         if self.type == "tweezer":
+            devices.manta419b_tweezer.expose(
+                'manta419b',
+                t,
+                'atoms',
+                exposure_time=exposure_time,
+            )
 
+        if self.type == "kinetix":
+            devices.kinetix.expose(
+                'Kinetix',
+                t,
+                'atoms',
+                exposure_time=exposure_time,
+            )
 
 class EField:
     def __init__(self, t):
@@ -451,6 +473,7 @@ class MOTSequence:
         self.BField_obj = BField(t)
         self.Microwave_obj = Microwave(t)
         self.UVLamps_obj = UVLamps(t)
+        self.Camera_obj = Camera(t)
 
     def do_mot(self, t, dur, hold_shutter_open=False):
         if shot_globals.do_uv:
@@ -604,16 +627,17 @@ class MOTSequence:
             if close_shutter:
                  self.D2Lasers_obj.close_img_shutters(t+dur)
 
+        t = t+dur
         self.D2Lasers_obj.mot_aom_off(t+dur)
+
+        return t
 
     #Which arguments are actually necessary to pass or even set as a defualt?
     #How many of them can just be set to globals?
     def do_molasses_dipole_trap_imaging(self, t, img_ta_detuning=0, img_repump_detuning=0, img_ta_power=1, img_repump_power=1, do_repump=True, close_shutter=True):
+        # define quantization axis (Whut?? This is zeroing the field, there's not quantization axis)
 
-        # define quantization axis
         _ = self.BField_obj.ramp_B_field(t, (0,0,0))
-
-        # exposure=shot_globals.bm_exposure_time
 
         #Is this section needed?
         self.D2Lasers_obj.open_ta_shutter(t)
@@ -623,9 +647,11 @@ class MOTSequence:
             self.D2Lasers_obj.close_repump_shutter(t)
 
         # Ramp to imaging frequencies
-        self.D2Lasers_obj.ramp_ta_freq(t - CONST_TA_VCO_RAMP_TIME, CONST_TA_VCO_RAMP_TIME, ta_freq_calib(img_ta_detuning))
-        self.D2Lasers_obj.ramp_repump_freq(t - CONST_TA_VCO_RAMP_TIME, CONST_TA_VCO_RAMP_TIME, repump_freq_calib(img_repump_detuning))
+        self.D2Lasers_obj.ramp_ta_freq(t, CONST_TA_VCO_RAMP_TIME, ta_freq_calib(img_ta_detuning))
+        self.D2Lasers_obj.ramp_repump_freq(t, CONST_TA_VCO_RAMP_TIME, repump_freq_calib(img_repump_detuning))
+        t+=CONST_TA_VCO_RAMP_TIME
 
+        # Opening the correct shutters
         if shot_globals.do_mot_beams_during_imaging:
             if not shot_globals.do_molasses_in_situ_check:
                 self.D2Lasers_obj.close_img_shutters(t)
@@ -633,54 +659,49 @@ class MOTSequence:
         if shot_globals.do_img_beams_during_imaging and not shot_globals.do_molasses_in_situ_check:
             self.D2Lasers_obj.close_mot_shutters(t)
             self.D2Lasers_obj.open_img_shutters(t, label=shot_globals.img_beam_imaging_label)
+            t+=CONST_SHUTTER_TURN_OFF_TIME
 
         self.D2Lasers_obj.mot_aom_on(t, img_ta_power, img_repump_power)
 
-        # Replace with camera class
-        if shot_globals.do_mot_camera:
-            devices.manta419b_mot.expose(
-                'manta419b',
-                t,
-                'atoms',
-                exposure_time=max(exposure, 50e-6),
-            )
-            devices.tweezer_camera_trigger.go_high(t)
-            devices.tweezer_camera_trigger.go_low(
-                t + shot_globals.bm_exposure_time)
+        # TODO: include camera type global
+        self.Camera_obj.set_type(shot_globals.camera_type)
+        if self.Camera_obj.type =="MOT" or "tweezer":
+            exposure = max(shot_globals.bm_exposure_time, 50e-6)
+        if self.Camera_obj.type == "kinetix":
+            exposure = max(shot_globals.bm_exposure_time, 1e-3)
+        self.Camera_obj.expose(t, exposure)
 
-        if shot_globals.do_tweezer_camera:
-            devices.manta419b_tweezer.expose(
-                'manta419b',
-                t,
-                'atoms',
-                exposure_time=max(exposure, 50e-6),
-            )
-
-            # send a trigger to a local manta camera: (mot camera or blue laser
-            # camera)
-            devices.mot_camera_trigger.go_high(t)
-            devices.mot_camera_trigger.go_low(t + shot_globals.bm_exposure_time)
-
-        if shot_globals.do_kinetix_camera:
-            devices.kinetix.expose(
-                'Kinetix',
-                t,
-                'atoms',
-                exposure_time=max(exposure, 1e-3),
-            )
-            print('t after exposure', t)
-            print('exposure time', max(exposure, 1e-3))
-
-        t += exposure_time
-
+        # Closes the aom and the specified shutters
+        t += exposure
         self.D2Lasers_obj.mot_aom_off(t)
-
         if close_shutter:
             if shot_globals.do_mot_beams_during_imaging:
                  self.D2Lasers_obj.close_mot_shutters(t, label=shot_globals.mot_beam_imaging_label)
             if shot_globals.do_img_beams_during_imaging:
                 self.D2Lasers_obj.close_img_shutters(t, label=shot_globals.img_beam_imaging_label)
         return t
+
+    def do_molasses_in_situ_sequence(self, t, reset_mot = False):
+        # MOT loading time 500 ms
+        mot_load_dur = 0.5
+
+        t += CONST_SHUTTER_TURN_ON_TIME
+
+        t = self.do_mot(t, mot_load_dur, hold_shutter_open=True)
+
+        t = self.do_molasses(t, shot_globals.bm_time, close_shutter=False)
+
+        t = self.do_molasses_dipole_trap_imaging(t, close_shutter=True)
+
+        # Turn off MOT for taking background images
+        t += 1e-1
+
+        t += CONST_TA_VCO_RAMP_TIME
+        t = self.do_molasses_dipole_trap_imaging(t, close_shutter=False)
+        t += 1e-2
+
+        if reset_mot:
+            t = self.reset_mot(t)
 
     def do_kinetix_imaging(self, t, shot_number):
         self.D2Lasers_obj.open_ta_shutter(t)
@@ -717,15 +738,11 @@ class MOTSequence:
                                                     "for the case?")
 
         #Replace with camera object
+        self.Camera_obj.set_type("kinetix")
         if shot_globals.do_kinetix_camera:
-            devices.kinetix.expose(
-                'Kinetix',
-                t,
-                'atoms',
-                exposure_time=max(shot_globals.img_exposure_time, 1e-3),
-            )
-
-            t += shot_globals.img_exposure_time
+            exposure = max(shot_globals.img_exposure_time, 1e-3)
+            self.Camera_obj.expose(t, exposure)
+            t += exposure
 
         self.D2Lasers_obj.mot_aom_off(t)
 
