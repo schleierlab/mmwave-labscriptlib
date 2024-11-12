@@ -76,6 +76,7 @@ class D2Lasers:
         elif label == "xy":
             devices.mot_xy_shutter.open(t)
         else:
+            print("opening both mot shutters at t = ", t)
             devices.mot_z_shutter.open(t)
             devices.mot_xy_shutter.open(t)
 
@@ -88,6 +89,7 @@ class D2Lasers:
         elif label == "xy":
             devices.mot_xy_shutter.close(t)
         else:
+            print("closing both mot shutters at t = ", t)
             devices.mot_z_shutter.close(t)
             devices.mot_xy_shutter.close(t)
 
@@ -191,7 +193,6 @@ class D2Lasers:
 
         return t
 
-
     def repump_aom_pulse(self, t, dur, repump_power):
         """Set AOMs to do a repump pulse, no shutter action"""
         self.repump_aom_on(t, repump_power)
@@ -199,7 +200,6 @@ class D2Lasers:
         self.repump_aom_off(t)
 
         return t
-
 
     def do_ta_pulse(self, t, dur, ta_power, hold_shutter_open=False):
         self.ta_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
@@ -211,7 +211,6 @@ class D2Lasers:
             self.ta_aom_on(t, 1)
 
         return t
-
 
     def do_repump_pulse(self, t, dur, repump_power, hold_shutter_open=False):
         self.repump_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
@@ -228,9 +227,11 @@ class D2Lasers:
         self.open_mot_shutters(t, label)
         _ = self.do_ta_pulse(t, dur, ta_power, hold_shutter_open)
         _ = self.do_repump_pulse(t, dur, repump_power, hold_shutter_open)
+        print("do_mot_pulse before t += dur, t = ", t, "dur = ", dur)
         t += dur
-        print("Hold shutter open = ", hold_shutter_open)
+        print("Hold shutter open = ", hold_shutter_open, "t = ", t)
         if not hold_shutter_open:
+            print("Inside hold open", hold_shutter_open, "t = ", t)
             self.close_mot_shutters(t)
             t += CONST_SHUTTER_TURN_OFF_TIME
         return t
@@ -321,7 +322,7 @@ class BField:
         devices.y_coil_current.ramp(
             t_y_coil,
             duration=ramp_dur,
-            initial=shot_globals.mot_y_coil_voltage,
+            initial=self.bias_y_voltage,
             final=biasy_calib(B_field_vector[1]),  # 0 mG
             samplerate=1e5,
         )
@@ -329,7 +330,7 @@ class BField:
         devices.z_coil_current.ramp(
             t_z_coil,
             duration=ramp_dur,
-            initial=shot_globals.mot_z_coil_voltage,
+            initial=self.bias_z_voltage,
             final=biasz_calib(B_field_vector[2]),  # 0 mG
             samplerate=1e5,
         )
@@ -411,17 +412,18 @@ class MOTSequence:
             t,
             'atoms',
             exposure_time=shot_globals.mot_exposure_time)
-
-        t = self.D2Lasers_obj.do_mot_pulse(t, shot_globals.img_exposure_time,
-                        shot_globals.img_ta_power, shot_globals.img_repump_power, hold_shutter_open=hold_shutter_open)
+        print("before doing a MOT pulse for image t = ", t)
+        t = self.D2Lasers_obj.do_mot_pulse(t, shot_globals.mot_exposure_time,
+                        shot_globals.mot_ta_power, shot_globals.mot_repump_power, hold_shutter_open=hold_shutter_open)
 
         return t
 
     def do_mot_in_situ_sequence(self, t):
         print("Running do_mot_in_situ_check")
 
+        print("MOT coils = ", self.BField_obj.mot_coils_on)
         # MOT loading time 500 ms
-        mot_load_dur = 0.5 # 0.5
+        mot_load_dur = 2
 
         t += CONST_SHUTTER_TURN_ON_TIME
 
