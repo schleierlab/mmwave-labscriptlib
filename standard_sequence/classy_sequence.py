@@ -529,9 +529,7 @@ class MOTSequence:
         print("MOT coils = ", self.BField_obj.mot_coils_on)
         # MOT loading time 500 ms
         mot_load_dur = 0.5
-
         t += CONST_SHUTTER_TURN_ON_TIME
-
         t = self.do_mot(t, mot_load_dur, hold_shutter_open=True)
 
         t = self.image_mot(t)
@@ -703,6 +701,31 @@ class MOTSequence:
         if reset_mot:
             t = self.reset_mot(t)
 
+        return t
+
+    def do_molasses_tof_sequence(self, t, reset_mot = False):
+
+        mot_load_dur = 0.5
+        t += CONST_SHUTTER_TURN_ON_TIME
+
+        t = self.do_mot(t, mot_load_dur, hold_shutter_open=True)
+
+        t = self.do_molasses(t, shot_globals.bm_time, close_shutter=True)
+
+        assert shot_globals.bm_tof_imaging_delay > CONST_MIN_SHUTTER_OFF_TIME, "time of flight too short for shutter"
+        t += shot_globals.bm_tof_imaging_delay
+        t = self.do_molasses_dipole_trap_imaging(self, t, close_shutter=True)
+
+        # Turn off MOT for taking background images
+        t += 1e-1
+
+        t = self.do_molasses_dipole_trap_imaging(self, t, close_shutter=True)
+
+        t += 1e-2
+        if reset_mot:
+            t = self.reset_mot(t)
+
+
     def do_kinetix_imaging(self, t, shot_number):
         self.D2Lasers_obj.open_ta_shutter(t)
         self.D2Lasers_obj.open_repump_shutter(t)
@@ -790,6 +813,8 @@ class DiagnosticSequence(RydSequence):
 
     def __init__(self):
         super(DiagnosticSequence, self).__init__()
+
+
 
 #sequences functions without classes
 #-------------------------------------------------------------------------------
