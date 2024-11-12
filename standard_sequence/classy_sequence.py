@@ -464,8 +464,6 @@ class MOTSequence:
 
         return t
 
-
-
     def image_mot(self, t, hold_shutter_open=False):
         # Move to on resonance, make sure AOM is off
         self.D2Lasers_obj.ramp_ta_freq(t, CONST_TA_VCO_RAMP_TIME, ta_freq_calib(0))
@@ -497,6 +495,35 @@ class MOTSequence:
         t += CONST_SHUTTER_TURN_ON_TIME
 
         t = self.do_mot(t, mot_load_dur, hold_shutter_open=True)
+
+        t = self.image_mot(t)
+        # Shutter does not need to be held open
+
+        # Wait until the MOT disappear for background image
+        t += 0.1
+        t = self.image_mot(t)
+
+        # Reset laser frequency so lasers do not jump frequency and come unlocked
+        t = self.D2Lasers_obj.reset_to_mot_freq(t)
+
+        if reset_mot:
+            t = self.reset_mot(t)
+
+        return t
+
+    def do_mot_tof_sequence(self, t, reset_mot = False):
+        print("Running do_mot_in_situ_check")
+
+        print("MOT coils = ", self.BField_obj.mot_coils_on)
+        # MOT loading time 500 ms
+        mot_load_dur = 0.5
+
+        t += CONST_SHUTTER_TURN_ON_TIME
+
+        t = self.do_mot(t, mot_load_dur, hold_shutter_open=True)
+
+        assert shot_globals.mot_tof_imaging_delay > CONST_MIN_SHUTTER_OFF_TIME, "time of flight too short for shutter"
+        t += shot_globals.mot_tof_imaging_delay
 
         t = self.image_mot(t)
         # Shutter does not need to be held open
@@ -3781,7 +3808,7 @@ if __name__ == "__main__":
     if shot_globals.do_mot_in_situ_check:
         #t = do_mot_in_situ_check(t)
         MOTSeq_obj = MOTSequence(t)
-        t = MOTSeq_obj.do_mot_in_situ_sequence(t, reset_mot = False)
+        t = MOTSeq_obj.do_mot_in_situ_sequence(t, reset_mot = True)
 
     if shot_globals.do_mot_tof_check:
         t = do_mot_tof_check(t)
