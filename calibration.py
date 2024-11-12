@@ -43,15 +43,15 @@ def ta_freq_calib(detuning_mhz):
     # ]))
 
     # 2024/01/04
-    f = np.poly1d(np.array([1.69904275e-15,
-                            1.86873771e-12,
-                            6.70317726e-10,
-                            2.33845162e-08,
-                            -1.52527834e-05,
-                            -1.44239092e-02,
-                            1.70416960e+00]))
+    f = np.poly1d(np.array([1.29077826e-15,
+                            1.38450146e-12,
+                            4.77126509e-10,
+                            -1.66416905e-09,
+                            -1.31919006e-05,
+                            -1.39610019e-02,
+                            1.67363876e+00]))
 
-    off_set_freq = -6 #MHz measued using 0.1V ta AOM atom imaging response
+    off_set_freq = 10 # -6 # MHz measued using 0.1V ta AOM atom imaging response
 
     return f(detuning_mhz + off_set_freq)
 
@@ -87,32 +87,60 @@ def generate_ta_freq_calib_coeff():
     # beat note freq in MHz
     # Measured with frequency counter
 
+    # 20241111
     beat_note = np.array([
-        262.38,
-        242.62,
-        203.37,
-        177.11,
-        134.74,
-        273.12,
-        277.10,
-        298.82,
-        314.28,
-        351.59,
-        391.71,
-        428.94,
-        461.18,
-        493.07,
-        520.23,
-        546.27,
-        570.48,
-        593.53,
-        614.82,
-        634.50,
-        653.20,
-        670.52,
-        686.55,
-        701.72
+       264.8,
+       245.1,
+       204.5,
+       176.5,
+       138.06,
+       275.8,
+       279.8,
+       301.8,
+       317.8,
+       355.7,
+       394.8,
+       430.9,
+       462.4,
+       493.3,
+       520.5,
+       546,
+       569.9,
+       592.6,
+       613.7,
+       632.8,
+       651,
+       668.1,
+       684.4,
+       699.3,
     ])
+
+    # beat_note = np.array([
+    #     262.38,
+    #     242.62,
+    #     203.37,
+    #     177.11,
+    #     134.74,
+    #     273.12,
+    #     277.10,
+    #     298.82,
+    #     314.28,
+    #     351.59,
+    #     391.71,
+    #     428.94,
+    #     461.18,
+    #     493.07,
+    #     520.23,
+    #     546.27,
+    #     570.48,
+    #     593.53,
+    #     614.82,
+    #     634.50,
+    #     653.20,
+    #     670.52,
+    #     686.55,
+    #     701.72
+    # ])
     # beat_note = np.array([
     #     263.60,
     #     240.09,
@@ -355,18 +383,18 @@ def mot_y_repump_calib(power):
 
 if __name__ == '__main__':
 
-    # generate_ta_freq_calib_coeff()
-    # print(ta_freq_calib(-13))
+    generate_ta_freq_calib_coeff()
+    print(ta_freq_calib(-13))
 
     # generate_repump_freq_calib_coeff()
     # print(repump_freq_calib(0))
 
-    x_lst = np.arange(0, 2.2, 0.01) #optical power
-    y_lst = []
-    for i in x_lst:
-        aom_vol = img_x_ta_calib(i)
-        y_lst.append()
-    imgy = img_y_ta_calib(1.13)
-    imgz = img_z_ta_calib(1.26)
+    # x_lst = np.arange(0, 2.2, 0.01) #optical power
+    # y_lst = []
+    # for i in x_lst:
+    #     aom_vol = img_x_ta_calib(i)
+    #     y_lst.append()
+    # imgy = img_y_ta_calib(1.13)
+    # imgz = img_z_ta_calib(1.26)
 
-    print(imgx, imgy, imgz, '1V')
+    # print(imgx, imgy, imgz, '1V')

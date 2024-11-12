@@ -478,7 +478,7 @@ def do_mot_imaging(t, *, ta_last_detuning, use_shutter=True):
     )  # ramp to imaging
 
     # set ta and repump to full power
-    mot_aom_on(t, ta_const=0.1, repump_const=1)
+    mot_aom_on(t, ta_const=0.05, repump_const=1)
     # devices.ta_aom_analog.constant(t, 1)
     # devices.repump_aom_analog.constant(t, 1)
     # devices.ta_aom_digital.go_high(t)
