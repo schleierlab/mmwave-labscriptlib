@@ -487,9 +487,10 @@
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.BField.ramp_B_field">[docs]</a>
     <span class="k">def</span> <span class="nf">ramp_B_field</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">B_field_vector</span><span class="p">):</span>
         <span class="c1">#B_field_vector should be a tuple of the form (x,y,z)</span>
-        <span class="n">t_x_coil</span><span class="p">,</span> <span class="n">t_y_coil</span><span class="p">,</span> <span class="n">t_z_coil</span> <span class="o">=</span> <span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_x_coil_voltage</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">),</span>
-                                        <span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_y_coil_voltage</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">),</span>
-                                        <span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_z_coil_voltage</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="c1"># Need to start the ramp earlier if the voltage changes sign</span>
+        <span class="n">t_x_coil</span><span class="p">,</span> <span class="n">t_y_coil</span><span class="p">,</span> <span class="n">t_z_coil</span> <span class="o">=</span> <span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_x_voltage</span> <span class="o">*</span> <span class="n">biasx_calib</span><span class="p">(</span><span class="n">B_field_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">),</span>
+                                        <span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_y_voltage</span> <span class="o">*</span> <span class="n">biasy_calib</span><span class="p">(</span><span class="n">B_field_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">),</span>
+                                        <span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_z_voltage</span> <span class="o">*</span> <span class="n">biasz_calib</span><span class="p">(</span><span class="n">B_field_vector</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">))</span>
 
         <span class="n">ramp_dur</span> <span class="o">=</span> <span class="mf">100e-6</span>
 
@@ -530,9 +531,10 @@
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.BField.ramp_B_field_voltage">[docs]</a>
     <span class="k">def</span> <span class="nf">ramp_B_field_voltage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">voltage_vector</span><span class="p">):</span>
         <span class="c1">#B_field_vector should be a tuple of the form (x,y,z)</span>
-        <span class="n">t_x_coil</span><span class="p">,</span> <span class="n">t_y_coil</span><span class="p">,</span> <span class="n">t_z_coil</span> <span class="o">=</span> <span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_x_coil_voltage</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">),</span>
-                                        <span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_y_coil_voltage</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">),</span>
-                                        <span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_z_coil_voltage</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="c1"># Need to start the ramp earlier if the voltage changes sign</span>
+        <span class="n">t_x_coil</span><span class="p">,</span> <span class="n">t_y_coil</span><span class="p">,</span> <span class="n">t_z_coil</span> <span class="o">=</span> <span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_x_voltage</span> <span class="o">*</span> <span class="n">voltage_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">),</span>
+                                        <span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_y_voltage</span> <span class="o">*</span> <span class="n">voltage_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">),</span>
+                                        <span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_z_voltage</span> <span class="o">*</span> <span class="n">voltage_vector</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">))</span>
 
         <span class="n">ramp_dur</span> <span class="o">=</span> <span class="mf">100e-6</span>
 
@@ -598,6 +600,50 @@
 </div>
 
 
+<div class="viewcode-block" id="Camera">
+<a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.Camera">[docs]</a>
+<span class="k">class</span> <span class="nc">Camera</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="Camera.set_type">
+<a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.Camera.set_type">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+        <span class="c1"># type = &quot;MOT&quot; or &quot;tweezer&quot; or &quot;kinetix&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span></div>
+
+
+<div class="viewcode-block" id="Camera.expose">
+<a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.Camera.expose">[docs]</a>
+    <span class="k">def</span> <span class="nf">expose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">exposure_time</span><span class="p">,</span> <span class="n">trigger_local_manta</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">trigger_local_manta</span><span class="p">:</span>
+            <span class="n">devices</span><span class="o">.</span><span class="n">mot_camera_trigger</span><span class="o">.</span><span class="n">go_high</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+            <span class="n">devices</span><span class="o">.</span><span class="n">mot_camera_trigger</span><span class="o">.</span><span class="n">go_low</span><span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="n">exposure_time</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;MOT&quot;</span><span class="p">:</span>
+            <span class="n">devices</span><span class="o">.</span><span class="n">manta419b_mot</span><span class="o">.</span><span class="n">expose</span><span class="p">(</span>
+                <span class="s1">&#39;manta419b&#39;</span><span class="p">,</span>
+                <span class="n">t</span><span class="p">,</span>
+                <span class="s1">&#39;atoms&#39;</span><span class="p">,</span>
+                <span class="n">exposure_time</span> <span class="o">=</span> <span class="n">exposure_time</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;tweezer&quot;</span><span class="p">:</span>
+            <span class="n">devices</span><span class="o">.</span><span class="n">manta419b_tweezer</span><span class="o">.</span><span class="n">expose</span><span class="p">(</span>
+                <span class="s1">&#39;manta419b&#39;</span><span class="p">,</span>
+                <span class="n">t</span><span class="p">,</span>
+                <span class="s1">&#39;atoms&#39;</span><span class="p">,</span>
+                <span class="n">exposure_time</span><span class="o">=</span><span class="n">exposure_time</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;kinetix&quot;</span><span class="p">:</span>
+            <span class="n">devices</span><span class="o">.</span><span class="n">kinetix</span><span class="o">.</span><span class="n">expose</span><span class="p">(</span>
+                <span class="s1">&#39;Kinetix&#39;</span><span class="p">,</span>
+                <span class="n">t</span><span class="p">,</span>
+                <span class="s1">&#39;atoms&#39;</span><span class="p">,</span>
+                <span class="n">exposure_time</span><span class="o">=</span><span class="n">exposure_time</span><span class="p">,</span>
+            <span class="p">)</span></div>
+</div>
 
 
 <div class="viewcode-block" id="EField">
@@ -620,6 +666,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span> <span class="o">=</span> <span class="n">BField</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Microwave_obj</span> <span class="o">=</span> <span class="n">Microwave</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">UVLamps_obj</span> <span class="o">=</span> <span class="n">UVLamps</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span> <span class="o">=</span> <span class="n">Camera</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
 <div class="viewcode-block" id="MOTSequence.do_mot">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.do_mot">[docs]</a>
@@ -686,9 +733,7 @@
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;MOT coils = &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">mot_coils_on</span><span class="p">)</span>
         <span class="c1"># MOT loading time 500 ms</span>
         <span class="n">mot_load_dur</span> <span class="o">=</span> <span class="mf">0.5</span>
-
         <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_SHUTTER_TURN_ON_TIME</span>
-
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_mot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">mot_load_dur</span><span class="p">,</span> <span class="n">hold_shutter_open</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_mot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
@@ -739,6 +784,7 @@
         <span class="k">return</span> <span class="n">t</span></div>
 
 
+    <span class="c1"># Molasses sequences</span>
 <div class="viewcode-block" id="MOTSequence.ramp_to_molasses">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.ramp_to_molasses">[docs]</a>
     <span class="k">def</span> <span class="nf">ramp_to_molasses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">ta_bm_detuning</span><span class="p">,</span> <span class="n">repump_bm_detuning</span><span class="p">):</span>
@@ -792,7 +838,115 @@
             <span class="k">if</span> <span class="n">close_shutter</span><span class="p">:</span>
                  <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">close_img_shutters</span><span class="p">(</span><span class="n">t</span><span class="o">+</span><span class="n">dur</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">mot_aom_off</span><span class="p">(</span><span class="n">t</span><span class="o">+</span><span class="n">dur</span><span class="p">)</span></div>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">+</span><span class="n">dur</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">mot_aom_off</span><span class="p">(</span><span class="n">t</span><span class="o">+</span><span class="n">dur</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">t</span></div>
+
+
+    <span class="c1">#Which arguments are actually necessary to pass or even set as a defualt?</span>
+    <span class="c1">#How many of them can just be set to globals?</span>
+<div class="viewcode-block" id="MOTSequence.do_molasses_dipole_trap_imaging">
+<a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.do_molasses_dipole_trap_imaging">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_molasses_dipole_trap_imaging</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">img_ta_detuning</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">img_repump_detuning</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">img_ta_power</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">img_repump_power</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">do_repump</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">close_shutter</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="c1"># define quantization axis (Whut?? This is zeroing the field, there&#39;s not quantization axis)</span>
+
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_B_field</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+
+        <span class="c1">#Is this section needed?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">open_ta_shutter</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">do_repump</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">open_repump_shutter</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">close_repump_shutter</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="c1"># Ramp to imaging frequencies</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_ta_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">CONST_TA_VCO_RAMP_TIME</span><span class="p">,</span> <span class="n">ta_freq_calib</span><span class="p">(</span><span class="n">img_ta_detuning</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_repump_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">CONST_TA_VCO_RAMP_TIME</span><span class="p">,</span> <span class="n">repump_freq_calib</span><span class="p">(</span><span class="n">img_repump_detuning</span><span class="p">))</span>
+        <span class="n">t</span><span class="o">+=</span><span class="n">CONST_TA_VCO_RAMP_TIME</span>
+
+        <span class="c1"># Opening the correct shutters</span>
+        <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_mot_beams_during_imaging</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_molasses_in_situ_check</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">close_img_shutters</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">open_mot_shutters</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_beam_imaging_label</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_img_beams_during_imaging</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_molasses_in_situ_check</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">close_mot_shutters</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">open_img_shutters</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">img_beam_imaging_label</span><span class="p">)</span>
+            <span class="n">t</span><span class="o">+=</span><span class="n">CONST_SHUTTER_TURN_OFF_TIME</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">mot_aom_on</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">img_ta_power</span><span class="p">,</span> <span class="n">img_repump_power</span><span class="p">)</span>
+
+        <span class="c1"># TODO: include camera type global</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span><span class="o">.</span><span class="n">set_type</span><span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">camera_type</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span><span class="s2">&quot;MOT&quot;</span> <span class="ow">or</span> <span class="s2">&quot;tweezer&quot;</span><span class="p">:</span>
+            <span class="n">exposure</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_exposure_time</span><span class="p">,</span> <span class="mf">50e-6</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;kinetix&quot;</span><span class="p">:</span>
+            <span class="n">exposure</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_exposure_time</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span><span class="o">.</span><span class="n">expose</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">exposure</span><span class="p">)</span>
+
+        <span class="c1"># Closes the aom and the specified shutters</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">exposure</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">mot_aom_off</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">close_shutter</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_mot_beams_during_imaging</span><span class="p">:</span>
+                 <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">close_mot_shutters</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_beam_imaging_label</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_img_beams_during_imaging</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">close_img_shutters</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">img_beam_imaging_label</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">t</span></div>
+
+
+<div class="viewcode-block" id="MOTSequence.do_molasses_in_situ_sequence">
+<a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.do_molasses_in_situ_sequence">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_molasses_in_situ_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="c1"># MOT loading time 500 ms</span>
+        <span class="n">mot_load_dur</span> <span class="o">=</span> <span class="mf">0.5</span>
+
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_SHUTTER_TURN_ON_TIME</span>
+
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_mot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">mot_load_dur</span><span class="p">,</span> <span class="n">hold_shutter_open</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_molasses</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_time</span><span class="p">,</span> <span class="n">close_shutter</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_molasses_dipole_trap_imaging</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">close_shutter</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Turn off MOT for taking background images</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="mf">1e-1</span>
+
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_TA_VCO_RAMP_TIME</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_molasses_dipole_trap_imaging</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">close_shutter</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="mf">1e-2</span>
+
+        <span class="k">if</span> <span class="n">reset_mot</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reset_mot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">t</span></div>
+
+
+<div class="viewcode-block" id="MOTSequence.do_molasses_tof_sequence">
+<a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.do_molasses_tof_sequence">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_molasses_tof_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+
+        <span class="n">mot_load_dur</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_SHUTTER_TURN_ON_TIME</span>
+
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_mot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">mot_load_dur</span><span class="p">,</span> <span class="n">hold_shutter_open</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_molasses</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_time</span><span class="p">,</span> <span class="n">close_shutter</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_tof_imaging_delay</span> <span class="o">&gt;</span> <span class="n">CONST_MIN_SHUTTER_OFF_TIME</span><span class="p">,</span> <span class="s2">&quot;time of flight too short for shutter&quot;</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_tof_imaging_delay</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_molasses_dipole_trap_imaging</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">close_shutter</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Turn off MOT for taking background images</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="mf">1e-1</span>
+
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_molasses_dipole_trap_imaging</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">close_shutter</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">t</span> <span class="o">+=</span> <span class="mf">1e-2</span>
+        <span class="k">if</span> <span class="n">reset_mot</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reset_mot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></div>
+
 
 
 <div class="viewcode-block" id="MOTSequence.do_kinetix_imaging">
@@ -832,15 +986,11 @@
                                                     <span class="s2">&quot;for the case?&quot;</span><span class="p">)</span>
 
         <span class="c1">#Replace with camera object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span><span class="o">.</span><span class="n">set_type</span><span class="p">(</span><span class="s2">&quot;kinetix&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_kinetix_camera</span><span class="p">:</span>
-            <span class="n">devices</span><span class="o">.</span><span class="n">kinetix</span><span class="o">.</span><span class="n">expose</span><span class="p">(</span>
-                <span class="s1">&#39;Kinetix&#39;</span><span class="p">,</span>
-                <span class="n">t</span><span class="p">,</span>
-                <span class="s1">&#39;atoms&#39;</span><span class="p">,</span>
-                <span class="n">exposure_time</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">img_exposure_time</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">),</span>
-            <span class="p">)</span>
-
-            <span class="n">t</span> <span class="o">+=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">img_exposure_time</span>
+            <span class="n">exposure</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">img_exposure_time</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span><span class="o">.</span><span class="n">expose</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">exposure</span><span class="p">)</span>
+            <span class="n">t</span> <span class="o">+=</span> <span class="n">exposure</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">mot_aom_off</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
@@ -907,6 +1057,8 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">DiagnosticSequence</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span></div>
+
+
 
 
 <span class="c1">#sequences functions without classes</span>
