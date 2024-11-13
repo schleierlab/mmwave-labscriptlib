@@ -157,6 +157,7 @@ class D2Lasers:
         self.repump_power = const
 
     def ramp_ta_aom(self, t, dur, final_power):
+
         devices.ta_aom_analog.ramp(
             t,
             duration=dur,
