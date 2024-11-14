@@ -478,7 +478,7 @@ def do_mot_imaging(t, *, ta_last_detuning, use_shutter=True):
     )  # ramp to imaging
 
     # set ta and repump to full power
-    mot_aom_on(t, ta_const=0.05, repump_const=1)
+    mot_aom_on(t, ta_const=shot_globals.mot_ta_image_power, repump_const=1)
     # devices.ta_aom_analog.constant(t, 1)
     # devices.repump_aom_analog.constant(t, 1)
     # devices.ta_aom_digital.go_high(t)
@@ -998,7 +998,7 @@ def do_imaging(t, shot_number, ta_last_detuning, repump_last_detuning, exposure 
 
 
 def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'microwave'):
-    ta_pumping_detuning = -251 # MHz 4->4 tansition
+    ta_pumping_detuning = shot_globals.op_ta_pumping_detuning #-251 # MHz 4->4 tansition
     repump_depumping_detuning = -201.24 # MHz 3->3 transition
     repump_pumping_detuning = shot_globals.op_repump_pumping_detuning
     ta_vco_stable_t = 1e-4 # stable time waited for lock
@@ -1247,6 +1247,7 @@ def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'micr
         devices.ta_aom_analog.constant(t - ta_shutter_off_t, 0)
         devices.mot_coil_current_ctrl.constant(t, 0)
 
+
         if  do_comparison_with_optical_pump_MOT == True:
             devices.ta_shutter.close(t)
         else:
@@ -1298,15 +1299,24 @@ def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'micr
             repump_last_detuning = repump_pumping_detuning
 
             t += max(ta_vco_ramp_t, 100e-6, shot_globals.op_ramp_delay)
-            if shot_globals.do_op_sigma_plus_with_repumper_only == True:
+            if shot_globals.do_depump_pulse_before_pumping:
+                devices.optical_pump_shutter.open(t)
+                devices.ta_shutter.open(t)
+                devices.ta_aom_digital.go_high(t)
+                devices.ta_aom_analog.constant(t, shot_globals.odp_ta_power)
+                t += shot_globals.odp_ta_time
+                devices.ta_aom_digital.go_low(t)
+                devices.ta_aom_analog.constant(t, 0)
+
+            if shot_globals.do_op_sigma_plus_with_repumper_only:
                 devices.ta_shutter.close(t)
+                t += shutter_turn_off_t
             else:
                 devices.ta_shutter.open(t)
                 devices.ta_aom_digital.go_high(t)
                 devices.ta_aom_analog.constant(t, shot_globals.op_ta_power)
 
         devices.optical_pump_shutter.open(t)
-        # devices.ta_aom_analog.constant(t, shot_globals.op_ta_power)
         devices.repump_shutter.open(t)
         devices.repump_aom_digital.go_high(t)
         devices.repump_aom_analog.constant(t, shot_globals.op_repump_power)

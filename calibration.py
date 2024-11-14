@@ -43,24 +43,24 @@ def ta_freq_calib(detuning_mhz):
     # ]))
 
     # 2024/01/04
-    f = np.poly1d(np.array([1.69904275e-15,
-                            1.86873771e-12,
-                            6.70317726e-10,
-                            2.33845162e-08,
-                            -1.52527834e-05,
-                            -1.44239092e-02,
-                            1.70416960e+00]))
+    # f = np.poly1d(np.array([1.69904275e-15,
+    #                         1.86873771e-12,
+    #                         6.70317726e-10,
+    #                         2.33845162e-08,
+    #                         -1.52527834e-05,
+    #                         -1.44239092e-02,
+    #                         1.70416960e+00]))
 
     # 2024/11/11
-    # f = np.poly1d(np.array([1.29077826e-15,
-    #                         1.38450146e-12,
-    #                         4.77126509e-10,
-    #                         -1.66416905e-09,
-    #                         -1.31919006e-05,
-    #                         -1.39610019e-02,
-    #                         1.67363876e+00]))
+    f = np.poly1d(np.array([1.29077826e-15,
+                            1.38450146e-12,
+                            4.77126509e-10,
+                            -1.66416905e-09,
+                            -1.31919006e-05,
+                            -1.39610019e-02,
+                            1.67363876e+00]))
 
-    off_set_freq = -6 #10 # -6 # MHz measued using 0.1V ta AOM atom imaging response
+    off_set_freq = 3 #10 #-6 # MHz measued using 0.1V ta AOM atom imaging response
 
     return f(detuning_mhz + off_set_freq)
 
@@ -97,59 +97,60 @@ def generate_ta_freq_calib_coeff():
     # Measured with frequency counter
 
     # 20241111
+    beat_note = np.array([
+       264.8,
+       245.1,
+       204.5,
+       176.5,
+       138.06,
+       275.8,
+       279.8,
+       301.8,
+       317.8,
+       355.7,
+       394.8,
+       430.9,
+       462.4,
+       493.3,
+       520.5,
+       546,
+       569.9,
+       592.6,
+       613.7,
+       632.8,
+       651,
+       668.1,
+       684.4,
+       699.3,
+    ])
+
     # beat_note = np.array([
-    #    264.8,
-    #    245.1,
-    #    204.5,
-    #    176.5,
-    #    138.06,
-    #    275.8,
-    #    279.8,
-    #    301.8,
-    #    317.8,
-    #    355.7,
-    #    394.8,
-    #    430.9,
-    #    462.4,
-    #    493.3,
-    #    520.5,
-    #    546,
-    #    569.9,
-    #    592.6,
-    #    613.7,
-    #    632.8,
-    #    651,
-    #    668.1,
-    #    684.4,
-    #    699.3,
+    #     262.38,
+    #     242.62,
+    #     203.37,
+    #     177.11,
+    #     134.74,
+    #     273.12,
+    #     277.10,
+    #     298.82,
+    #     314.28,
+    #     351.59,
+    #     391.71,
+    #     428.94,
+    #     461.18,
+    #     493.07,
+    #     520.23,
+    #     546.27,
+    #     570.48,
+    #     593.53,
+    #     614.82,
+    #     634.50,
+    #     653.20,
+    #     670.52,
+    #     686.55,
+    #     701.72
     # ])
 
-    beat_note = np.array([
-        262.38,
-        242.62,
-        203.37,
-        177.11,
-        134.74,
-        273.12,
-        277.10,
-        298.82,
-        314.28,
-        351.59,
-        391.71,
-        428.94,
-        461.18,
-        493.07,
-        520.23,
-        546.27,
-        570.48,
-        593.53,
-        614.82,
-        634.50,
-        653.20,
-        670.52,
-        686.55,
-        701.72
-    ])
     # beat_note = np.array([
     #     263.60,
     #     240.09,
@@ -189,8 +190,17 @@ def generate_ta_freq_calib_coeff():
 
 def repump_freq_calib(detuning_mhz):
     # this detuning is relative to F = 3 -> F' = 4 tranisition
-    f = np.poly1d(np.array([ 3.05390232e-14,  2.18562217e-11,  5.45062179e-09,  4.01536932e-07,
-       -3.64452729e-05, -3.21551810e-02,  2.24658348e+00]))
+    # f = np.poly1d(np.array([ 3.05390232e-14,  2.18562217e-11,  5.45062179e-09,  4.01536932e-07,
+    #    -3.64452729e-05, -3.21551810e-02,  2.24658348e+00]))
+
+    #20241112
+    f = np.poly1d(np.array([2.93833235e-14,
+                            2.12699651e-11,
+                            5.39636666e-09,
+                            4.15169376e-07,
+                            -3.41448762e-05,
+                            -3.21482962e-02,
+                            2.21019254e+00]))
 
 
     if (detuning_mhz < -275 or detuning_mhz > 76):
@@ -204,19 +214,35 @@ def repump_freq_calib(detuning_mhz):
 def generate_repump_freq_calib_coeff():
     repump_voltage = np.array([2.3,2,1,0,3,4,5,6,7,8,9,10]) # Volts
 
+    # beat_note = np.array([
+    #     399.89,
+    #     389.85,
+    #     362.11,
+    #     321.92,
+    #     424.26,
+    #     459.62,
+    #     496.39,
+    #     534.89,
+    #     574.27,
+    #     610.80,
+    #     643.95,
+    #     674.44
+    # ]) # Measured with frequency counter
+
+    #20241111
     beat_note = np.array([
-        399.89,
-        389.85,
-        362.11,
-        321.92,
-        424.26,
-        459.62,
-        496.39,
-        534.89,
-        574.27,
-        610.80,
-        643.95,
-        674.44
+        401.14,
+        390.89,
+        363.12,
+        323.13,
+        425.43,
+        460.75,
+        497.50,
+        536.01,
+        575.29,
+        611.77,
+        644.90,
+        675.40
     ]) # Measured with frequency counter
     repump_frequency = -9.192e3 + 38 - 13 + 80 - (beat_note - 9.486e3) # MHz frequency relative to F = 3 -> F' = 4 transition 13 MHz, 3/5 cross over 38MHz, Switch AOM 80 MHz, 6S1/2 hyperfine splitting -9.192e3, LO = 9.486e3
 
@@ -392,11 +418,11 @@ def mot_y_repump_calib(power):
 
 if __name__ == '__main__':
 
-    generate_ta_freq_calib_coeff()
-    print(ta_freq_calib(-13))
+    # generate_ta_freq_calib_coeff()
+    # print(ta_freq_calib(-13))
 
-    # generate_repump_freq_calib_coeff()
-    # print(repump_freq_calib(0))
+    generate_repump_freq_calib_coeff()
+    print(repump_freq_calib(0))
 
     # x_lst = np.arange(0, 2.2, 0.01) #optical power
     # y_lst = []
