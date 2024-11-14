@@ -203,6 +203,7 @@ class D2Lasers:
         return t
 
     def do_ta_pulse(self, t, dur, ta_power, hold_shutter_open=False):
+        # TODO: Do we want a condition where we don't turn the AOM off before doing the pulse? Might be a usecase for the class variable defining shutter_state
         self.ta_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
         devices.ta_shutter.open(t) # labscript already account for the shutter open time
         t = self.ta_aom_pulse(t, dur, ta_power)
@@ -230,7 +231,7 @@ class D2Lasers:
         _ = self.do_repump_pulse(t, dur, repump_power, hold_shutter_open)
         print("do_mot_pulse before t += dur, t = ", t, "dur = ", dur)
         t += dur
-        print("Hold shutter open = ", hold_shutter_open, "t = ", t)
+        # print("Hold shutter open = ", hold_shutter_open, "t = ", t)
         if not hold_shutter_open:
             print("Inside hold open", hold_shutter_open, "t = ", t)
             self.close_mot_shutters(t)
@@ -427,7 +428,7 @@ class Camera:
         self.type = None
 
     def set_type(self, type):
-        # type = "MOT" or "tweezer" or "kinetix"
+        # type = "MOT_manta" or "tweezer_manta" or "kinetix"
         self.type = type
 
     def expose(self, t, exposure_time, trigger_local_manta = False):
@@ -436,14 +437,14 @@ class Camera:
             devices.mot_camera_trigger.go_high(t)
             devices.mot_camera_trigger.go_low(t + exposure_time)
 
-        if self.type == "MOT":
+        if self.type == "MOT_manta":
             devices.manta419b_mot.expose(
                 'manta419b',
                 t,
                 'atoms',
                 exposure_time = exposure_time)
 
-        if self.type == "tweezer":
+        if self.type == "tweezer_manta":
             devices.manta419b_tweezer.expose(
                 'manta419b',
                 t,
@@ -512,7 +513,7 @@ class MOTSequence:
         if self.BField_obj.mot_coils_on:
             t = self.BField_obj.switch_mot_coils(t)
 
-        #Camera class...?
+        #TODO: replace
         devices.manta419b_mot.expose(
             'manta419b',
             t,
@@ -548,6 +549,7 @@ class MOTSequence:
 
         return t
 
+    # TODO: Needs more experimental debugging. When should the shutter close? What timescales should we expect the MOT to disperse in?
     def do_mot_tof_sequence(self, t, reset_mot = False):
         print("Running do_mot_in_situ_check")
 
@@ -559,7 +561,7 @@ class MOTSequence:
 
         t = self.do_mot(t, mot_load_dur, hold_shutter_open=True)
 
-        assert shot_globals.mot_tof_imaging_delay > CONST_MIN_SHUTTER_OFF_TIME, "time of flight too short for shutter"
+        # assert shot_globals.mot_tof_imaging_delay > CONST_MIN_SHUTTER_OFF_TIME, "time of flight too short for shutter"
         t += shot_globals.mot_tof_imaging_delay
 
         t = self.image_mot(t)
@@ -583,9 +585,6 @@ class MOTSequence:
         self.D2Lasers_obj.ramp_ta_freq(t, 1e-3, ta_bm_detuning)
         self.D2Lasers_obj.ramp_repump_freq(t, 1e-3, repump_bm_detuning)
 
-        self.D2Lasers_obj.ramp_ta_aom(t, 100e-6, shot_globals.bm_ta_power)
-        self.D2Lasers_obj.ramp_repump_aom(t, 100e-6, shot_globals.bm_repump_power)
-
         self.BField_obj.switch_mot_coils(t)
         self.BField_obj.ramp_B_field(t, (0,0,0))
 
@@ -595,7 +594,7 @@ class MOTSequence:
 
         return t
 
-    def do_molasses(self, t, dur, close_shutter=True):
+    def do_molasses(self, t, dur, hold_shutter_open=True):
         assert (shot_globals.do_molasses_img_beam or shot_globals.do_molasses_mot_beam), "either do_molasses_img_beam or do_molasses_mot_beam has to be on"
         #TODO: what does this assert statement mean?
         assert shot_globals.bm_ta_detuning != 0, "bright molasses detuning = 0, did you forget to correct for the new case?"
@@ -604,36 +603,19 @@ class MOTSequence:
         #Should we do this in-sequence?
         self.ramp_to_molasses(t, shot_globals.bm_ta_detuning, shot_globals.bm_repump_detuning)
 
-        self.D2Lasers_obj.open_ta_shutter(t)
-        self.D2Lasers_obj.open_repump_shutter(t)
-
         if shot_globals.do_molasses_mot_beam:
-            self.D2Lasers_obj.open_mot_shutters(t)
-            self.D2Lasers_obj.close_img_shutters(t)
-
-            self.D2Lasers_obj.mot_aom_on(t)
-
-            if close_shutter:
-                self.D2Lasers_obj.close_mot_shutters(t+dur)
+            t = self.D2Lasers_obj.do_mot_pulse(t, dur, shot_globals.bm_ta_power, shot_globals.bm_repump_power, hold_shutter_open = hold_shutter_open)
 
         if shot_globals.do_molasses_img_beam:
-            self.D2Lasers_obj.mot_aom_off(t)
-            self.D2Lasers_obj.close_mot_shutters(t)
-
-            self.D2Lasers_obj.open_img_shutters(t+CONST_SHUTTER_TURN_OFF_TIME)
-            self.D2Lasers_obj.mot_aom_on(t+CONST_SHUTTER_TURN_OFF_TIME)
-
-            if close_shutter:
-                 self.D2Lasers_obj.close_img_shutters(t+dur)
-
-        t = t+dur
-        self.D2Lasers_obj.mot_aom_off(t+dur)
+            _ = self.D2Lasers_obj.close_mot_shutters(t)
+            t += CONST_SHUTTER_TURN_OFF_TIME
+            t = self.D2Lasers_obj.do_img_pulse(t, dur, shot_globals.bm_ta_power, shot_globals.bm_repump_power, hold_shutter_open = hold_shutter_open)
 
         return t
 
     #Which arguments are actually necessary to pass or even set as a defualt?
     #How many of them can just be set to globals?
-    def do_molasses_dipole_trap_imaging(self, t, img_ta_detuning=0, img_repump_detuning=0, img_ta_power=1, img_repump_power=1, do_repump=True, close_shutter=True):
+    def do_molasses_dipole_trap_imaging(self, t, img_ta_detuning=0, img_repump_detuning=0, img_ta_power=1, img_repump_power=1, do_repump=True, hold_shutter_open=True):
         # define quantization axis (Whut?? This is zeroing the field, there's not quantization axis)
 
         _ = self.BField_obj.ramp_B_field(t, (0,0,0))
@@ -652,19 +634,18 @@ class MOTSequence:
 
         # Opening the correct shutters
         if shot_globals.do_mot_beams_during_imaging:
-            if not shot_globals.do_molasses_in_situ_check:
-                self.D2Lasers_obj.close_img_shutters(t)
-            self.D2Lasers_obj.open_mot_shutters(t, label=shot_globals.mot_beam_imaging_label)
+            print("pew pew")
+            _ = self.D2Lasers_obj.do_mot_pulse(t, shot_globals.bm_exposure_time, img_ta_power, img_repump_power, hold_shutter_open = hold_shutter_open, label=shot_globals.imaging_label)
+
+        #If you're trying to do in-situ imaging, you want to image faster than switch shutters allows for, so you can't do imaging beam imaging
         if shot_globals.do_img_beams_during_imaging and not shot_globals.do_molasses_in_situ_check:
-            self.D2Lasers_obj.close_mot_shutters(t)
-            self.D2Lasers_obj.open_img_shutters(t, label=shot_globals.img_beam_imaging_label)
-            t+=CONST_SHUTTER_TURN_OFF_TIME
+            _ = self.D2Lasers_obj.close_mot_shutters(t)
+            t += CONST_SHUTTER_TURN_OFF_TIME
+            _ = self.D2Lasers_obj.do_img_pulse(t, shot_globals.bm_exposure_time, img_ta_power, img_repump_power, hold_shutter_open = hold_shutter_open, label = shot_globals.imaging_label)
 
-        self.D2Lasers_obj.mot_aom_on(t, img_ta_power, img_repump_power)
-
-        # TODO: include camera type global
+        # TODO: ask Lin and Michelle and max() logic and if we always want it there
         self.Camera_obj.set_type(shot_globals.camera_type)
-        if self.Camera_obj.type =="MOT" or "tweezer":
+        if self.Camera_obj.type =="MOT_manta" or "tweezer_manta":
             exposure = max(shot_globals.bm_exposure_time, 50e-6)
         if self.Camera_obj.type == "kinetix":
             exposure = max(shot_globals.bm_exposure_time, 1e-3)
@@ -672,12 +653,7 @@ class MOTSequence:
 
         # Closes the aom and the specified shutters
         t += exposure
-        self.D2Lasers_obj.mot_aom_off(t)
-        if close_shutter:
-            if shot_globals.do_mot_beams_during_imaging:
-                 self.D2Lasers_obj.close_mot_shutters(t, label=shot_globals.mot_beam_imaging_label)
-            if shot_globals.do_img_beams_during_imaging:
-                self.D2Lasers_obj.close_img_shutters(t, label=shot_globals.img_beam_imaging_label)
+
         return t
 
     def do_molasses_in_situ_sequence(self, t, reset_mot = False):
@@ -688,15 +664,15 @@ class MOTSequence:
 
         t = self.do_mot(t, mot_load_dur, hold_shutter_open=True)
 
-        t = self.do_molasses(t, shot_globals.bm_time, close_shutter=False)
+        t = self.do_molasses(t, shot_globals.bm_time, hold_shutter_open=True)
 
-        t = self.do_molasses_dipole_trap_imaging(t, close_shutter=True)
+        t = self.do_molasses_dipole_trap_imaging(t, hold_shutter_open=False)
 
         # Turn off MOT for taking background images
         t += 1e-1
 
         t += CONST_TA_VCO_RAMP_TIME
-        t = self.do_molasses_dipole_trap_imaging(t, close_shutter=False)
+        t = self.do_molasses_dipole_trap_imaging(t, hold_shutter_open=True)
         t += 1e-2
 
         if reset_mot:
@@ -711,22 +687,24 @@ class MOTSequence:
 
         t = self.do_mot(t, mot_load_dur, hold_shutter_open=True)
 
-        t = self.do_molasses(t, shot_globals.bm_time, close_shutter=True)
+        t = self.do_molasses(t, shot_globals.bm_time, hold_shutter_open=False)
 
         assert shot_globals.bm_tof_imaging_delay > CONST_MIN_SHUTTER_OFF_TIME, "time of flight too short for shutter"
         t += shot_globals.bm_tof_imaging_delay
-        t = self.do_molasses_dipole_trap_imaging(self, t, close_shutter=True)
+        t = self.do_molasses_dipole_trap_imaging(t, hold_shutter_open=False)
 
         # Turn off MOT for taking background images
         t += 1e-1
 
-        t = self.do_molasses_dipole_trap_imaging(self, t, close_shutter=True)
+        t = self.do_molasses_dipole_trap_imaging(t, hold_shutter_open=False)
 
         t += 1e-2
         if reset_mot:
             t = self.reset_mot(t)
 
+        return t
 
+    #TODO: refactor this more like the do_molasses_imaging thing above
     def do_kinetix_imaging(self, t, shot_number):
         self.D2Lasers_obj.open_ta_shutter(t)
         self.D2Lasers_obj.open_repump_shutter(t)
@@ -3946,13 +3924,16 @@ if __name__ == "__main__":
         t = MOTSeq_obj.do_mot_in_situ_sequence(t, reset_mot = True)
 
     if shot_globals.do_mot_tof_check:
-        t = do_mot_tof_check(t)
+        MOTSeq_obj = MOTSequence(t)
+        t = MOTSeq_obj.do_mot_tof_sequence(t, reset_mot = True)
 
     if shot_globals.do_molasses_in_situ_check:
-        t = do_molasses_in_situ_check(t)
+        MOTSeq_obj = MOTSequence(t)
+        t = MOTSeq_obj.do_molasses_in_situ_sequence(t, reset_mot = True)
 
     if shot_globals.do_molasses_tof_check:
-        t = do_molasses_tof_check(t)
+        MOTSeq_obj = MOTSequence(t)
+        t = MOTSeq_obj.do_molasses_tof_sequence(t, reset_mot = True)
 
     if shot_globals.do_field_calib_in_molasses_check:
         t = do_field_calib_in_molasses_check(t)
