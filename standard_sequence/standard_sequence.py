@@ -34,6 +34,8 @@ ta_bm_detuning = shot_globals.bm_ta_detuning  # -100 # MHz, bright molasses detu
 repump_bm_detuning = shot_globals.bm_repump_detuning  # 0 # MHz, bright molasses detuning
 shutter_turn_off_t = 2e-3  # the time for shutter take from start to close to fully close
 shutter_turn_on_t = 2e-3  # the time for the shutter take from start to open to fully open
+bipolar_coil_flip_time = 6e-3 # the time takes to flip the polarity of the coil
+coil_ramp_time = 100e-6
 
 
 def ta_aom_off(t):
@@ -44,6 +46,16 @@ def ta_aom_off(t):
 def ta_aom_on(t, const):
     devices.ta_aom_digital.go_high(t)  # digital on
     devices.ta_aom_analog.constant(t, const)  # analog to const
+
+
+def ta_beam_on(t, const):
+    devices.ta_shutter.open(t)
+    ta_aom_on(t, const)
+
+
+def ta_beam_off(t):
+    devices.ta_shutter.close(t)
+    ta_aom_off(t)
 
 
 def repump_aom_off(t):
@@ -997,6 +1009,53 @@ def do_imaging(t, shot_number, ta_last_detuning, repump_last_detuning, exposure 
     return t, ta_last_detuning, repump_last_detuning
 
 
+def coil_change(t, x_ini, x_fin, y_ini, y_fin, z_ini, z_fin):
+    if np.sign(biasx_calib(x_fin)*biasx_calib(x_ini)) < 0 or np.sign(biasy_calib(y_fin)*biasy_calib(y_ini)) < 0 or np.sign(biasz_calib(z_fin)*biasz_calib(z_ini)) < 0:
+        t += bipolar_coil_flip_time
+
+    if np.sign(biasx_calib(x_fin)*biasx_calib(x_ini)) < 0:  # coil flip the control voltage sign
+        devices.x_coil_current.constant(t-bipolar_coil_flip_time, biasx_calib(x_fin))  # define quantization axis
+    else:
+        devices.x_coil_current.ramp(
+                t,
+                duration=coil_ramp_time,
+                initial=biasx_calib(x_ini),
+                final=biasx_calib(x_fin),# 0 mG
+                samplerate=1e5,
+            )
+
+    if np.sign(biasy_calib(y_fin)*biasy_calib(y_ini)) < 0:  # coil flip the control voltage sign
+        devices.y_coil_current.constant(t-bipolar_coil_flip_time, biasy_calib(y_fin)) # define quantization axis
+    else:
+        devices.y_coil_current.ramp(
+                t,
+                duration=coil_ramp_time,
+                initial=biasy_calib(y_ini),
+                final= biasy_calib(y_fin),# 0 mG
+                samplerate=1e5,
+            )
+
+    if np.sign(biasz_calib(z_fin)*biasz_calib(z_ini)) < 0:  # coil flip the control voltage sign
+        devices.z_coil_current.constant(t-bipolar_coil_flip_time, biasz_calib(z_fin))  # define quantization axis
+    else:
+        devices.z_coil_current.ramp(
+                t,
+                duration=coil_ramp_time,
+                initial=biasz_calib(z_ini),
+                final= biasz_calib(z_fin),# 0 mG
+                samplerate=1e5,
+            )
+
+    print(f"X ini field = {biasx_calib(x_ini)} V, X fin field = {biasx_calib(x_fin)} V")
+    print(f"Y ini field = {biasy_calib(y_ini)} V, Y fin field = {biasy_calib(y_fin)} V")
+    print(f"Z ini field = {biasz_calib(z_ini)} V, Z fin field = {biasz_calib(z_fin)} V")
+
+    return t + coil_ramp_time
+
+
+
+
+
 def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'microwave'):
     ta_pumping_detuning = shot_globals.op_ta_pumping_detuning #-251 # MHz 4->4 tansition
     repump_depumping_detuning = -201.24 # MHz 3->3 transition
@@ -1259,27 +1318,7 @@ def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'micr
             op_biasx_field = shot_globals.op_bias_amp * np.cos(shot_globals.op_bias_phi/180*np.pi) * np.sin(shot_globals.op_bias_theta/180*np.pi)
             op_biasy_field = shot_globals.op_bias_amp * np.sin(shot_globals.op_bias_phi/180*np.pi) * np.sin(shot_globals.op_bias_theta/180*np.pi)
             op_biasz_field = shot_globals.op_bias_amp * np.cos(shot_globals.op_bias_theta/180*np.pi)
-
-            devices.x_coil_current.ramp(
-                    t,
-                    duration=100e-6,
-                    initial=biasx_calib(0),
-                    final= biasx_calib(op_biasx_field),# 0 mG
-                    samplerate=1e5,
-                )
-
-            if np.sign(biasy_calib(op_biasy_field)*biasy_calib(0))<0:  # coil flip the control voltage sign
-                devices.y_coil_current.constant(t-6e-3, biasy_calib(op_biasy_field)) # define quantization axis
-            elif
-
-
-            devices.z_coil_current.ramp(
-                    t,
-                    duration=100e-6,
-                    initial=biasz_calib(0),
-                    final= biasz_calib(op_biasz_field),# 0 mG
-                    samplerate=1e5,
-                )
+            t = coil_change(t, x_ini=0, x_fin=op_biasx_field, y_ini=0, y_fin=op_biasy_field, z_ini=0, z_fin=op_biasz_field)
 
             devices.ta_vco.ramp(
                     t,
@@ -1301,7 +1340,7 @@ def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'micr
             ta_last_detuning = ta_pumping_detuning
             repump_last_detuning = repump_pumping_detuning
 
-            t += max(ta_vco_ramp_t, 100e-6, shot_globals.op_ramp_delay)
+            t += max(ta_vco_ramp_t, coil_ramp_time, shot_globals.op_ramp_delay)
             if shot_globals.do_depump_pulse_before_pumping:
                 devices.optical_pump_shutter.open(t)
                 devices.ta_shutter.open(t)
@@ -1332,14 +1371,13 @@ def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'micr
         if shot_globals.do_depump_pulse_after_pumping:
             # do not close the TA shutter, pulsing the TA AOM for measuring dark states
             assert shot_globals.op_ta_time < shot_globals.op_repump_time, "TA time should be shorter than repump for atom in F = 4"
-            #t += max(shot_globals.op_ta_time, shot_globals.op_repump_time)
-            t += min_shutter_off_t
-            devices.ta_shutter.open(t)
-            devices.ta_aom_digital.go_high(t)
-            devices.ta_aom_analog.constant(t, shot_globals.op_depump_power) #0.3)
+            if shot_globals.do_op_sigma_plus_with_repumper_only:
+                t += min_shutter_off_t # wait for repump shutter to be fully closed
+            else:
+                t += max(shot_globals.op_ta_time, shot_globals.op_repump_time)
+            ta_beam_on(t, shot_globals.op_depump_power)
             t += shot_globals.op_depump_pulse_time
-            devices.ta_aom_digital.go_low(t)
-            devices.ta_shutter.close(t)
+            ta_beam_off(t)
         else:
             devices.ta_shutter.close(t + shot_globals.op_ta_time)
 
@@ -1349,83 +1387,10 @@ def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'micr
         devices.optical_pump_shutter.close(t)
 
         if do_comparison_with_optical_pump_MOT == False:
-            devices.x_coil_current.ramp(
-                t,
-                duration=100e-6,
-                initial=biasx_calib(op_biasx_field),
-                final= biasx_calib(final_biasx_field),# 0 mG
-                samplerate=1e5,
-            )
-
-            # devices.y_coil_current.ramp(
-            #         t,
-            #         duration=100e-6,
-            #         initial=biasx_calib(shot_globals.op_biasy_field),
-            #         final=  biasy_calib(shot_globals.biasy_field),# 0 mG
-            #         samplerate=1e5,
-            #     )
-            devices.y_coil_current.constant(t, biasy_calib(final_biasy_field)) # define quantization axis
-
-            devices.z_coil_current.ramp(
-                    t,
-                    duration=100e-6,
-                    initial=biasz_calib(op_biasz_field),
-                    final= biasz_calib(final_biasz_field),# 0 mG
-                    samplerate=1e5,
-                )
+            t = coil_change(t, x_ini=op_biasx_field, x_fin=final_biasx_field, y_ini=op_biasy_field, y_fin=final_biasy_field, z_ini=op_biasz_field, z_fin=final_biasz_field)
+            t += coil_ramp_time
             print('OP bias phi = ', shot_globals.op_bias_phi)
             print(f'OP bias x, y, z voltage = {biasx_calib(op_biasx_field)}, {biasy_calib(op_biasy_field)}, {biasz_calib(op_biasz_field)}')
-
-    # ###### pump all atom into F = 4, mF = 4 level by using sigma+ beam #########
-    # if shot_globals.do_optical_pump_sigma_plus: # use sigma + polarized light for optical pumping
-    #     print("I'm doing optical pumping now using sigma+ beams")
-    #     devices.mot_xy_shutter.close(t)
-    #     devices.mot_z_shutter.close(t)
-    #     devices.img_xy_shutter.close(t)
-    #     devices.img_z_shutter.close(t)
-    #     devices.ta_aom_digital.go_low(t)
-    #     devices.mot_coil_current_ctrl.constant(t, 0)
-    #     devices.ta_shutter.close(t-3e-3)
-    #     devices.optical_pump_shutter.open(t)
-    #     devices.ta_aom_analog.constant(t, shot_globals.op_ta_power)
-    #     devices.repump_shutter.open(t)
-    #     devices.repump_aom_digital.go_high(t)
-    #     devices.repump_aom_analog.constant(t, shot_globals.op_repump_power)
-
-
-    #     devices.ta_aom_digital.go_low(t + shot_globals.op_ta_time)
-    #     devices.repump_aom_digital.go_low(t + shot_globals.op_repump_time)
-    #     devices.repump_shutter.close(t + shot_globals.op_repump_time)
-    #     devices.ta_shutter.close(t + shot_globals.op_ta_time)
-    #     assert shot_globals.op_ta_time < shot_globals.op_repump_time, "TA time should be shorter than repump for atom in F = 4"
-    #     t += max(shot_globals.op_ta_time, shot_globals.op_repump_time)
-    #     devices.optical_pump_shutter.close(t)
-    #     devices.x_coil_current.ramp(
-    #         t,
-    #         duration=100e-6,
-    #         initial=biasx_calib(0),
-    #         final= biasx_calib(final_biasx_field),# 0 mG
-    #         samplerate=1e5,
-    #     )
-
-    #     devices.y_coil_current.ramp(
-    #             t,
-    #             duration=100e-6,
-    #             initial=biasx_calib(0),
-    #             final=  biasy_calib(final_biasy_field),# 0 mG
-    #             samplerate=1e5,
-    #         )
-
-    #     devices.z_coil_current.ramp(
-    #             t,
-    #             duration=100e-6,
-    #             initial=biasz_calib(0),
-    #             final= biasz_calib(final_biasz_field),# 0 mG
-    #             samplerate=1e5,
-    #         )
-
-    #     ta_last_detuning = ta_last_detuning
-    #     repump_last_detuning = repump_last_detuning
 
 
     devices.mot_xy_shutter.close(t)
