@@ -1020,7 +1020,7 @@ def coil_change(t, x_ini, x_fin, y_ini, y_fin, z_ini, z_fin):
                 t,
                 duration=coil_ramp_time,
                 initial=biasx_calib(x_ini),
-                final=biasx_calib(x_fin),# 0 mG
+                final=biasx_calib(x_fin),  # 0 mG
                 samplerate=1e5,
             )
 
@@ -1031,7 +1031,7 @@ def coil_change(t, x_ini, x_fin, y_ini, y_fin, z_ini, z_fin):
                 t,
                 duration=coil_ramp_time,
                 initial=biasy_calib(y_ini),
-                final= biasy_calib(y_fin),# 0 mG
+                final=biasy_calib(y_fin),  # 0 mG
                 samplerate=1e5,
             )
 
@@ -1042,7 +1042,7 @@ def coil_change(t, x_ini, x_fin, y_ini, y_fin, z_ini, z_fin):
                 t,
                 duration=coil_ramp_time,
                 initial=biasz_calib(z_ini),
-                final= biasz_calib(z_fin),# 0 mG
+                final=biasz_calib(z_fin),  # 0 mG
                 samplerate=1e5,
             )
 
