@@ -31,15 +31,54 @@ CONST_MIN_SHUTTER_OFF_TIME = 6.28e-3  # minimum time for shutter to be off and o
 CONST_SHUTTER_TURN_ON_TIME  = 2e-3 # for shutter take from start to close to fully close
 CONST_SHUTTER_TURN_OFF_TIME = 2e-3 # for shutter take from start to open to fully open
 
+
+lasers_852 =  D2Lasers()
+lasers_852.pulse_imaging(t=300e-6, duration=100e-6)
+lasers_852.pulse_ta(t=450e-6, duration=100e-6, hold_shutter_open = True)
+pulser_ta(t=600e-6, duration=100e-6)
+
+
+MOTconfig = (shutter1: True, shutter2: False, shutter3: True)
+imagconfig = (shutter1: False, shutter2: True, )
+
+from enum import Flag, auto
+
+class ShutterConfig(Flag):
+    NONE = 0
+
+    TA = auto()
+    REPUMP = auto()
+    MOT_XY = auto()
+    MOT_Z = auto()
+    IMG_XY = auto()
+    IMG_Z = auto()
+    OPTICAL_PUMPING = auto()
+
+    UPSTREAM = TA | REPUMP
+    MOT_FULL = UPSTREAM | MOT_XY | MOT_Z
+    MOT_TA = TA | MOT_XY | MOT_Z
+    MOT_REPUMP = REPUMP | MOT_XY | MOT_Z
+
+
+    shutter_dict: dict[ShutterConfig, labscript.Shutter] = {
+        ShutterConfig.TA: devices.ta_shutter,
+        ShutterConfig.REPUMP: devices.repump_shutter,
+}
+
+ShutterConfig.MOT_REPUMP
+
 # Hardware control classes
 #-------------------------------------------------------------------------------
 class D2Lasers:
+    shutter_config: ShutterConfig
+
     def __init__(self, t):
         # Tune to MOT frequency, full power
         self.ta_freq = shot_globals.mot_ta_detuning
         self.repump_freq = 0# shot_globals.mot_repump_detuning
         self.ta_power = shot_globals.mot_ta_power
         self.repump_power = shot_globals.mot_repump_power
+        self.shutter_config = ShutterConfig.NONE
 
         devices.ta_vco.constant(t, ta_freq_calib(self.ta_freq))
         devices.repump_vco.constant(t, repump_freq_calib(self.repump_freq))
@@ -47,6 +86,36 @@ class D2Lasers:
         devices.repump_aom_analog.constant(t, self.repump_power)
 
         #close shutters too?
+
+    def pulse(self, t, duration, shutter_config, hold_shutters=False):
+        if shutter_config != self.shutter_config:
+            self.ta_aom_off(t - shutter_delay)
+            self.repump_aom_off(t - shutter_delay)
+            self.mot_aom_off(t - shutter_delay)
+            # self.update_shutters(shutter_config)
+            shutter_config.update(self.shutter_config)
+            self.shutter_config = shutter_config
+
+        # aoms on TODO
+
+        # cleanup
+        if not hold_shutters:
+            self.update_shutters(ShutterConfig.NONE)
+
+    def update_shutters(self, new_shutter_config: ShutterConfig, t):
+        changed_shutters = self.shutter_config ^ new_shutter_config
+
+        shutters_to_open = changed_shutters & new_shutter_config
+        shutters_to_close = changed_shutters & self.shutter_config
+
+        for shutter in shutters_to_open:
+            self.shutter_config.shutter_dict[shutter].open()
+        for shutter in shutters_to_close:
+            self.shutter_config.shutter_dict[shutter].close()
+
+        self.shutter_config = new_shutter_config
+
+
 
     #Move freq_calib to a function within here? Probably not needed.
     def ramp_ta_freq(self, t, duration, final):
