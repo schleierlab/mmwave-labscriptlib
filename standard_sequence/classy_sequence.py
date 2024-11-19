@@ -5,6 +5,7 @@ Created on Thu Feb 16 11:33:13 2023
 @author: sslab
 """
 import sys
+from typing import ClassVar
 root_path = r"X:\userlib\labscriptlib"
 
 if root_path not in sys.path:
@@ -18,6 +19,7 @@ from spectrum_manager import spectrum_manager
 from calibration import ta_freq_calib, repump_freq_calib, biasx_calib, biasy_calib, biasz_calib
 from connection_table import devices
 import labscript
+from __future__ import annotations
 
 spcm_sequence_mode = shot_globals.do_sequence_mode
 
@@ -59,11 +61,23 @@ class ShutterConfig(Flag):
     MOT_TA = TA | MOT_XY | MOT_Z
     MOT_REPUMP = REPUMP | MOT_XY | MOT_Z
 
+    IMG_FULL = UPSTREAM | IMG_XY | IMG_Z
+    IMG_TA = TA | IMG_XY | IMG_Z
+    IMG_REPUMP = REPUMP | IMG_XY | IMG_Z
 
-    shutter_dict: dict[ShutterConfig, labscript.Shutter] = {
-        ShutterConfig.TA: devices.ta_shutter,
-        ShutterConfig.REPUMP: devices.repump_shutter,
-}
+    OPTICAL_PUMPING_FULL = UPSTREAM | OPTICAL_PUMPING
+    OPTICAL_PUMPING_TA = TA | OPTICAL_PUMPING
+    OPTICAL_PUMPING_REPUMP = REPUMP | OPTICAL_PUMPING
+
+    shutter_dict: ClassVar[dict[ShutterConfig, labscript.Shutter]] = {
+        TA: devices.ta_shutter,
+        REPUMP: devices.repump_shutter,
+        MOT_XY: devices.mot_xy_shutter,
+        MOT_Z: devices.mot_z_shutter,
+        IMG_XY: devices.img_xy_shutter,
+        IMG_Z: devices.img_z_shutter
+        OPTICAL_PUMPING: devices.optical_pump_shutter
+    }
 
 ShutterConfig.MOT_REPUMP
 
@@ -85,8 +99,22 @@ class D2Lasers:
         devices.ta_aom_analog.constant(t, self.ta_power)
         devices.repump_aom_analog.constant(t, self.repump_power)
 
-        #close shutters too?
+        # TODO: Initialize shutters??
 
+    def update_shutters(self, new_shutter_config: ShutterConfig, t):
+        changed_shutters = self.shutter_config ^ new_shutter_config
+
+        shutters_to_open = changed_shutters & new_shutter_config
+        shutters_to_close = changed_shutters & self.shutter_config
+
+        for shutter in shutters_to_open:
+            self.shutter_config.shutter_dict[shutter].open()
+        for shutter in shutters_to_close:
+            self.shutter_config.shutter_dict[shutter].close()
+
+        self.shutter_config = new_shutter_config
+
+    #TODO: Do we just add which AOM to use in the arguements?
     def pulse(self, t, duration, shutter_config, hold_shutters=False):
         if shutter_config != self.shutter_config:
             self.ta_aom_off(t - shutter_delay)
@@ -101,19 +129,6 @@ class D2Lasers:
         # cleanup
         if not hold_shutters:
             self.update_shutters(ShutterConfig.NONE)
-
-    def update_shutters(self, new_shutter_config: ShutterConfig, t):
-        changed_shutters = self.shutter_config ^ new_shutter_config
-
-        shutters_to_open = changed_shutters & new_shutter_config
-        shutters_to_close = changed_shutters & self.shutter_config
-
-        for shutter in shutters_to_open:
-            self.shutter_config.shutter_dict[shutter].open()
-        for shutter in shutters_to_close:
-            self.shutter_config.shutter_dict[shutter].close()
-
-        self.shutter_config = new_shutter_config
 
 
 
