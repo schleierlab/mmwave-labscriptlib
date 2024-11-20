@@ -173,7 +173,7 @@ class D2Lasers:
         )
 
 
-    def update_shutters(self, t, new_shutter_config: ShutterConfig):
+    def update_shutters(self, t, new_shutter_config: ShutterConfig, early_close=False):
         changed_shutters = self.shutter_config ^ new_shutter_config
 
         shutters_to_open = changed_shutters & new_shutter_config
@@ -182,15 +182,22 @@ class D2Lasers:
         for shutter in shutters_to_open:
             self.shutter_config.shutter_dict[shutter].open(t)
         for shutter in shutters_to_close:
-            self.shutter_config.shutter_dict[shutter].close(t)
+            if early_close:
+                self.shutter_config.shutter_dict[shutter].close(t - CONST_SHUTTER_TURN_ON_TIME)
+            else:
+                self.shutter_config.shutter_dict[shutter].close(t)
 
         self.shutter_config = new_shutter_config
 
+    # NOTE: If the shutter configuration is changed from the previous pulse, this will cut the previous pulse short
+    # with the AOM by CONST_SHUTTER_TURN_ON_TIME in order to switch the shutters, and start the next pulse exactly at the t specified.
     def do_pulse(self, t, dur, shutter_config, ta_power, repump_power, hold_shutters=False):
         if shutter_config != self.shutter_config:
             self.ta_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
             self.repump_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
-            self.update_shutters(shutter_config)
+
+            #doesn't close the one's that need to be closed early enough when switching. Add an early close?
+            self.update_shutters(t, shutter_config, early_close=True)
 
         if ta_power != 0:
             self.ta_aom_on(self, t, ta_power)
@@ -475,12 +482,8 @@ class MOTSequence:
         if self.BField_obj.mot_coils_on:
             t = self.BField_obj.switch_mot_coils(t)
 
-        #TODO: replace
-        devices.manta419b_mot.expose(
-            'manta419b',
-            t,
-            'atoms',
-            exposure_time=shot_globals.mot_exposure_time)
+        self.Camera_obj.set_type("MOT_manta")
+        self.Camera_obj.expose(self, t, shot_globals.mot_exposure_time)
         print("before doing a MOT pulse for image t = ", t)
 
         t = self.D2Lasers_obj.do_pulse(t, shot_globals.mot_exposure_time, ShutterConfig.MOT_FULL, shot_globals.mot_ta_power,
@@ -567,9 +570,12 @@ class MOTSequence:
         self.ramp_to_molasses(t, shot_globals.bm_ta_detuning, shot_globals.bm_repump_detuning)
 
         if shot_globals.do_molasses_mot_beam:
-            t = self.D2Lasers_obj.do_mot_pulse(t, dur, shot_globals.bm_ta_power, shot_globals.bm_repump_power, hold_shutter_open = hold_shutter_open)
+            t = self.D2Lasers_obj.do_pulse(t, dur, ShutterConfig.MOT_FULL, shot_globals.bm_ta_power,
+                                shot_globals.bm_repump_power, hold_shutters=hold_shutter_open)
 
         if shot_globals.do_molasses_img_beam:
+            t = self.D2Lasers_obj.do_pulse(t, dur, ShutterConfig.IMG_FULL, shot_globals.bm_ta_power,
+                                shot_globals.bm_repump_power, hold_shutters=hold_shutter_open)
             _ = self.D2Lasers_obj.close_mot_shutters(t)
             t += CONST_SHUTTER_TURN_OFF_TIME
             t = self.D2Lasers_obj.do_img_pulse(t, dur, shot_globals.bm_ta_power, shot_globals.bm_repump_power, hold_shutter_open = hold_shutter_open)
