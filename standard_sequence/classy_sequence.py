@@ -43,7 +43,8 @@ pulser_ta(t=600e-6, duration=100e-6)
 MOTconfig = (shutter1: True, shutter2: False, shutter3: True)
 imagconfig = (shutter1: False, shutter2: True, )
 
-from enum import Flag, auto
+from enum import Enum, Flag, auto
+
 
 class ShutterConfig(Flag):
     NONE = 0
@@ -78,6 +79,7 @@ class ShutterConfig(Flag):
         IMG_Z: devices.img_z_shutter,
         OPTICAL_PUMPING: devices.optical_pump_shutter,
     }
+
 
 # Hardware control classes
 #-------------------------------------------------------------------------------
@@ -576,41 +578,49 @@ class MOTSequence:
         if shot_globals.do_molasses_img_beam:
             t = self.D2Lasers_obj.do_pulse(t, dur, ShutterConfig.IMG_FULL, shot_globals.bm_ta_power,
                                 shot_globals.bm_repump_power, hold_shutters=hold_shutter_open)
-            _ = self.D2Lasers_obj.close_mot_shutters(t)
-            t += CONST_SHUTTER_TURN_OFF_TIME
-            t = self.D2Lasers_obj.do_img_pulse(t, dur, shot_globals.bm_ta_power, shot_globals.bm_repump_power, hold_shutter_open = hold_shutter_open)
-
         return t
 
     #Which arguments are actually necessary to pass or even set as a defualt?
     #How many of them can just be set to globals?
+    # TODO: Maybe pass the shutter config into here? This would get rid of all the if statements?
     def do_molasses_dipole_trap_imaging(self, t, img_ta_detuning=0, img_repump_detuning=0, img_ta_power=1, img_repump_power=1, do_repump=True, hold_shutter_open=True):
         # define quantization axis (Whut?? This is zeroing the field, there's not quantization axis)
 
         _ = self.BField_obj.ramp_B_field(t, (0,0,0))
 
         #Is this section needed?
-        self.D2Lasers_obj.open_ta_shutter(t)
-        if do_repump:
-            self.D2Lasers_obj.open_repump_shutter(t)
-        else:
-            self.D2Lasers_obj.close_repump_shutter(t)
 
         # Ramp to imaging frequencies
         self.D2Lasers_obj.ramp_ta_freq(t, CONST_TA_VCO_RAMP_TIME, ta_freq_calib(img_ta_detuning))
         self.D2Lasers_obj.ramp_repump_freq(t, CONST_TA_VCO_RAMP_TIME, repump_freq_calib(img_repump_detuning))
         t+=CONST_TA_VCO_RAMP_TIME
 
-        # Opening the correct shutters
-        if shot_globals.do_mot_beams_during_imaging:
-            print("pew pew")
-            _ = self.D2Lasers_obj.do_mot_pulse(t, shot_globals.bm_exposure_time, img_ta_power, img_repump_power, hold_shutter_open = hold_shutter_open, label=shot_globals.imaging_label)
 
+        # TODO: REFACTOR THIS! Need better globals informed by hardware?
+        repump_config = (ShutterConfig.REPUMP if do_repump else ShutterConfig.NONE)
+        label=shot_globals.imaging_label
+
+        if shot_globals.do_mot_beams_during_imaging:
+            if label == "z":
+                shutter_config = ShutterConfig.MOT_Z | repump_config
+            elif label == "xy":
+                shutter_config = ShutterConfig.MOT_XY | repump_config
+            else:
+                shutter_config = ShutterConfig.MOT_FULL | repump_config
         #If you're trying to do in-situ imaging, you want to image faster than switch shutters allows for, so you can't do imaging beam imaging
         if shot_globals.do_img_beams_during_imaging and not shot_globals.do_molasses_in_situ_check:
-            _ = self.D2Lasers_obj.close_mot_shutters(t)
-            t += CONST_SHUTTER_TURN_OFF_TIME
-            _ = self.D2Lasers_obj.do_img_pulse(t, shot_globals.bm_exposure_time, img_ta_power, img_repump_power, hold_shutter_open = hold_shutter_open, label = shot_globals.imaging_label)
+            if label == "z":
+                shutter_config = ShutterConfig.IMG_Z | repump_config
+            elif label == "xy":
+                shutter_config = ShutterConfig.IMG_XY | repump_config
+            else:
+                shutter_config = ShutterConfig.IMG_FULL | repump_config
+        else:
+            shutter_config = ShutterConfig.NONE
+
+
+        _ = self.D2Lasers_obj.do_pulse(t, shot_globals.bm_exposure_time, shutter_config, img_ta_power, img_repump_power, hold_shutter_open = hold_shutter_open)
+
 
         # TODO: ask Lin and Michelle and max() logic and if we always want it there
         self.Camera_obj.set_type(shot_globals.camera_type)
