@@ -75,11 +75,9 @@ class ShutterConfig(Flag):
         MOT_XY: devices.mot_xy_shutter,
         MOT_Z: devices.mot_z_shutter,
         IMG_XY: devices.img_xy_shutter,
-        IMG_Z: devices.img_z_shutter
-        OPTICAL_PUMPING: devices.optical_pump_shutter
+        IMG_Z: devices.img_z_shutter,
+        OPTICAL_PUMPING: devices.optical_pump_shutter,
     }
-
-ShutterConfig.MOT_REPUMP
 
 # Hardware control classes
 #-------------------------------------------------------------------------------
@@ -100,36 +98,6 @@ class D2Lasers:
         devices.repump_aom_analog.constant(t, self.repump_power)
 
         # TODO: Initialize shutters??
-
-    def update_shutters(self, new_shutter_config: ShutterConfig, t):
-        changed_shutters = self.shutter_config ^ new_shutter_config
-
-        shutters_to_open = changed_shutters & new_shutter_config
-        shutters_to_close = changed_shutters & self.shutter_config
-
-        for shutter in shutters_to_open:
-            self.shutter_config.shutter_dict[shutter].open()
-        for shutter in shutters_to_close:
-            self.shutter_config.shutter_dict[shutter].close()
-
-        self.shutter_config = new_shutter_config
-
-    #TODO: Do we just add which AOM to use in the arguements?
-    def pulse(self, t, duration, shutter_config, hold_shutters=False):
-        if shutter_config != self.shutter_config:
-            self.ta_aom_off(t - shutter_delay)
-            self.repump_aom_off(t - shutter_delay)
-            self.mot_aom_off(t - shutter_delay)
-            # self.update_shutters(shutter_config)
-            shutter_config.update(self.shutter_config)
-            self.shutter_config = shutter_config
-
-        # aoms on TODO
-
-        # cleanup
-        if not hold_shutters:
-            self.update_shutters(ShutterConfig.NONE)
-
 
 
     #Move freq_calib to a function within here? Probably not needed.
@@ -153,80 +121,24 @@ class D2Lasers:
         )
         self.repump_freq = final
 
-    def open_mot_shutters(self, t, label=None):
-        """Open the specified MOT shutters, else open all the MOT shutters"""
-        if label == "z":
-            devices.mot_z_shutter.open(t)
-        elif label == "xy":
-            devices.mot_xy_shutter.open(t)
-        else:
-            print("opening both mot shutters at t = ", t)
-            devices.mot_z_shutter.open(t)
-            devices.mot_xy_shutter.open(t)
-
-        return t
-
-    def close_mot_shutters(self, t, label=None):
-        """Close the specified MOT shutters, else open all the MOT shutters"""
-        if label == "z":
-            devices.mot_z_shutter.close(t)
-        elif label == "xy":
-            devices.mot_xy_shutter.close(t)
-        else:
-            print("closing both mot shutters at t = ", t)
-            devices.mot_z_shutter.close(t)
-            devices.mot_xy_shutter.close(t)
-
-        return t
-
-    def open_img_shutters(self, t, label=None):
-        """Open the specified IMG shutters, else open all the IMG shutters"""
-        if label == "z":
-            devices.img_z_shutter.open(t)
-        elif label == "xy":
-            devices.img_xy_shutter.open(t)
-        else:
-            devices.img_z_shutter.open(t)
-            devices.img_xy_shutter.open(t)
-
-        return t
-
-    def close_img_shutters(self, t, label=None):
-        """Open the specified IMG shutters, else open all the IMG shutters"""
-        if label == "z":
-            devices.img_z_shutter.close(t)
-        elif label == "xy":
-            devices.img_xy_shutter.close(t)
-        else:
-            devices.img_z_shutter.close(t)
-            devices.img_xy_shutter.close(t)
-
-        return t
-
-    #Do I need these? Probably not but it might be nice for consistent code?
-    def open_ta_shutter(self, t):
-        devices.ta_shutter.open(t)
-
-    def close_ta_shutter(self, t):
-        devices.ta_shutter.close(t)
-
-    def open_repump_shutter(self, t):
-        devices.repump_shutter.open(t)
-
-    def close_repump_shutter(self, t):
-        devices.repump_shutter.close(t)
-
-    def ta_aom_off(self, t):
+        def ta_aom_off(self, t):
         """ Turn off the ta beam using aom """
         devices.ta_aom_digital.go_low(t)  # digital off
         devices.ta_aom_analog.constant(t, 0)  # analog off
         self.ta_power = 0
+
 
     def ta_aom_on(self, t, const):
         """ Turn on the ta beam using aom """
         devices.ta_aom_digital.go_high(t)  # digital on
         devices.ta_aom_analog.constant(t, const)  # analog to const
         self.ta_power = const
+
+    def ta_aom_off(self, t):
+        """ Turn off the repump beam using aom """
+        devices.ta_aom_digital.go_low(t)  # digital off
+        devices.ta_aom_analog.constant(t, 0)  # analog off
+        self.ta_power = 0
 
     def repump_aom_off(self, t):
         """ Turn off the repump beam using aom """
@@ -239,6 +151,7 @@ class D2Lasers:
         devices.repump_aom_digital.go_high(t)  # digital on
         devices.repump_aom_analog.constant(t, const)  # analog to const
         self.repump_power = const
+
 
     def ramp_ta_aom(self, t, dur, final_power):
 
@@ -259,77 +172,43 @@ class D2Lasers:
             samplerate=1e5,
         )
 
-    def mot_aom_on(self, t, ta_const, repump_const):
-        """ Turn on both the ta & repump beam using aom """
-        self.ta_aom_on(t, ta_const)  # ta beam off
-        self.repump_aom_on(t, repump_const)  # repump beam off
 
-    def mot_aom_off(self, t):
-        """ Turn off both the ta & repump beam using aom """
-        self.ta_aom_off(t)  # ta beam off
-        self.repump_aom_off(t)  # repump beam off
+    def update_shutters(self, t, new_shutter_config: ShutterConfig):
+        changed_shutters = self.shutter_config ^ new_shutter_config
 
-#Do we want to set these so that they default to the self.x_power values?
-    def ta_aom_pulse(self, t, dur, ta_power):
-        """Set AOMs to do a TA pulse, no shutter action"""
-        self.ta_aom_on(t, ta_power)
+        shutters_to_open = changed_shutters & new_shutter_config
+        shutters_to_close = changed_shutters & self.shutter_config
+
+        for shutter in shutters_to_open:
+            self.shutter_config.shutter_dict[shutter].open(t)
+        for shutter in shutters_to_close:
+            self.shutter_config.shutter_dict[shutter].close(t)
+
+        self.shutter_config = new_shutter_config
+
+    def do_pulse(self, t, dur, shutter_config, ta_power, repump_power, hold_shutters=False):
+        if shutter_config != self.shutter_config:
+            self.ta_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
+            self.repump_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
+            self.update_shutters(shutter_config)
+
+        if ta_power != 0:
+            self.ta_aom_on(self, t, ta_power)
+            self.ta_power = ta_power
+        if repump_power != 0:
+            self.repump_aom_on(self, t, repump_power)
+            self.repump_power = repump_power
+
         t += dur
         self.ta_aom_off(t)
-
-        return t
-
-    def repump_aom_pulse(self, t, dur, repump_power):
-        """Set AOMs to do a repump pulse, no shutter action"""
-        self.repump_aom_on(t, repump_power)
-        t += dur
         self.repump_aom_off(t)
 
-        return t
-
-    def do_ta_pulse(self, t, dur, ta_power, hold_shutter_open=False):
-        # TODO: Do we want a condition where we don't turn the AOM off before doing the pulse? Might be a usecase for the class variable defining shutter_state
-        self.ta_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
-        devices.ta_shutter.open(t) # labscript already account for the shutter open time
-        t = self.ta_aom_pulse(t, dur, ta_power)
-        if not hold_shutter_open:
-            devices.ta_shutter.close(t)
+        if not hold_shutters:
+            self.update_shutters(ShutterConfig.NONE)
             t += CONST_SHUTTER_TURN_OFF_TIME
-            self.ta_aom_on(t, 1)
+            self.ta_aom_on(self, t, 1)
+            self.repump_aom_on(self, t, 1)
 
-        return t
-
-    def do_repump_pulse(self, t, dur, repump_power, hold_shutter_open=False):
-        self.repump_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
-        devices.repump_shutter.open(t)
-        t = self.repump_aom_pulse(t, dur, repump_power)
-        if not hold_shutter_open:
-            devices.repump_shutter.close(t)
-            t += CONST_SHUTTER_TURN_OFF_TIME
-            self.repump_aom_on(t, 1)
-
-        return t
-
-    def do_mot_pulse(self, t, dur, ta_power, repump_power, hold_shutter_open=False, label=None):
-        self.open_mot_shutters(t, label)
-        _ = self.do_ta_pulse(t, dur, ta_power, hold_shutter_open)
-        _ = self.do_repump_pulse(t, dur, repump_power, hold_shutter_open)
-        print("do_mot_pulse before t += dur, t = ", t, "dur = ", dur)
-        t += dur
-        # print("Hold shutter open = ", hold_shutter_open, "t = ", t)
-        if not hold_shutter_open:
-            print("Inside hold open", hold_shutter_open, "t = ", t)
-            self.close_mot_shutters(t)
-            t += CONST_SHUTTER_TURN_OFF_TIME
-        return t
-
-    def do_img_pulse(self, t, dur, ta_power, repump_power, hold_shutter_open=False, label=None):
-        self.open_img_shutters(t, label)
-        _ = self.do_ta_pulse(t, dur, ta_power, hold_shutter_open)
-        _ = self.do_repump_pulse(t, dur, repump_power, hold_shutter_open)
-        t += dur
-        if not hold_shutter_open:
-            self.close_img_shutters(t)
-            t += CONST_SHUTTER_TURN_OFF_TIME
         return t
 
     def reset_to_mot_freq(self, t):
@@ -341,10 +220,9 @@ class D2Lasers:
         return t
 
     def reset_to_mot_on(self, t):
-        self.mot_aom_on(t, shot_globals.mot_ta_power, shot_globals.mot_repump_power)
-        self.open_repump_shutter(t)
-        self.open_ta_shutter(t)
-        t = self.open_mot_shutters(t)
+        self.ta_aom_on(t, shot_globals.mot_ta_power)
+        self.repump_aom_on(t, shot_globals.mot_repump_power)
+        self.update_shutters(ShutterConfig.MOT_FULL)
         t += CONST_SHUTTER_TURN_ON_TIME
 
         return t
@@ -567,8 +445,8 @@ class MOTSequence:
             # longer duration than 1e-2 will lead to the overall MOT atom
             # number decay during the cycle
 
-        t = self.D2Lasers_obj.do_mot_pulse(t, dur, shot_globals.mot_ta_power,
-                                shot_globals.mot_repump_power, hold_shutter_open=hold_shutter_open)
+        t = self.D2Lasers_obj.do_pulse(t, dur, ShutterConfig.MOT_FULL, shot_globals.mot_ta_power,
+                                        shot_globals.mot_repump_power, hold_shutters=hold_shutter_open)
 
         return t
 
@@ -604,8 +482,9 @@ class MOTSequence:
             'atoms',
             exposure_time=shot_globals.mot_exposure_time)
         print("before doing a MOT pulse for image t = ", t)
-        t = self.D2Lasers_obj.do_mot_pulse(t, shot_globals.mot_exposure_time,
-                        shot_globals.mot_ta_power, shot_globals.mot_repump_power, hold_shutter_open=hold_shutter_open)
+
+        t = self.D2Lasers_obj.do_pulse(t, shot_globals.mot_exposure_time, ShutterConfig.MOT_FULL, shot_globals.mot_ta_power,
+                                        shot_globals.mot_repump_power, hold_shutters=hold_shutter_open)
 
         return t
 
