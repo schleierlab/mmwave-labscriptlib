@@ -30,6 +30,7 @@ if __name__ == "__main__":
 CONST_COIL_OFF_TIME = 1.4e-3  # minimum time for the MOT coil to be off
 CONST_TA_VCO_RAMP_TIME = 1.2e-4
 CONST_MIN_SHUTTER_OFF_TIME = 6.28e-3  # minimum time for shutter to be off and on again
+CONST_MIN_SHUTTER_ON_TIME = 3.6e-3  # minimum time for shutter to be on
 CONST_SHUTTER_TURN_ON_TIME  = 2e-3 # for shutter take from start to close to fully close
 CONST_SHUTTER_TURN_OFF_TIME = 2e-3 # for shutter take from start to open to fully open
 
@@ -79,6 +80,34 @@ class ShutterConfig(Flag):
         IMG_Z: devices.img_z_shutter,
         OPTICAL_PUMPING: devices.optical_pump_shutter,
     }
+
+
+    @classmethod
+    def select_imgaging_shutters(cls, do_repump = True) -> ShutterConfig:
+        repump_config = (cls.REPUMP if do_repump else cls.NONE)
+        label=shot_globals.imaging_label
+
+        if shot_globals.do_mot_beams_during_imaging:
+            if label == "z":
+                shutter_config = cls.MOT_Z | repump_config
+            elif label == "xy":
+                shutter_config = cls.MOT_XY | repump_config
+            else:
+                shutter_config = cls.MOT_FULL | repump_config
+
+        #If you're trying to do in-situ imaging, you want to image faster than switch shutters allows for, so you can't do imaging beam imaging
+        if shot_globals.do_img_beams_during_imaging and not shot_globals.do_molasses_in_situ_check:
+            if label == "z":
+                shutter_config = cls.IMG_Z | repump_config
+            elif label == "xy":
+                shutter_config = cls.IMG_XY | repump_config
+            else:
+                shutter_config = cls.IMG_FULL | repump_config
+
+        else:
+            shutter_config = cls.NONE
+
+        return shutter_config
 
 
 # Hardware control classes
@@ -194,11 +223,13 @@ class D2Lasers:
     # NOTE: If the shutter configuration is changed from the previous pulse, this will cut the previous pulse short
     # with the AOM by CONST_SHUTTER_TURN_ON_TIME in order to switch the shutters, and start the next pulse exactly at the t specified.
     def do_pulse(self, t, dur, shutter_config, ta_power, repump_power, hold_shutters=False):
-        if shutter_config != self.shutter_config:
+        change_shutters = self.shutter_config != shutter_config
+
+        if change_shutters:
+            t += CONST_SHUTTER_TURN_ON_TIME
+            print("shutter config changed, adding time to account for switching")
             self.ta_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
             self.repump_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
-
-            #doesn't close the one's that need to be closed early enough when switching. Add an early close?
             self.update_shutters(t, shutter_config, early_close=True)
 
         if ta_power != 0:
@@ -211,6 +242,9 @@ class D2Lasers:
         t += dur
         self.ta_aom_off(t)
         self.repump_aom_off(t)
+
+        if (dur < CONST_MIN_SHUTTER_ON_TIME) and change_shutters:
+            t += CONST_MIN_SHUTTER_ON_TIME - dur
 
         if not hold_shutters:
             self.update_shutters(ShutterConfig.NONE)
@@ -596,28 +630,7 @@ class MOTSequence:
         t+=CONST_TA_VCO_RAMP_TIME
 
 
-        # TODO: REFACTOR THIS! Need better globals informed by hardware?
-        repump_config = (ShutterConfig.REPUMP if do_repump else ShutterConfig.NONE)
-        label=shot_globals.imaging_label
-
-        if shot_globals.do_mot_beams_during_imaging:
-            if label == "z":
-                shutter_config = ShutterConfig.MOT_Z | repump_config
-            elif label == "xy":
-                shutter_config = ShutterConfig.MOT_XY | repump_config
-            else:
-                shutter_config = ShutterConfig.MOT_FULL | repump_config
-        #If you're trying to do in-situ imaging, you want to image faster than switch shutters allows for, so you can't do imaging beam imaging
-        if shot_globals.do_img_beams_during_imaging and not shot_globals.do_molasses_in_situ_check:
-            if label == "z":
-                shutter_config = ShutterConfig.IMG_Z | repump_config
-            elif label == "xy":
-                shutter_config = ShutterConfig.IMG_XY | repump_config
-            else:
-                shutter_config = ShutterConfig.IMG_FULL | repump_config
-        else:
-            shutter_config = ShutterConfig.NONE
-
+        shutter_config = ShutterConfig.select_imgaging_shutters(do_repump = do_repump)
 
         _ = self.D2Lasers_obj.do_pulse(t, shot_globals.bm_exposure_time, shutter_config, img_ta_power, img_repump_power, hold_shutter_open = hold_shutter_open)
 
