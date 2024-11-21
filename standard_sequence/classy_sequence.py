@@ -82,11 +82,13 @@ class ShutterConfig(Flag):
     }
 
 
+    # TODO: replace globals with arguments
     @classmethod
     def select_imgaging_shutters(cls, do_repump = True) -> ShutterConfig:
         repump_config = (cls.REPUMP if do_repump else cls.NONE)
         label=shot_globals.imaging_label
 
+        # TODO: change handling of labels to make full default and raise error when not one of the options
         if shot_globals.do_mot_beams_during_imaging:
             if label == "z":
                 shutter_config = cls.MOT_Z | repump_config
@@ -219,13 +221,33 @@ class D2Lasers:
                 self.shutter_config.shutter_dict[shutter].close(t)
 
         self.shutter_config = new_shutter_config
+        #return t?
+
+# NOTE: This version makes it so that the previous shutters are fully closed before opening the new shutters
+    # def update_shutters(self, t, new_shutter_config: ShutterConfig):
+    #     changed_shutters = self.shutter_config ^ new_shutter_config
+
+    #     shutters_to_open = changed_shutters & new_shutter_config
+    #     shutters_to_close = changed_shutters & self.shutter_config
+
+    #     for shutter in shutters_to_close:
+    #         self.shutter_config.shutter_dict[shutter].close(t)
+
+    #     t += 2*CONST_SHUTTER_TURN_OFF_TIME
+    #     for shutter in shutters_to_open:
+    #         self.shutter_config.shutter_dict[shutter].open(t)
+
+    #     self.shutter_config = new_shutter_config
+    #     return t
 
     # NOTE: If the shutter configuration is changed from the previous pulse, this will cut the previous pulse short
     # with the AOM by CONST_SHUTTER_TURN_ON_TIME in order to switch the shutters, and start the next pulse exactly at the t specified.
-    def do_pulse(self, t, dur, shutter_config, ta_power, repump_power, hold_shutters=False):
+    # NOTE: The above note should be taken in context with the one below.
+    def do_pulse(self, t, dur, shutter_config, ta_power, repump_power, close_all_shutters=False):
         change_shutters = self.shutter_config != shutter_config
 
         if change_shutters:
+            # NOTE:Adding this to t makes it so it doesn't cut the previous pulse short, but shifts the time of the next.
             t += CONST_SHUTTER_TURN_ON_TIME
             print("shutter config changed, adding time to account for switching")
             self.ta_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
@@ -243,10 +265,13 @@ class D2Lasers:
         self.ta_aom_off(t)
         self.repump_aom_off(t)
 
+
         if (dur < CONST_MIN_SHUTTER_ON_TIME) and change_shutters:
             t += CONST_MIN_SHUTTER_ON_TIME - dur
 
-        if not hold_shutters:
+        # If not doing hold_shutters, have to make sure that we aren't opening any of the ones we just closed in the next pulse.
+        # Otherwise they won't be able to open in time unless there's enough delay between pulses.
+        if close_all_shutters:
             self.update_shutters(ShutterConfig.NONE)
             t += CONST_SHUTTER_TURN_OFF_TIME
             self.ta_aom_on(self, t, 1)
