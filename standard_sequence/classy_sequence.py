@@ -4,6 +4,7 @@ Created on Thu Feb 16 11:33:13 2023
 
 @author: sslab
 """
+from __future__ import annotations
 import sys
 from typing import ClassVar
 root_path = r"X:\userlib\labscriptlib"
@@ -19,7 +20,6 @@ from spectrum_manager import spectrum_manager
 from calibration import ta_freq_calib, repump_freq_calib, biasx_calib, biasy_calib, biasz_calib
 from connection_table import devices
 import labscript
-from __future__ import annotations
 
 spcm_sequence_mode = shot_globals.do_sequence_mode
 
@@ -35,14 +35,14 @@ CONST_SHUTTER_TURN_ON_TIME  = 2e-3 # for shutter take from start to close to ful
 CONST_SHUTTER_TURN_OFF_TIME = 2e-3 # for shutter take from start to open to fully open
 
 
-lasers_852 =  D2Lasers()
-lasers_852.pulse_imaging(t=300e-6, duration=100e-6)
-lasers_852.pulse_ta(t=450e-6, duration=100e-6, hold_shutter_open = True)
-pulser_ta(t=600e-6, duration=100e-6)
+# lasers_852 =  D2Lasers()
+# lasers_852.pulse_imaging(t=300e-6, duration=100e-6)
+# lasers_852.pulse_ta(t=450e-6, duration=100e-6, hold_shutter_open = True)
+# pulser_ta(t=600e-6, duration=100e-6)
 
 
-MOTconfig = (shutter1: True, shutter2: False, shutter3: True)
-imagconfig = (shutter1: False, shutter2: True, )
+# MOTconfig = {shutter1: True, shutter2: False, shutter3: True}
+# imagconfig = {shutter1: False, shutter2: True, }
 
 from enum import Enum, Flag, auto
 
@@ -154,7 +154,7 @@ class D2Lasers:
         )
         self.repump_freq = final
 
-        def ta_aom_off(self, t):
+    def ta_aom_off(self, t):
         """ Turn off the ta beam using aom """
         devices.ta_aom_digital.go_low(t)  # digital off
         devices.ta_aom_analog.constant(t, 0)  # analog off
@@ -211,9 +211,9 @@ class D2Lasers:
 
         shutters_to_open = changed_shutters & new_shutter_config
         shutters_to_close = changed_shutters & self.shutter_config
-
-        for shutter in shutters_to_open:
-            self.shutter_config.shutter_dict[shutter].open(t)
+        print(shutters_to_open)
+        for shutter in self.shutter_config.shutter_dict[shutters_to_open]:
+            shutter.open(t)
         for shutter in shutters_to_close:
             if early_close:
                 self.shutter_config.shutter_dict[shutter].close(t - CONST_SHUTTER_TURN_ON_TIME)
@@ -507,14 +507,14 @@ class MOTSequence:
         self.UVLamps_obj = UVLamps(t)
         self.Camera_obj = Camera(t)
 
-    def do_mot(self, t, dur, hold_shutter_open=False):
+    def do_mot(self, t, dur, close_all_shutters=False):
         if shot_globals.do_uv:
             _ = self.UVLamps_obj.uv_pulse(t, dur=1e-2)
             # longer duration than 1e-2 will lead to the overall MOT atom
             # number decay during the cycle
 
         t = self.D2Lasers_obj.do_pulse(t, dur, ShutterConfig.MOT_FULL, shot_globals.mot_ta_power,
-                                        shot_globals.mot_repump_power, hold_shutters=hold_shutter_open)
+                                        shot_globals.mot_repump_power, close_all_shutters = close_all_shutters)
 
         return t
 
@@ -534,7 +534,7 @@ class MOTSequence:
 
         return t
 
-    def image_mot(self, t, hold_shutter_open=False):
+    def image_mot(self, t, close_all_shutters=False):
         # Move to on resonance, make sure AOM is off
         self.D2Lasers_obj.ramp_ta_freq(t, CONST_TA_VCO_RAMP_TIME, ta_freq_calib(0))
         t += CONST_TA_VCO_RAMP_TIME
@@ -548,7 +548,7 @@ class MOTSequence:
         print("before doing a MOT pulse for image t = ", t)
 
         t = self.D2Lasers_obj.do_pulse(t, shot_globals.mot_exposure_time, ShutterConfig.MOT_FULL, shot_globals.mot_ta_power,
-                                        shot_globals.mot_repump_power, hold_shutters=hold_shutter_open)
+                                        shot_globals.mot_repump_power, close_all_shutters = close_all_shutters)
 
         return t
 
@@ -559,7 +559,7 @@ class MOTSequence:
         # MOT loading time 500 ms
         mot_load_dur = 0.5
         t += CONST_SHUTTER_TURN_ON_TIME
-        t = self.do_mot(t, mot_load_dur, hold_shutter_open=True)
+        t = self.do_mot(t, mot_load_dur)
 
         t = self.image_mot(t)
         # Shutter does not need to be held open
@@ -586,7 +586,7 @@ class MOTSequence:
 
         t += CONST_SHUTTER_TURN_ON_TIME
 
-        t = self.do_mot(t, mot_load_dur, hold_shutter_open=True)
+        t = self.do_mot(t, mot_load_dur)
 
         # assert shot_globals.mot_tof_imaging_delay > CONST_MIN_SHUTTER_OFF_TIME, "time of flight too short for shutter"
         t += shot_globals.mot_tof_imaging_delay
