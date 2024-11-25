@@ -144,17 +144,6 @@
     <span class="n">OPTICAL_PUMPING_TA</span> <span class="o">=</span> <span class="n">TA</span> <span class="o">|</span> <span class="n">OPTICAL_PUMPING</span>
     <span class="n">OPTICAL_PUMPING_REPUMP</span> <span class="o">=</span> <span class="n">REPUMP</span> <span class="o">|</span> <span class="n">OPTICAL_PUMPING</span>
 
-    <span class="n">shutter_dict</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="n">ShutterConfig</span><span class="p">,</span> <span class="n">labscript</span><span class="o">.</span><span class="n">Shutter</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="n">TA</span><span class="p">:</span> <span class="n">devices</span><span class="o">.</span><span class="n">ta_shutter</span><span class="p">,</span>
-        <span class="n">REPUMP</span><span class="p">:</span> <span class="n">devices</span><span class="o">.</span><span class="n">repump_shutter</span><span class="p">,</span>
-        <span class="n">MOT_XY</span><span class="p">:</span> <span class="n">devices</span><span class="o">.</span><span class="n">mot_xy_shutter</span><span class="p">,</span>
-        <span class="n">MOT_Z</span><span class="p">:</span> <span class="n">devices</span><span class="o">.</span><span class="n">mot_z_shutter</span><span class="p">,</span>
-        <span class="n">IMG_XY</span><span class="p">:</span> <span class="n">devices</span><span class="o">.</span><span class="n">img_xy_shutter</span><span class="p">,</span>
-        <span class="n">IMG_Z</span><span class="p">:</span> <span class="n">devices</span><span class="o">.</span><span class="n">img_z_shutter</span><span class="p">,</span>
-        <span class="n">OPTICAL_PUMPING</span><span class="p">:</span> <span class="n">devices</span><span class="o">.</span><span class="n">optical_pump_shutter</span><span class="p">,</span>
-    <span class="p">}</span>
-
-
     <span class="c1"># TODO: replace globals with arguments</span>
 <div class="viewcode-block" id="ShutterConfig.select_imgaging_shutters">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.ShutterConfig.select_imgaging_shutters">[docs]</a>
@@ -316,14 +305,29 @@
 
         <span class="n">shutters_to_open</span> <span class="o">=</span> <span class="n">changed_shutters</span> <span class="o">&amp;</span> <span class="n">new_shutter_config</span>
         <span class="n">shutters_to_close</span> <span class="o">=</span> <span class="n">changed_shutters</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">shutter_config</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">shutters_to_open</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">shutter</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">shutter_config</span><span class="o">.</span><span class="n">shutter_dict</span><span class="p">[</span><span class="n">shutters_to_open</span><span class="p">]:</span>
-            <span class="n">shutter</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">shutter</span> <span class="ow">in</span> <span class="n">shutters_to_close</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">early_close</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">shutter_config</span><span class="o">.</span><span class="n">shutter_dict</span><span class="p">[</span><span class="n">shutter</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">CONST_SHUTTER_TURN_ON_TIME</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">shutter_config</span><span class="o">.</span><span class="n">shutter_dict</span><span class="p">[</span><span class="n">shutter</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="c1"># Can we put tjhis somewhere nicer?</span>
+        <span class="n">basic_shutters</span> <span class="o">=</span> <span class="p">[</span><span class="n">ShutterConfig</span><span class="o">.</span><span class="n">TA</span><span class="p">,</span> <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">REPUMP</span><span class="p">,</span> <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">MOT_XY</span><span class="p">,</span>
+                          <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">MOT_Z</span><span class="p">,</span> <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">IMG_XY</span><span class="p">,</span> <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">IMG_Z</span><span class="p">,</span>
+                          <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">OPTICAL_PUMPING</span><span class="p">]</span>
+
+        <span class="n">shutter_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">ShutterConfig</span><span class="p">,</span> <span class="n">labscript</span><span class="o">.</span><span class="n">Shutter</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">TA</span><span class="p">:</span> <span class="n">devices</span><span class="o">.</span><span class="n">ta_shutter</span><span class="p">,</span>
+            <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">REPUMP</span><span class="p">:</span> <span class="n">devices</span><span class="o">.</span><span class="n">repump_shutter</span><span class="p">,</span>
+            <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">MOT_XY</span><span class="p">:</span> <span class="n">devices</span><span class="o">.</span><span class="n">mot_xy_shutter</span><span class="p">,</span>
+            <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">MOT_Z</span><span class="p">:</span> <span class="n">devices</span><span class="o">.</span><span class="n">mot_z_shutter</span><span class="p">,</span>
+            <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">IMG_XY</span><span class="p">:</span> <span class="n">devices</span><span class="o">.</span><span class="n">img_xy_shutter</span><span class="p">,</span>
+            <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">IMG_Z</span><span class="p">:</span> <span class="n">devices</span><span class="o">.</span><span class="n">img_z_shutter</span><span class="p">,</span>
+            <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">OPTICAL_PUMPING</span><span class="p">:</span> <span class="n">devices</span><span class="o">.</span><span class="n">optical_pump_shutter</span><span class="p">,}</span>
+
+        <span class="k">for</span> <span class="n">shutter</span> <span class="ow">in</span> <span class="n">basic_shutters</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">shutter</span> <span class="ow">in</span> <span class="n">shutters_to_open</span><span class="p">:</span>
+                <span class="n">shutter_dict</span><span class="p">[</span><span class="n">shutter</span><span class="p">]</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">shutter</span> <span class="ow">in</span> <span class="n">shutters_to_close</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">early_close</span><span class="p">:</span>
+                    <span class="n">shutter_dict</span><span class="p">[</span><span class="n">shutter</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">CONST_SHUTTER_TURN_ON_TIME</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">shutter_dict</span><span class="p">[</span><span class="n">shutter</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">shutter_config</span> <span class="o">=</span> <span class="n">new_shutter_config</span></div>
 
@@ -363,10 +367,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">update_shutters</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shutter_config</span><span class="p">,</span> <span class="n">early_close</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">ta_power</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">ta_aom_on</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">ta_power</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ta_aom_on</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">ta_power</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">ta_power</span> <span class="o">=</span> <span class="n">ta_power</span>
         <span class="k">if</span> <span class="n">repump_power</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">repump_aom_on</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">repump_power</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">repump_aom_on</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">repump_power</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">repump_power</span> <span class="o">=</span> <span class="n">repump_power</span>
 
         <span class="n">t</span> <span class="o">+=</span> <span class="n">dur</span>
