@@ -269,7 +269,7 @@ class D2Lasers:
         if (dur < CONST_MIN_SHUTTER_ON_TIME) and change_shutters:
             t += CONST_MIN_SHUTTER_ON_TIME - dur
 
-        # If not doing hold_shutters, have to make sure that we aren't opening any of the ones we just closed in the next pulse.
+        # If doing close_all_shutters, have to make sure that we aren't opening any of the ones we just closed in the next pulse.
         # Otherwise they won't be able to open in time unless there's enough delay between pulses.
         if close_all_shutters:
             self.update_shutters(ShutterConfig.NONE)
