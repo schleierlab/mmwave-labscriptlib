@@ -1031,7 +1031,7 @@ def coil_change(t, x_ini, x_fin, y_ini, y_fin, z_ini, z_fin):
                 t,
                 duration=coil_ramp_time,
                 initial=biasy_calib(y_ini),
-                final=biasy_calib(y_fin),  # 0 mG
+                final=biasy_calib(y_fin), # 0 mG
                 samplerate=1e5,
             )
 
@@ -1189,33 +1189,7 @@ def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'micr
         op_biasx_field = shot_globals.op_bias_amp * np.cos(shot_globals.op_bias_phi/180*np.pi) * np.sin(shot_globals.op_bias_theta/180*np.pi)
         op_biasy_field = shot_globals.op_bias_amp * np.sin(shot_globals.op_bias_phi/180*np.pi) * np.sin(shot_globals.op_bias_theta/180*np.pi)
         op_biasz_field = shot_globals.op_bias_amp * np.cos(shot_globals.op_bias_theta/180*np.pi)
-
-
-        devices.x_coil_current.ramp(
-                t,
-                duration=100e-6,
-                initial=biasx_calib(0),
-                final= biasx_calib(op_biasx_field),# 0 mG
-                samplerate=1e5,
-            )
-
-        # devices.y_coil_current.ramp(
-        #         t,
-        #         duration=100e-6,
-        #         initial=biasx_calib(0),
-        #         final=  biasy_calib(shot_globals.op_biasy_field),# 0 mG
-        #         samplerate=1e5,
-        #     )
-
-        devices.y_coil_current.constant(t, biasy_calib(op_biasy_field)) # define quantization axis
-
-        devices.z_coil_current.ramp(
-                t,
-                duration=100e-6,
-                initial=biasz_calib(0),
-                final= biasz_calib(op_biasz_field),# 0 mG
-                samplerate=1e5,
-            )
+        coil_change(t, x_ini=0, x_fin=op_biasx_field, y_ini=0, y_fin=op_biasy_field, z_ini=0, z_fin=op_biasz_field)
 
         devices.ta_vco.ramp(
                 t,
@@ -1244,7 +1218,7 @@ def optical_pumping(t, ta_last_detuning, repump_last_detuning, next_step = 'micr
         devices.repump_aom_digital.go_low(t - shutter_turn_off_t)
         devices.repump_aom_analog.constant(t - shutter_turn_off_t,0)
 
-        t += max(ta_vco_ramp_t, 100e-6, shot_globals.op_ramp_delay)
+        t += max(ta_vco_ramp_t, coil_ramp_time, shot_globals.op_ramp_delay)
 
         devices.optical_pump_shutter.open(t)
         devices.ta_aom_digital.go_high(t)

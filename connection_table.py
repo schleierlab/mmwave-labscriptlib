@@ -54,12 +54,32 @@ class LabDevices():
             delay=aom_delays,
             open_state=1,
         )
+
+
         self.repump_aom_digital = Shutter(
             name='repump_aom_digital',
             parent_device=ni_6363_0,
             connection='port0/line1',
             delay=aom_delays,
             open_state=1,
+        )
+
+        self.x_coil_feedback_off = DigitalOut(
+            name='x_coil_feedback_off',
+            parent_device=ni_6363_0,
+            connection='port0/line4',
+        )
+
+        self.y_coil_feedback_off = DigitalOut(
+            name='y_coil_feedback_off',
+            parent_device=ni_6363_0,
+            connection='port0/line12',
+        )
+
+        self.z_coil_feedback_off = DigitalOut(
+            name='z_coil_feedback_off',
+            parent_device=ni_6363_0,
+            connection='port0/line12',
         )
 
         # port 2 is camera
@@ -249,11 +269,11 @@ class LabDevices():
             open_state=1,
         )
 
-        self.digital_out_ch26 = DigitalOut(
-            name='digital_out_ch26',
-            parent_device=ni_6363_0,
-            connection='port0/line26',
-        )
+        # self.digital_out_ch26 = DigitalOut(
+        #     name='digital_out_ch26',
+        #     parent_device=ni_6363_0,
+        #     connection='port0/line26',
+        # )
 
 
 
@@ -336,12 +356,12 @@ class LabDevices():
         # Cameras
         #==============================================================================
 
-        # self.manta419b_mot = Manta419B(
-        #     'manta419b_mot',
-        #     parent_device=ni_6363_0,
-        #     connection="port0/line2",
-        #     BIAS_port=54321,
-        # )
+        self.manta419b_mot = Manta419B(
+            'manta419b_mot',
+            parent_device=ni_6363_0,
+            connection="port0/line2",
+            BIAS_port=54321,
+        )
 
         # self.manta419b_tweezer = Manta419B(
         #     'manta419b_tweezer',
@@ -364,12 +384,12 @@ class LabDevices():
         #     BIAS_port=54323,
         # )
 
-        self.kinetix = Kinetix(
-            name='kinetix',
-            parent_device=ni_6363_0,
-            connection='port0/line15',
-            BIAS_port=27171,
-        )
+        # self.kinetix = Kinetix(
+        #     name='kinetix',
+        #     parent_device=ni_6363_0,
+        #     connection='port0/line15',
+        #     BIAS_port=27171,
+        # )
 
         #================================================================================
         # Spectrum Instrumentation Cards for microwaves
@@ -414,44 +434,45 @@ class LabDevices():
         #     handle_name = b'/dev/spcm1',
         # )
 
-        #==============================================================================
-        # Y AOD DDS: AD9914 0
-        #==============================================================================
-        ad99140 = AD9914('AD99140', parent_device=clockline_6363, com_port=54322)
-        self.dds0 = AD_DDS(
-            name='dds0',
-            parent_device=ad99140,
-            connection='p0',
-            profileControls ={
-                'PS0': {'device': ni_6363_0, 'connection': 'port0/line27'},
-                'PS1': {'device': ni_6363_0, 'connection': 'port0/line28'},
-                'PS2': {'device': ni_6363_0, 'connection': 'port0/line29'},
-            },
-            sweepControls = {
-                'DRCTL': {'device': ni_6363_0, 'connection': 'port0/line30'},
-                'DRHOLD': {'device': ni_6363_0, 'connection': 'port0/line31'},
-            },
+        # #==============================================================================
+        # # Y AOD DDS: AD9914 0
+        # #==============================================================================
+        # ad99140 = AD9914('AD99140', parent_device=clockline_6363, com_port=54322)
+        # self.dds0 = AD_DDS(
+        #     name='dds0',
+        #     parent_device=ad99140,
+        #     connection='p0',
+        #     profileControls ={
+        #         'PS0': {'device': ni_6363_0, 'connection': 'port0/line27'},
+        #         'PS1': {'device': ni_6363_0, 'connection': 'port0/line28'},
+        #         'PS2': {'device': ni_6363_0, 'connection': 'port0/line29'},
+        #     },
+        #     sweepControls = {
+        #         'DRCTL': {'device': ni_6363_0, 'connection': 'port0/line30'},
+        #         'DRHOLD': {'device': ni_6363_0, 'connection': 'port0/line31'},
+        #     },
 
-        )
-        #==============================================================================
-        # 456 DDS: AD9914 1
-        #==============================================================================
+        # )
+        # #==============================================================================
+        # # 456 DDS: AD9914 1
+        # #==============================================================================
 
-        ad9914_1 = AD9914('AD9914_1', parent_device=clockline_6363, com_port=54320)
-        self.dds1 = AD_DDS(
-            name='dds1',
-            parent_device=ad9914_1,
-            connection='p1',
-            profileControls = {
-                'PS0': {'device': ni_6363_0, 'connection': 'port0/line27'},
-                'PS1': {'device': ni_6363_0, 'connection': 'port0/line28'},
-                'PS2': {'device': ni_6363_0, 'connection': 'port0/line29'},
-            },
-            sweepControls = {
-                'DRCTL': {'device': ni_6363_0, 'connection': 'port0/line30'},
-                'DRHOLD': {'device': ni_6363_0, 'connection': 'port0/line31'},
-            },
-        )
+        # ad9914_1 = AD9914('AD9914_1', parent_device=clockline_6363, com_port=54320)
+        # self.dds1 = AD_DDS(
+        #     name='dds1',
+        #     parent_device=ad9914_1,
+        #     connection='p1',
+        #     profileControls = {
+        #         'PS0': {'device': ni_6363_0, 'connection': 'port0/line27'},
+        #         'PS1': {'device': ni_6363_0, 'connection': 'port0/line28'},
+        #         'PS2': {'device': ni_6363_0, 'connection': 'port0/line29'},
+        #     },
+        #     sweepControls = {
+        #         'DRCTL': {'device': ni_6363_0, 'connection': 'port0/line30'},
+        #         'DRHOLD': {'device': ni_6363_0, 'connection': 'port0/line31'},
+        #     },
+        # )
+
     # def checkChannelParity(device):
     #     analogs = {}
     #     digitals = {}
