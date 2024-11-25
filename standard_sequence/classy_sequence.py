@@ -556,7 +556,7 @@ class MOTSequence:
 
         return t
 
-    def do_mot_in_situ_sequence(self, t, reset_mot = False):
+    def _do_mot_in_situ_sequence(self, t, reset_mot = False):
         print("Running do_mot_in_situ_check")
 
         print("MOT coils = ", self.BField_obj.mot_coils_on)
@@ -581,7 +581,7 @@ class MOTSequence:
         return t
 
     # TODO: Needs more experimental debugging. When should the shutter close? What timescales should we expect the MOT to disperse in?
-    def do_mot_tof_sequence(self, t, reset_mot = False):
+    def _do_mot_tof_sequence(self, t, reset_mot = False):
         print("Running do_mot_in_situ_check")
 
         print("MOT coils = ", self.BField_obj.mot_coils_on)
@@ -677,7 +677,7 @@ class MOTSequence:
 
         return t
 
-    def do_molasses_in_situ_sequence(self, t, reset_mot = False):
+    def _do_molasses_in_situ_sequence(self, t, reset_mot = False):
         # MOT loading time 500 ms
         mot_load_dur = 0.5
 
@@ -701,7 +701,7 @@ class MOTSequence:
 
         return t
 
-    def do_molasses_tof_sequence(self, t, reset_mot = False):
+    def _do_molasses_tof_sequence(self, t, reset_mot = False):
 
         mot_load_dur = 0.5
         t += CONST_SHUTTER_TURN_ON_TIME
@@ -779,12 +779,39 @@ class MOTSequence:
         return t
 
 
+class OpticalPumpingSequence(MOTSequence):
+
+    def __init__(self):
+        super(OpticalPumpingSequence, self).__init__()
+
+    def pump_to_F4(self, t):
+        pass
+
+    def depump_to_F3(self, t):
+        pass
+
+    def kill_F4(self, t):
+        pass
+
+    def kill_F3(self, t):
+        pass
+
+
 
 class TweezerSequence(MOTSequence):
 
     def __init__(self):
         super(TweezerSequence, self).__init__()
         self.TweezerLaser_obj = TweezerLaser()
+
+    def load_tweezers(self, t):
+        pass
+
+    def rearrange_to_dense(self, t):
+        pass
+
+    def image_tweezers(self, t):
+        pass
 
 
 # I think we should leave both 456 and 1064 stuff here because really the only debugging
@@ -825,19 +852,19 @@ if __name__ == "__main__":
     if shot_globals.do_mot_in_situ_check:
         #t = do_mot_in_situ_check(t)
         MOTSeq_obj = MOTSequence(t)
-        t = MOTSeq_obj.do_mot_in_situ_sequence(t, reset_mot = True)
+        t = MOTSeq_obj._do_mot_in_situ_sequence(t, reset_mot = True)
 
     if shot_globals.do_mot_tof_check:
         MOTSeq_obj = MOTSequence(t)
-        t = MOTSeq_obj.do_mot_tof_sequence(t, reset_mot = True)
+        t = MOTSeq_obj._do_mot_tof_sequence(t, reset_mot = True)
 
-    if shot_globals.do_molasses_in_situ_check:
+    if shot_globals._do_molasses_in_situ_check:
         MOTSeq_obj = MOTSequence(t)
-        t = MOTSeq_obj.do_molasses_in_situ_sequence(t, reset_mot = True)
+        t = MOTSeq_obj._do_molasses_in_situ_sequence(t, reset_mot = True)
 
     if shot_globals.do_molasses_tof_check:
         MOTSeq_obj = MOTSequence(t)
-        t = MOTSeq_obj.do_molasses_tof_sequence(t, reset_mot = True)
+        t = MOTSeq_obj._do_molasses_tof_sequence(t, reset_mot = True)
 
     # if shot_globals.do_field_calib_in_molasses_check:
     #     t = do_field_calib_in_molasses_check(t)
