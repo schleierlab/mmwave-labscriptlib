@@ -71,17 +71,6 @@ class ShutterConfig(Flag):
     OPTICAL_PUMPING_TA = TA | OPTICAL_PUMPING
     OPTICAL_PUMPING_REPUMP = REPUMP | OPTICAL_PUMPING
 
-    shutter_dict: ClassVar[dict[ShutterConfig, labscript.Shutter]] = {
-        TA: devices.ta_shutter,
-        REPUMP: devices.repump_shutter,
-        MOT_XY: devices.mot_xy_shutter,
-        MOT_Z: devices.mot_z_shutter,
-        IMG_XY: devices.img_xy_shutter,
-        IMG_Z: devices.img_z_shutter,
-        OPTICAL_PUMPING: devices.optical_pump_shutter,
-    }
-
-
     # TODO: replace globals with arguments
     @classmethod
     def select_imgaging_shutters(cls, do_repump = True) -> ShutterConfig:
@@ -211,14 +200,29 @@ class D2Lasers:
 
         shutters_to_open = changed_shutters & new_shutter_config
         shutters_to_close = changed_shutters & self.shutter_config
-        print(shutters_to_open)
-        for shutter in self.shutter_config.shutter_dict[shutters_to_open]:
-            shutter.open(t)
-        for shutter in shutters_to_close:
-            if early_close:
-                self.shutter_config.shutter_dict[shutter].close(t - CONST_SHUTTER_TURN_ON_TIME)
-            else:
-                self.shutter_config.shutter_dict[shutter].close(t)
+
+        # Can we put tjhis somewhere nicer?
+        basic_shutters = [ShutterConfig.TA, ShutterConfig.REPUMP, ShutterConfig.MOT_XY,
+                          ShutterConfig.MOT_Z, ShutterConfig.IMG_XY, ShutterConfig.IMG_Z,
+                          ShutterConfig.OPTICAL_PUMPING]
+
+        shutter_dict: dict[ShutterConfig, labscript.Shutter] = {
+            ShutterConfig.TA: devices.ta_shutter,
+            ShutterConfig.REPUMP: devices.repump_shutter,
+            ShutterConfig.MOT_XY: devices.mot_xy_shutter,
+            ShutterConfig.MOT_Z: devices.mot_z_shutter,
+            ShutterConfig.IMG_XY: devices.img_xy_shutter,
+            ShutterConfig.IMG_Z: devices.img_z_shutter,
+            ShutterConfig.OPTICAL_PUMPING: devices.optical_pump_shutter,}
+
+        for shutter in basic_shutters:
+            if shutter in shutters_to_open:
+                shutter_dict[shutter].open(t)
+            if shutter in shutters_to_close:
+                if early_close:
+                    shutter_dict[shutter].close(t - CONST_SHUTTER_TURN_ON_TIME)
+                else:
+                    shutter_dict[shutter].close(t)
 
         self.shutter_config = new_shutter_config
         #return t?
@@ -255,10 +259,10 @@ class D2Lasers:
             self.update_shutters(t, shutter_config, early_close=True)
 
         if ta_power != 0:
-            self.ta_aom_on(self, t, ta_power)
+            self.ta_aom_on(t, ta_power)
             self.ta_power = ta_power
         if repump_power != 0:
-            self.repump_aom_on(self, t, repump_power)
+            self.repump_aom_on(t, repump_power)
             self.repump_power = repump_power
 
         t += dur
