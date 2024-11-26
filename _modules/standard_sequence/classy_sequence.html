@@ -874,10 +874,13 @@
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.do_mot">[docs]</a>
     <span class="k">def</span> <span class="nf">do_mot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_uv</span><span class="p">:</span>
-            <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">UVLamps_obj</span><span class="o">.</span><span class="n">uv_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">)</span>
-            <span class="c1"># longer duration than 1e-2 will lead to the overall MOT atom</span>
-            <span class="c1"># number decay during the cycle</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">UVLamps_obj</span><span class="o">.</span><span class="n">uv_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">uv_duration</span><span class="p">)</span>
+            <span class="c1"># the uv duration should be determined for each dispenser current</span>
+            <span class="c1"># generally, get superior loading in the 10s of milliseconds</span>
 
+        <span class="c1"># if using a long UV duration, want to make sure that the MOT doesn&#39;t finish</span>
+        <span class="c1"># loading leaving the UV is still on for imaging.</span>
+        <span class="n">dur</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">dur</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">uv_duration</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="p">,</span> <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">MOT_FULL</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_ta_power</span><span class="p">,</span>
                                         <span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_repump_power</span><span class="p">,</span> <span class="n">close_all_shutters</span> <span class="o">=</span> <span class="n">close_all_shutters</span><span class="p">)</span>
 
@@ -924,7 +927,7 @@
         <span class="k">return</span> <span class="n">t</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_do_mot_in_situ_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_do_mot_in_situ_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running do_mot_in_situ_check&quot;</span><span class="p">)</span>
 
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;MOT coils = &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">mot_coils_on</span><span class="p">)</span>
@@ -1390,21 +1393,20 @@
     <span class="c1"># Insert &quot;stay on&quot; statements for alignment here...</span>
 
     <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_mot_in_situ_check</span><span class="p">:</span>
-        <span class="c1">#t = do_mot_in_situ_check(t)</span>
         <span class="n">MOTSeq_obj</span> <span class="o">=</span> <span class="n">MOTSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="n">MOTSeq_obj</span><span class="o">.</span><span class="n">_do_mot_in_situ_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">MOTSeq_obj</span><span class="o">.</span><span class="n">_do_mot_in_situ_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_mot_tof_check</span><span class="p">:</span>
         <span class="n">MOTSeq_obj</span> <span class="o">=</span> <span class="n">MOTSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="n">MOTSeq_obj</span><span class="o">.</span><span class="n">_do_mot_tof_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">MOTSeq_obj</span><span class="o">.</span><span class="n">_do_mot_tof_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">_do_molasses_in_situ_check</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_molasses_in_situ_check</span><span class="p">:</span>
         <span class="n">MOTSeq_obj</span> <span class="o">=</span> <span class="n">MOTSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="n">MOTSeq_obj</span><span class="o">.</span><span class="n">_do_molasses_in_situ_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">MOTSeq_obj</span><span class="o">.</span><span class="n">_do_molasses_in_situ_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_molasses_tof_check</span><span class="p">:</span>
         <span class="n">MOTSeq_obj</span> <span class="o">=</span> <span class="n">MOTSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="n">MOTSeq_obj</span><span class="o">.</span><span class="n">_do_molasses_tof_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">MOTSeq_obj</span><span class="o">.</span><span class="n">_do_molasses_tof_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1"># if shot_globals.do_field_calib_in_molasses_check:</span>
     <span class="c1">#     t = do_field_calib_in_molasses_check(t)</span>
