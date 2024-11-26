@@ -33,7 +33,8 @@ CONST_MIN_SHUTTER_OFF_TIME = 6.28e-3  # minimum time for shutter to be off and o
 CONST_MIN_SHUTTER_ON_TIME = 3.6e-3  # minimum time for shutter to be on
 CONST_SHUTTER_TURN_ON_TIME  = 2e-3 # for shutter take from start to close to fully close
 CONST_SHUTTER_TURN_OFF_TIME = 2e-3 # for shutter take from start to open to fully open
-
+CONST_TA_PUMPING_DETUNING = -251  # MHz 4->4 tansition
+CONST_REPUMP_DEPUMPING_DETUNING = -201.24  # MHz 3->3 transition
 
 # lasers_852 =  D2Lasers()
 # lasers_852.pulse_imaging(t=300e-6, duration=100e-6)
@@ -124,22 +125,26 @@ class D2Lasers:
 
     #Move freq_calib to a function within here? Probably not needed.
     def ramp_ta_freq(self, t, duration, final):
+        # TODO: check that duration statement here is valid for optical pumping
+        duration = max(CONST_TA_VCO_RAMP_TIME, duration)
         devices.ta_vco.ramp(
             t,
             duration=duration,
             initial=ta_freq_calib(self.ta_freq),
             final=ta_freq_calib(final),
-            samplerate=1e5,
+            samplerate=4e5,
         )
         self.ta_freq = final
 
     def ramp_repump_freq(self, t, duration, final):
+        # TODO: check that duration statement here is valid for optical pumping
+        duration = max(CONST_TA_VCO_RAMP_TIME, duration)
         devices.repump_vco.ramp(
             t,
             duration=duration,
             initial=repump_freq_calib(self.repump_freq),
             final=repump_freq_calib(final),
-            samplerate=1e5,
+            samplerate=4e5,
         )
         self.repump_freq = final
 
@@ -176,7 +181,7 @@ class D2Lasers:
 
 
     def ramp_ta_aom(self, t, dur, final_power):
-
+        """ ramp ta power from current value to final power """
         devices.ta_aom_analog.ramp(
             t,
             duration=dur,
@@ -186,6 +191,7 @@ class D2Lasers:
         )
 
     def ramp_repump_aom(self, t, dur, final_power):
+        """ ramp repump power from current value to final power """
         devices.repump_aom_analog.ramp(
             t,
             duration=dur,
@@ -269,7 +275,6 @@ class D2Lasers:
         self.ta_aom_off(t)
         self.repump_aom_off(t)
 
-
         if (dur < CONST_MIN_SHUTTER_ON_TIME) and change_shutters:
             t += CONST_MIN_SHUTTER_ON_TIME - dur
 
@@ -299,11 +304,68 @@ class D2Lasers:
 
         return t
 
+    def parity_projection_pulse(self, t, dur):
+        self.ramp_ta_freq(t, duration=0, final=shot_globals.bm_parity_projection_ta_detuning)
+        t += CONST_TA_VCO_RAMP_TIME
+        # TODO: is this a TA pulse only? Or is repump also supposed to be on?
+        t = self.do_pulse(t, dur, ShutterConfig.MOT_TA,
+                      shot_globals.bm_parity_projection_ta_power,
+                      0, close_all_shutters=True)
+        return t
+
 
 
 class TweezerLaser:
     def __init__(self, t):
-        pass
+        self.tw_power = shot_globals.tw_power
+        self.intensity_servo_keep_on(t)
+        self.start_tweezers(t)
+
+    def start_tweezers(self, t):
+        spectrum_manager.start_card()
+        t1 = spectrum_manager.start_tweezers(t)
+        print('tweezer start time:', t1)
+        self.aom_on(t, self.tw_power)
+
+    def intensity_servo_keep_on(self, t):
+        ''' keep the AOM digital high for intensity servo '''
+        self.aom_on(t, 0)
+
+    def aom_on(self, t, const):
+        """ Turn on the tweezer beam using aom """
+        devices.tweezer_aom_digital.go_high(t)  # digital off
+        devices.tweezer_aom_analog.constant(t, const)  # analog off
+        self.tw_power = const
+
+    def aom_off(self, t):
+        """ Turn off the tweezer beam using aom """
+        devices.tweezer_aom_digital.go_low(t)  # digital off
+        devices.tweezer_aom_analog.constant(t, 0)  # analog off
+        self.tw_power = 0
+
+    def ramp_power(self, t, dur, final_power):
+        devices.tweezer_aom_analog.ramp(
+            t,
+            duration=dur,
+            initial=self.tw_power,
+            final=final_power,
+            samplerate=1e5
+        )
+
+    def sine_mod_power(self, t, dur, amp, freq):
+        devices.tweezer_aom_analog.sine(
+            t,
+            duration=dur,
+            amplitude=amp,
+            angfreq=2*np.pi*freq,
+            phase=0,
+            dc_offset=self.tw_power,
+            samplerate=1e5
+        )
+
+
+
+
 
 class Microwave:
     def __init__(self, t):
@@ -313,7 +375,73 @@ class Microwave:
 
 class RydLasers:
     def __init__(self, t):
-        pass
+        # Keep the intensity servo on, regardless of BLACs settings
+        self.blue_intensity_servo_keep_on(t)
+        self.red_intensity_servo_keep_on(t)
+
+    def blue_intensity_servo_keep_on(self, t):
+        ''' keep the AOM digital high for intensity servo '''
+        self.blue_servo_aom_on(t, 0)
+
+    def red_intensity_servo_keep_on(self, t):
+        ''' keep the AOM digital high for intensity servo '''
+        self.red_servo_aom_on(t, 0)
+
+    def blue_servo_aom_on(self, t, const):
+        devices.moglabs_456_aom_digital.go_high(t)  # digital on
+        devices.moglabs_456_aom_analog.constant(t, const)  # analog to const
+        self.blue_power = const
+
+    def blue_servo_aom_off(self, t):
+        devices.moglabs_456_aom_digital.go_low(t)  # digital off
+        devices.moglabs_456_aom_analog.constant(t, 0)  # analog off
+        self.blue_power = 0
+
+    def blue_pulse_aom_on(self, t, const):
+        devices.octagon_456_aom_digital.go_high(t)  # digital on
+        devices.octagon_456_aom_analog.constant(t, const)  # analog to const
+        self.blue_power = const
+
+    def blue_pulse_aom_off(self, t):
+        devices.octagon_456_aom_digital.go_low(t)  # digital off
+        devices.octagon_456_aom_analog.constant(t, 0)  # analog off
+        self.blue_power = 0
+
+    def red_servo_aom_on(self, t, const):
+        devices.ipg_1064_aom_digital.go_high(t)  # digital on
+        devices.ipg_1064_aom_analog.constant(t, const)  # analog to const
+        self.red_power = const
+
+    def red_servo_aom_off(self, t):
+        devices.ipg_1064_aom_digital.go_low(t)  # digital off
+        devices.ipg_1064_aom_analog.constant(t, 0)  # analog off
+        self.red_power = 0
+
+    def red_pulse_aom_on(self, t, const):
+        devices.pulse_1064_digital.go_high(t)  # digital on
+        devices.pulse_1064_analog.constant(t, const)  # analog to const
+        self.red_power = const
+
+    def red_pulse_aom_off(self, t):
+        devices.pulse_1064_digital.go_low(t)  # digital off
+        devices.pulse_1064_analog.constant(t, 0)  # analog off
+        self.red_power = 0
+
+    def blue_mirror_1_position(self, t):
+        devices.mirror_1_horizontal.constant(t, shot_globals.ryd_456_mirror_1_h_position)
+        devices.mirror_1_vertical.constant(t, shot_globals.ryd_456_mirror_1_v_position)
+
+    def blue_mirror_2_position(self, t):
+        devices.mirror_2_horizontal.constant(t, shot_globals.ryd_456_mirror_2_h_position)
+        devices.mirror_2_vertical.constant(t, shot_globals.ryd_456_mirror_2_v_position)
+
+    def red_mirror_1_position(self, t):
+        devices.mirror_3_horizontal.constant(t, shot_globals.ryd_1064_mirror_1_h_position)
+        devices.mirror_3_vertical.constant(t, shot_globals.ryd_1064_mirror_1_v_position)
+
+    def red_mirror_2_position(self, t):
+        devices.mirror_4_horizontal.constant(t, shot_globals.ryd_1064_mirror_2_h_position)
+        devices.mirror_4_vertical.constant(t, shot_globals.ryd_1064_mirror_2_v_position)
 
 class UVLamps:
     def __init__(self, t):
@@ -456,6 +584,14 @@ class BField:
         t += ramp_dur
         t += CONST_COIL_OFF_TIME
         return t
+
+    def get_op_bias_fields(self):
+        """ Compute the proper bias fields for a given quantization angle from shot globals """
+        op_biasx_field = shot_globals.op_bias_amp * np.cos(shot_globals.op_bias_phi / 180 * np.pi) * np.sin(shot_globals.op_bias_theta / 180 * np.pi)
+        op_biasy_field = shot_globals.op_bias_amp * np.sin(shot_globals.op_bias_phi / 180 * np.pi) * np.sin(shot_globals.op_bias_theta / 180 * np.pi)
+        op_biasz_field = shot_globals.op_bias_amp * np.cos(shot_globals.op_bias_theta / 180 * np.pi)
+
+        return op_biasx_field, op_biasy_field, op_biasz_field
 
 class Camera:
     def __init__(self, t):
@@ -784,14 +920,110 @@ class OpticalPumpingSequence(MOTSequence):
     def __init__(self):
         super(OpticalPumpingSequence, self).__init__()
 
-    def pump_to_F4(self, t):
-        pass
+    def pump_to_F4(self, t, label=None):
+        if self.BField_obj.mot_coils_on:
+            _ = self.BField_obj.mot_coils_off(t)
+        if label == "mot":
+            # Use the MOT beams for optical pumping
+            # define quantization axis
+            t = self.BField_obj.ramp_B_field(t, (shot_globals.mw_biasx_field,
+                                                 shot_globals.mw_biasy_field,
+                                                 shot_globals.mw_biasz_field))
+            # Do a repump pulse
+            t = self.D2Lasers_obj.do_pulse(t, shot_globals.op_MOT_op_time,
+                                    ShutterConfig.MOT_REPUMP, 0, 1, close_all_shutters=True)
+            return t
+
+        elif label == "sigma":
+            # Use the sigma+ beam for optical pumping
+            # TODO: do we want shutters always closed for this ramping?
+            op_biasx_field, op_biasy_field, op_biasz_field = self.BField_obj.get_op_bias_fields()
+            _ = self.BField_obj.ramp_B_field(t, (op_biasx_field,
+                                                 op_biasy_field,
+                                                 op_biasz_field))
+            # ramp detuning to 4 -> 4, 3 -> 4
+            self.D2Lasers_obj.ramp_ta_freq(t, 0, CONST_TA_PUMPING_DETUNING)
+            self.D2Lasers_obj.ramp_repump_freq(t, 0, shot_globals.op_repump_pumping_detuning)
+            # Do a sigma+ pulse
+            # TODO: is shot_globals.op_ramp_delay just extra fudge time? can it be eliminated?
+            t += max(CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
+            t = self.D2Lasers_obj.do_pulse(t - CONST_SHUTTER_TURN_ON_TIME,
+                                       shot_globals.op_repump_time,
+                                       ShutterConfig.OPTICAL_PUMPING_FULL,
+                                       shot_globals.op_ta_power,
+                                       shot_globals.op_repump_power,)
+            # Need to turn off the TA before repump, Sam claims this timing should work
+            assert shot_globals.op_ta_time < shot_globals.op_repump_time, "TA time should be shorter than repump for pumping to F=4"
+            # TODO: test this timing
+            self.D2Lasers_obj.ta_aom_off(t + shot_globals.op_ta_time - shot_globals.op_repump_time)
+            # Close the shutters
+            self.D2Lasers_obj.update_shutters(t, ShutterConfig.NONE)
+            t += CONST_SHUTTER_TURN_OFF_TIME
+
+            return t
+
+        else:
+            raise NotImplementedError("This optical pumping method is not implemented")
 
     def depump_to_F3(self, t):
-        pass
+        # This method should be quite similar to pump_to_F4, but trying to call pump_to_F4 with
+        # different parameters would produce a very long argument list
+        if self.BField_obj.mot_coils_on:
+            _ = self.BField_obj.mot_coils_off(t)
+        if label == "mot":
+            # Use the MOT beams for optical depumping
+            # define quantization axis
+            t = self.BField_obj.ramp_B_field(t, (shot_globals.mw_biasx_field,
+                                                 shot_globals.mw_biasy_field,
+                                                 shot_globals.mw_biasz_field))
+            # ramp detuning to 4 -> 4 for TA
+            self.D2Lasers_obj.ramp_ta_freq(t, 0, CONST_TA_PUMPING_DETUNING)
+            # Do a repump pulse
+            t = self.D2Lasers_obj.do_pulse(t, shot_globals.op_MOT_odp_time,
+                                    ShutterConfig.MOT_REPUMP, 1, 0, close_all_shutters=True)
+            return t
+
+        elif label == "sigma":
+            # Use the sigma+ beam for optical pumping
+            # TODO: do we want shutters always closed for this ramping?
+            op_biasx_field, op_biasy_field, op_biasz_field = self.BField_obj.get_op_bias_fields()
+            _ = self.BField_obj.ramp_B_field(t, (op_biasx_field,
+                                                 op_biasy_field,
+                                                 op_biasz_field))
+            # ramp detuning to 4 -> 4, 3 -> 3
+            self.D2Lasers_obj.ramp_ta_freq(t, 0, CONST_TA_PUMPING_DETUNING)
+            self.D2Lasers_obj.ramp_repump_freq(t, 0, CONST_REPUMP_DEPUMPING_DETUNING)
+            # Do a sigma+ pulse
+            # TODO: is shot_globals.op_ramp_delay just extra fudge time? can it be eliminated?
+            t += max(CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
+            t = self.D2Lasers_obj.do_pulse(t - CONST_SHUTTER_TURN_ON_TIME,
+                                       shot_globals.odp_repump_time,
+                                       ShutterConfig.OPTICAL_PUMPING_FULL,
+                                       shot_globals.odp_ta_power,
+                                       shot_globals.odp_repump_power,)
+            # Need to turn off the TA before repump, Sam claims this timing should work
+            assert shot_globals.odp_ta_time > shot_globals.odp_repump_time, "TA time should be longer than repump for depumping to F = 3"
+            # TODO: test this timing
+            self.D2Lasers_obj.ta_aom_off(t + shot_globals.odp_ta_time - shot_globals.odp_repump_time)
+            # Close the shutters
+            self.D2Lasers_obj.update_shutters(t, ShutterConfig.NONE)
+            t += CONST_SHUTTER_TURN_OFF_TIME
+
+            return t
+
+        else:
+            raise NotImplementedError("This optical depumping method is not implemented")
+
 
     def kill_F4(self, t):
-        pass
+        ''' Push away atoms in F = 4 '''
+        # tune to resonance
+        self.D2Lasers_obj.ramp_ta_freq(t, 0, 0)
+        t += CONST_TA_VCO_RAMP_TIME
+        # do a ta pulse via optical pumping path
+        t = self.D2Lasers_obj.do_pulse(t, shot_globals.op_killing_killing_pulse_time,
+                                    ShutterConfig.OPTICAL_PUMPING_FULL,
+                                    shot_globals.op_killing_ta_power, 0, close_all_shutters=True)
 
     def kill_F3(self, t):
         pass
@@ -805,14 +1037,32 @@ class TweezerSequence(MOTSequence):
         self.TweezerLaser_obj = TweezerLaser()
 
     def load_tweezers(self, t):
-        pass
+        t = self.do_mot(t, dur=0.5)
+        t = self.do_molasses(t, dur=shot_globals.bm_time)
+        t += 7e-3
+        # ramp to full power
+        self.TweezerLaser_obj.ramp_power(t, dur=10e-3, final_power=1)
+        t += 10e-3
+        t = self.D2Lasers_obj.parity_projection_pulse(t, dur=shot_globals.bm_parity_projection_pulse_dur)
+        t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
+
+        return t
 
     def rearrange_to_dense(self, t):
         pass
 
-    def image_tweezers(self, t):
+    def image_tweezers(self, t, shot_number):
+        # TODO: do_kinetix_imaging needs to include pre_imaging ramps
+        t = self.do_kinetix_imaging(t, shot_number=1)
+
+    def tweezer_modulation(self, t, label='sine'):
         pass
 
+    def _tweezer_release_recapture_sequence(self, t):
+        pass
+
+    def _tweezer_modulation_sequence(self, t):
+        pass
 
 # I think we should leave both 456 and 1064 stuff here because really the only debugging
 # we would need to do is checking their overlap or looking for a Rydberg loss signal in the dipole trap
