@@ -692,7 +692,7 @@ class MOTSequence:
 
         return t
 
-    def _do_mot_in_situ_sequence(self, t, reset_mot = False):
+    def _do_mot_in_situ_sequence(self, t, reset_mot=False):
         print("Running do_mot_in_situ_check")
 
         print("MOT coils = ", self.BField_obj.mot_coils_on)
@@ -1100,21 +1100,20 @@ if __name__ == "__main__":
     # Insert "stay on" statements for alignment here...
 
     if shot_globals.do_mot_in_situ_check:
-        #t = do_mot_in_situ_check(t)
         MOTSeq_obj = MOTSequence(t)
-        t = MOTSeq_obj._do_mot_in_situ_sequence(t, reset_mot = True)
+        t = MOTSeq_obj._do_mot_in_situ_sequence(t, reset_mot=True)
 
     if shot_globals.do_mot_tof_check:
         MOTSeq_obj = MOTSequence(t)
-        t = MOTSeq_obj._do_mot_tof_sequence(t, reset_mot = True)
+        t = MOTSeq_obj._do_mot_tof_sequence(t, reset_mot=True)
 
-    if shot_globals._do_molasses_in_situ_check:
+    if shot_globals.do_molasses_in_situ_check:
         MOTSeq_obj = MOTSequence(t)
-        t = MOTSeq_obj._do_molasses_in_situ_sequence(t, reset_mot = True)
+        t = MOTSeq_obj._do_molasses_in_situ_sequence(t, reset_mot=True)
 
     if shot_globals.do_molasses_tof_check:
         MOTSeq_obj = MOTSequence(t)
-        t = MOTSeq_obj._do_molasses_tof_sequence(t, reset_mot = True)
+        t = MOTSeq_obj._do_molasses_tof_sequence(t, reset_mot=True)
 
     # if shot_globals.do_field_calib_in_molasses_check:
     #     t = do_field_calib_in_molasses_check(t)
