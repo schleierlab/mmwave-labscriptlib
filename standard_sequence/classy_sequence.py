@@ -649,10 +649,13 @@ class MOTSequence:
 
     def do_mot(self, t, dur, close_all_shutters=False):
         if shot_globals.do_uv:
-            _ = self.UVLamps_obj.uv_pulse(t, dur=1e-2)
-            # longer duration than 1e-2 will lead to the overall MOT atom
-            # number decay during the cycle
+            _ = self.UVLamps_obj.uv_pulse(t, dur=shot_globals.uv_duration)
+            # the uv duration should be determined for each dispenser current
+            # generally, get superior loading in the 10s of milliseconds
 
+        # if using a long UV duration, want to make sure that the MOT doesn't finish
+        # loading leaving the UV is still on for imaging.
+        dur = max(dur, shot_globals.uv_duration)
         t = self.D2Lasers_obj.do_pulse(t, dur, ShutterConfig.MOT_FULL, shot_globals.mot_ta_power,
                                         shot_globals.mot_repump_power, close_all_shutters = close_all_shutters)
 
