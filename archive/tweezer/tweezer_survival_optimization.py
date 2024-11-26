@@ -32,7 +32,7 @@ def robost_loading_pulse_detuning_change(t, ta_last_detuning, repump_last_detuni
 
     devices.ta_vco.ramp(
         t,
-        duration= diagnostics.ta_vco_ramp_t,
+        duration= diagnostics.CONST_TA_VCO_RAMP_TIME,
         initial=ta_freq_calib(ta_last_detuning),
         final=ta_freq_calib(shot_globals.bm_rlp_ta_detuning),
         samplerate=4e5,
@@ -40,7 +40,7 @@ def robost_loading_pulse_detuning_change(t, ta_last_detuning, repump_last_detuni
 
     devices.repump_vco.ramp(
             t,
-            duration= diagnostics.ta_vco_ramp_t,
+            duration= diagnostics.CONST_TA_VCO_RAMP_TIME,
             initial=repump_freq_calib(repump_last_detuning),
             final=repump_freq_calib(0),
             samplerate=4e5,
@@ -52,7 +52,7 @@ def robost_loading_pulse_detuning_change(t, ta_last_detuning, repump_last_detuni
     devices.ta_aom_analog.constant(t , shot_globals.bm_rlp_ta_power) # back to full power for imaging
     devices.repump_aom_analog.constant(t , shot_globals.bm_rlp_repump_power)
 
-    t += diagnostics.ta_vco_ramp_t
+    t += diagnostics.CONST_TA_VCO_RAMP_TIME
 
     print('robust loading pulse stage')
     print(f'ta_last_detuning = {ta_last_detuning}')
@@ -67,7 +67,7 @@ def cooling_between_images(t, ta_last_detuning, repump_last_detuning):
 
     devices.ta_vco.ramp(
         t,
-        duration= diagnostics.ta_vco_ramp_t,
+        duration= diagnostics.CONST_TA_VCO_RAMP_TIME,
         initial=ta_freq_calib(ta_last_detuning),
         final=ta_freq_calib(shot_globals.img_cooling_between_images_ta_detuning),
         samplerate=4e5,
@@ -75,7 +75,7 @@ def cooling_between_images(t, ta_last_detuning, repump_last_detuning):
 
     devices.repump_vco.ramp(
             t,
-            duration= diagnostics.ta_vco_ramp_t,
+            duration= diagnostics.CONST_TA_VCO_RAMP_TIME,
             initial=repump_freq_calib(repump_last_detuning),
             final=repump_freq_calib(0),
             samplerate=4e5,
@@ -87,7 +87,7 @@ def cooling_between_images(t, ta_last_detuning, repump_last_detuning):
     devices.ta_aom_analog.constant(t , shot_globals.img_cooling_between_images_ta_power) # back to full power for imaging
     devices.repump_aom_analog.constant(t , shot_globals.img_cooling_between_images_repump_power)
 
-    t += diagnostics.ta_vco_ramp_t
+    t += diagnostics.CONST_TA_VCO_RAMP_TIME
 
     print('robust loading pulse stage')
     print(f'ta_last_detuning = {ta_last_detuning}')
@@ -103,13 +103,13 @@ def depump_pulse(t, ta_last_detuning, repump_last_detuning):
 
     t += devices.ta_vco.ramp(
         t,
-        duration=diagnostics.ta_vco_ramp_t,
+        duration=diagnostics.CONST_TA_VCO_RAMP_TIME,
         initial=ta_freq_calib(ta_last_detuning),
         final=ta_freq_calib(shot_globals.tw_depump_pulse_ta_detuning),
         samplerate=4e5,
     )
 
-    t += diagnostics.min_shutter_off_t
+    t += diagnostics.CONST_MIN_SHUTTER_OFF_TIME
     devices.ta_shutter.open(t)
     devices.optical_pump_shutter.open(t)
     devices.ta_aom_digital.go_high(t)
@@ -135,14 +135,14 @@ def killing_pulse(t, ta_last_detuning, repump_last_detuning):
 
     devices.ta_vco.ramp(
         t,
-        duration=diagnostics.ta_vco_ramp_t,
+        duration=diagnostics.CONST_TA_VCO_RAMP_TIME,
         initial=ta_freq_calib(ta_last_detuning),
         final=ta_freq_calib(0),
         samplerate=4e5,
     )
-    t += diagnostics.ta_vco_ramp_t
+    t += diagnostics.CONST_TA_VCO_RAMP_TIME
 
-    t += diagnostics.min_shutter_off_t
+    t += diagnostics.CONST_MIN_SHUTTER_OFF_TIME
     devices.ta_shutter.open(t)
     devices.optical_pump_shutter.open(t)
     devices.ta_aom_digital.go_high(t)
@@ -163,7 +163,7 @@ def killing_pulse(t, ta_last_detuning, repump_last_detuning):
 
 def optical_pumping(t, ta_last_detuning, repump_last_detuning):
     ######## pump all atom into F=4 using MOT beams ###########
-    ta_vco_ramp_t = diagnostics.ta_vco_ramp_t
+    ta_vco_ramp_t = diagnostics.CONST_TA_VCO_RAMP_TIME
     ta_pumping_detuning = -251 # MHz 4->4 tansition
     repump_pumping_detuning = -201.24 # MHz 3->3 transition
     if shot_globals.do_optical_pump_MOT:
@@ -489,7 +489,7 @@ def do_tweezer_check():
     diagnostics.do_MOT(t, MOT_load_dur, shot_globals.do_mot_coil)
     t += MOT_load_dur # how long MOT last
 
-    _, ta_last_detuning, repump_last_detuning = diagnostics.load_molasses(t, diagnostics.ta_bm_detuning, diagnostics.repump_bm_detuning)
+    _, ta_last_detuning, repump_last_detuning = diagnostics.load_molasses(t, diagnostics.CONST_TA_BM_DETUNING, diagnostics.CONST_REPUMP_BM_DETUNING)
     t += molasses_dur
     # ta_last_detuning =  ta_bm_detuning
     # repump_last_detuning = repump_bm_detuning
@@ -511,11 +511,11 @@ def do_tweezer_check():
     if shot_globals.do_trap_increase_during_imaging:
         devices.tweezer_aom_analog.constant(t, shot_globals.tweezer_loading_power) #0.3) #for single tweezer
 
-    t += diagnostics.min_shutter_off_t
+    t += diagnostics.CONST_MIN_SHUTTER_OFF_TIME
 
     t, ta_last_detuning, repump_last_detuning = diagnostics.pre_imaging(t, ta_last_detuning, repump_last_detuning)
 
-    assert shot_globals.img_tof_imaging_delay > diagnostics.min_shutter_off_t, "time of flight too short for shutter'"
+    assert shot_globals.img_tof_imaging_delay > diagnostics.CONST_MIN_SHUTTER_OFF_TIME, "time of flight too short for shutter'"
     t += shot_globals.img_tof_imaging_delay
 
     if shot_globals.do_trap_increase_during_imaging:

@@ -23,7 +23,7 @@ from labscriptlib.shot_globals import shot_globals
 
 coil_off_time = 1.4e-3 # minimum time for the MOT coil to be off
 # mot_detuning = -13 # MHz, optimized based on atom number
-mot_detuning = shot_globals.mot_detuning # MHz, optimized based on atom number
+mot_detuning = shot_globals.CONST_MOT_DETUNING # MHz, optimized based on atom number
 
 devices.initialize()
 

@@ -27,9 +27,9 @@ min_shutter_off_t = 6.28e-3 # minimum time for shutter to be off and on again
 devices.initialize()
 ta_vco_ramp_t = 1.2e-4 # minimum TA ramp time to stay locked
 ta_vco_stable_t = 1e-4 # stable time waited for lock
-mot_detuning = shot_globals.mot_detuning  # -13 # MHz, optimized based on atom number
-ta_bm_detuning = shot_globals.ta_bm_detuning  # -100 # MHz, bright molasses detuning
-repump_bm_detuning = shot_globals.repump_bm_detuning  # 0 # MHz, bright molasses detuning
+mot_detuning = shot_globals.CONST_MOT_DETUNING  # -13 # MHz, optimized based on atom number
+ta_bm_detuning = shot_globals.CONST_TA_BM_DETUNING  # -100 # MHz, bright molasses detuning
+repump_bm_detuning = shot_globals.CONST_REPUMP_BM_DETUNING  # 0 # MHz, bright molasses detuning
 ta_pumping_detuning = -251 # MHz 4->4 tansition
 repump_pumping_detuning = -201.24 # MHz 3->3 transition
 spectrum_card_offset = 52.8e-6 # the offset for the beging of output comparing to the trigger
