@@ -470,7 +470,7 @@ class BField:
         # Same question as for Dline_lasers, should we automatically initialize the hardware here or in a separate function we can call?
 
         # initialize bias_field variable to None
-        self.bias_field = None
+        # self.bias_field = None
 
         devices.x_coil_current.constant(t, self.bias_x_voltage)
         devices.y_coil_current.constant(t, self.bias_y_voltage)
@@ -631,8 +631,8 @@ class BField:
 
         # TODO: add the inverse function of bias_i_calib
         # otherwise, if only voltage vector is provided on input, the bias field will not be updated
-        if bias_field_vector is not None:
-            self.bias_field = bias_field_vector
+        # if bias_field_vector is not None:
+        #     self.bias_field = bias_field_vector
         self.bias_x_voltage = voltage_vector[0]
         self.bias_y_voltage = voltage_vector[1]
         self.bias_z_voltage = voltage_vector[2]
@@ -787,7 +787,7 @@ class MOTSequence:
         mot_bias_voltages = (shot_globals.mot_x_coil_voltage,
                              shot_globals.mot_y_coil_voltage,
                              shot_globals.mot_z_coil_voltage)
-        t = self.BField_obj.ramp_bias_field_voltage(t, mot_bias_voltages)
+        t = self.BField_obj.ramp_bias_field(t, voltage_vector = mot_bias_voltages)
 
         # Reset laser frequency and configuration
         t = self.D2Lasers_obj.reset_to_mot_freq(t)
