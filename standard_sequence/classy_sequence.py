@@ -583,29 +583,38 @@ class BField:
                                         t - 4e-3*int(self.bias_y_voltage * biasy_calib(bias_field_vector[1]) < 0),
                                         t - 4e-3*int(self.bias_z_voltage * biasz_calib(bias_field_vector[2]) < 0))
 
-        devices.x_coil_current.ramp(
-            t_x_coil,
-            duration=CONST_COIL_RAMP_TIME,
-            initial=self.bias_x_voltage,
-            final=biasx_calib(bias_field_vector[0]),
-            samplerate=1e5,
-        )
+        if np.sign(self.bias_x_voltage * biasx_calib(bias_field_vector[0])) > 0:
+            devices.x_coil_current.ramp(
+                t_x_coil,
+                duration=CONST_COIL_RAMP_TIME,
+                initial=self.bias_x_voltage,
+                final=biasx_calib(bias_field_vector[0]),
+                samplerate=1e5,
+            )
+        else: # coil flip the control voltage sign
+            self._x_coil_flip_polarity(self, t, bias_field_vector[0])
 
-        devices.y_coil_current.ramp(
-            t_y_coil,
-            duration=CONST_COIL_RAMP_TIME,
-            initial=self.bias_y_voltage,
-            final=biasy_calib(bias_field_vector[1]),  # 0 mG
-            samplerate=1e5,
-        )
+        if np.sign(self.bias_y_voltage * biasy_calib(bias_field_vector[1])) > 0:
+            devices.y_coil_current.ramp(
+                t_y_coil,
+                duration=CONST_COIL_RAMP_TIME,
+                initial=self.bias_y_voltage,
+                final=biasy_calib(bias_field_vector[1]),  # 0 mG
+                samplerate=1e5,
+            )
+        else: # coil flip the control voltage sign
+            self._y_coil_flip_polarity(self, t, bias_field_vector[1])
 
-        devices.z_coil_current.ramp(
-            t_z_coil,
-            duration=CONST_COIL_RAMP_TIME,
-            initial=self.bias_z_voltage,
-            final=biasz_calib(bias_field_vector[2]),  # 0 mG
-            samplerate=1e5,
-        )
+        if np.sign(self.bias_z_voltage * biasz_calib(bias_field_vector[2]) > 0:
+            devices.z_coil_current.ramp(
+                t_z_coil,
+                duration=CONST_COIL_RAMP_TIME,
+                initial=self.bias_z_voltage,
+                final=biasz_calib(bias_field_vector[2]),  # 0 mG
+                samplerate=1e5,
+            )
+        else: # coil flip the control voltage sign
+            self._z_coil_flip_polarity(self, t, bias_field_vector[2])
 
         self.bias_field = bias_field_vector
         self.bias_x_voltage = biasx_calib(bias_field_vector[0])
