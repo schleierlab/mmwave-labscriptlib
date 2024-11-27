@@ -483,25 +483,25 @@ class BField:
 
     def _x_coil_flip_polarity(self, t, final):
         coil_voltage_mid_abs = 0.03
-        coil_voltage_mid = np.sign(biasx_calib(final)) * coil_voltage_mid_abs
-        total_coil_flip_ramp_time = bipolar_coil_flip_time + coil_ramp_time
+        coil_voltage_mid = np.sign(final) * coil_voltage_mid_abs
+        total_coil_flip_ramp_time = CONST_BIPOLAR_COIL_FLIP_TIME + CONST_COIL_RAMP_TIME
         t += devices.x_coil_current.ramp(
             t,
-            duration=coil_ramp_time/2,
-            initial=biasx_calib(self.bias_x_voltage),
+            duration=CONST_COIL_RAMP_TIME/2,
+            initial=self.bias_x_voltage,
             final=coil_voltage_mid,  # sligtly negative voltage to trigger the polarity change
             samplerate=1e5,
         )
         devices.x_coil_feedback_off.go_high(t)
-        devices.x_coil_feedback_off.go_low(t + coil_feedback_off_time)
+        devices.x_coil_feedback_off.go_low(t + CONST_COIL_FEEDBACK_OFF_TIME)
         devices.x_coil_current.constant(t, coil_voltage_mid)
-        t += bipolar_coil_flip_time
+        t += CONST_BIPOLAR_COIL_FLIP_TIME
 
         t += devices.x_coil_current.ramp(
             t,
-            duration=coil_ramp_time/2,
+            duration=CONST_COIL_RAMP_TIME/2,
             initial=coil_voltage_mid,
-            final=biasx_calib(final),  # 0 mG
+            final=final,  # 0 mG
             samplerate=1e5,
         )
 
@@ -514,12 +514,12 @@ class BField:
 
     def _y_coil_flip_polarity(self, t, final):
         coil_voltage_mid_abs = 0.03
-        coil_voltage_mid = np.sign(biasy_calib(final)) * coil_voltage_mid_abs
+        coil_voltage_mid = np.sign(final) * coil_voltage_mid_abs
         total_coil_flip_ramp_time = bipolar_coil_flip_time + coil_ramp_time
         t += devices.y_coil_current.ramp(
             t,
             duration=coil_ramp_time/2,
-            initial=biasy_calib(self.bias_y_voltage),
+            initial=self.bias_y_voltage,
             final=coil_voltage_mid,  # sligtly negative voltage to trigger the polarity change
             samplerate=1e5,
         )
@@ -534,7 +534,7 @@ class BField:
             t,
             duration=coil_ramp_time/2,
             initial=coil_voltage_mid,
-            final=biasy_calib(final),  # 0 mG
+            final=final,  # 0 mG
             samplerate=1e5,
         )
 
@@ -547,12 +547,12 @@ class BField:
 
     def _z_coil_flip_polarity(self, t, final):
         coil_voltage_mid_abs = 0.03
-        coil_voltage_mid = np.sign(biasz_calib(final)) * coil_voltage_mid_abs
+        coil_voltage_mid = np.sign(final) * coil_voltage_mid_abs
         total_coil_flip_ramp_time = bipolar_coil_flip_time + coil_ramp_time
         t += devices.z_coil_current.ramp(
             t,
             duration=coil_ramp_time/2,
-            initial=biasz_calib(self.bias_z_voltage),
+            initial=self.bias_z_voltage,
             final=coil_voltage_mid,  # sligtly negative voltage to trigger the polarity change
             samplerate=1e5,
         )
@@ -565,7 +565,7 @@ class BField:
             t,
             duration=coil_ramp_time/2,
             initial=coil_voltage_mid,
-            final=biasz_calib(final),  # 0 mG
+            final=final,  # 0 mG
             samplerate=1e5,
         )
 
@@ -576,92 +576,108 @@ class BField:
 
         return t
 
-    def ramp_bias_field(self, t, bias_field_vector):
+    def ramp_bias_field(self, t, bias_field_vector=None, voltage_vector=None):
         # bias_field_vector should be a tuple of the form (x,y,z)
         # Need to start the ramp earlier if the voltage changes sign
-        t_x_coil, t_y_coil, t_z_coil = (t - 4e-3*int(self.bias_x_voltage * biasx_calib(bias_field_vector[0]) < 0),
-                                        t - 4e-3*int(self.bias_y_voltage * biasy_calib(bias_field_vector[1]) < 0),
-                                        t - 4e-3*int(self.bias_z_voltage * biasz_calib(bias_field_vector[2]) < 0))
+        if bias_field_vector is not None:
+            voltage_vector = [biasx_calib(bias_field_vector[0]),
+                              biasy_calib(bias_field_vector[1]),
+                              biasz_calib(bias_field_vector[2])]
 
-        if np.sign(self.bias_x_voltage * biasx_calib(bias_field_vector[0])) > 0:
+        t_x_coil, t_y_coil, t_z_coil = (t - CONST_BIPOLAR_COIL_FLIP_TIME*int(self.bias_x_voltage * voltage_vector[0] < 0),
+                                        t - CONST_BIPOLAR_COIL_FLIP_TIME*int(self.bias_y_voltage * voltage_vector[1] < 0),
+                                        t - CONST_BIPOLAR_COIL_FLIP_TIME*int(self.bias_z_voltage * voltage_vector[2] < 0))
+
+        if np.sign(self.bias_x_voltage * voltage_vector[0]) > 0:
             devices.x_coil_current.ramp(
                 t_x_coil,
                 duration=CONST_COIL_RAMP_TIME,
                 initial=self.bias_x_voltage,
-                final=biasx_calib(bias_field_vector[0]),
+                final=voltage_vector[0],
                 samplerate=1e5,
             )
         else: # coil flip the control voltage sign
-            self._x_coil_flip_polarity(self, t, bias_field_vector[0])
+            t = self._x_coil_flip_polarity(self, t_x_coil, voltage_vector[0])
 
-        if np.sign(self.bias_y_voltage * biasy_calib(bias_field_vector[1])) > 0:
+        if np.sign(self.bias_y_voltage * voltage_vector[1]) > 0:
             devices.y_coil_current.ramp(
                 t_y_coil,
                 duration=CONST_COIL_RAMP_TIME,
                 initial=self.bias_y_voltage,
-                final=biasy_calib(bias_field_vector[1]),  # 0 mG
+                final=voltage_vector[1],  # 0 mG
                 samplerate=1e5,
             )
         else: # coil flip the control voltage sign
-            self._y_coil_flip_polarity(self, t, bias_field_vector[1])
+            t = self._y_coil_flip_polarity(self, t_y_coil, voltage_vector[1])
 
-        if np.sign(self.bias_z_voltage * biasz_calib(bias_field_vector[2]) > 0:
+        if np.sign(self.bias_z_voltage * voltage_vector[2]) > 0:
             devices.z_coil_current.ramp(
                 t_z_coil,
                 duration=CONST_COIL_RAMP_TIME,
                 initial=self.bias_z_voltage,
-                final=biasz_calib(bias_field_vector[2]),  # 0 mG
+                final=voltage_vector[2],  # 0 mG
                 samplerate=1e5,
             )
         else: # coil flip the control voltage sign
-            self._z_coil_flip_polarity(self, t, bias_field_vector[2])
+            t = self._z_coil_flip_polarity(self, t_z_coil, voltage_vector[2])
 
-        self.bias_field = bias_field_vector
-        self.bias_x_voltage = biasx_calib(bias_field_vector[0])
-        self.bias_y_voltage = biasy_calib(bias_field_vector[1])
-        self.bias_z_voltage = biasz_calib(bias_field_vector[2])
+        # check if any of the bias coil polarity/sign is flipped
+        cond_x = (np.sign(voltage_vector[0]*biasx_calib(self.bias_x_voltage)) < 0)
+        cond_y = (np.sign(voltage_vector[1]*biasy_calib(self.bias_y_voltage)) < 0)
+        cond_z = (np.sign(voltage_vector[2]*biasz_calib(self.bias_z_voltage)) < 0)
+        if cond_x or cond_y or cond_z:
+            # if any bias coils are flipped, add extra time to account for the settling time
+            t += CONST_BIPOLAR_COIL_FLIP_TIME
 
-        t += CONST_COIL_RAMP_TIME
-        return t
-
-    def ramp_bias_field_voltage(self, t, voltage_vector):
-        #B_field_vector should be a tuple of the form (x,y,z)
-        # Need to start the ramp earlier if the voltage changes sign
-        t_x_coil, t_y_coil, t_z_coil = (t - 4e-3*int(self.bias_x_voltage * voltage_vector[0] < 0),
-                                        t - 4e-3*int(self.bias_y_voltage * voltage_vector[1] < 0),
-                                        t - 4e-3*int(self.bias_z_voltage * voltage_vector[2] < 0))
-
-        devices.x_coil_current.ramp(
-            t_x_coil,
-            duration=CONST_COIL_RAMP_TIME,
-            initial=self.bias_x_voltage,
-            final=voltage_vector[0],
-            samplerate=1e5,
-        )
-
-        devices.y_coil_current.ramp(
-            t_y_coil,
-            duration=CONST_COIL_RAMP_TIME,
-            initial=self.bias_y_voltage,
-            final=voltage_vector[1],
-            samplerate=1e5,
-        )
-
-        devices.z_coil_current.ramp(
-            t_z_coil,
-            duration=CONST_COIL_RAMP_TIME,
-            initial=self.bias_z_voltage,
-            final=voltage_vector[2],
-            samplerate=1e5,
-        )
         # TODO: add the inverse function of bias_i_calib
-        # self.B_field = B_field_vector
+        # otherwise, if only voltage vector is provided on input, the bias field will not be updated
+        if bias_field_vector is not None:
+            self.bias_field = bias_field_vector
         self.bias_x_voltage = voltage_vector[0]
         self.bias_y_voltage = voltage_vector[1]
         self.bias_z_voltage = voltage_vector[2]
 
         t += CONST_COIL_RAMP_TIME
         return t
+
+    # def ramp_bias_field_voltage(self, t, voltage_vector):
+    #     #B_field_vector should be a tuple of the form (x,y,z)
+    #     # Need to start the ramp earlier if the voltage changes sign
+    #     t_x_coil, t_y_coil, t_z_coil = (t - 4e-3*int(self.bias_x_voltage * voltage_vector[0] < 0),
+    #                                     t - 4e-3*int(self.bias_y_voltage * voltage_vector[1] < 0),
+    #                                     t - 4e-3*int(self.bias_z_voltage * voltage_vector[2] < 0))
+
+    #     devices.x_coil_current.ramp(
+    #         t_x_coil,
+    #         duration=CONST_COIL_RAMP_TIME,
+    #         initial=self.bias_x_voltage,
+    #         final=voltage_vector[0],
+    #         samplerate=1e5,
+    #     )
+
+    #     devices.y_coil_current.ramp(
+    #         t_y_coil,
+    #         duration=CONST_COIL_RAMP_TIME,
+    #         initial=self.bias_y_voltage,
+    #         final=voltage_vector[1],
+    #         samplerate=1e5,
+    #     )
+
+    #     devices.z_coil_current.ramp(
+    #         t_z_coil,
+    #         duration=CONST_COIL_RAMP_TIME,
+    #         initial=self.bias_z_voltage,
+    #         final=voltage_vector[2],
+    #         samplerate=1e5,
+    #     )
+    #     # TODO: add the inverse function of bias_i_calib
+    #     # self.B_field = B_field_vector
+    #     self.bias_x_voltage = voltage_vector[0]
+    #     self.bias_y_voltage = voltage_vector[1]
+    #     self.bias_z_voltage = voltage_vector[2]
+
+    #     t += CONST_COIL_RAMP_TIME
+    #     return t
 
     def switch_mot_coils(self, t):
         if self.mot_coils_on:
