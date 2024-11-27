@@ -877,7 +877,7 @@ class MOTSequence:
         self.D2Lasers_obj.ramp_repump_freq(t, 1e-3, shot_globals.bm_repump_detuning)
 
         self.BField_obj.switch_mot_coils(t)
-        self.BField_obj.ramp_bias_field(t, (0, 0, 0))
+        self.BField_obj.ramp_bias_field(t, bias_field_vector=(0, 0, 0))
 
         print('Molasses stage')
         print(f'ta_last_detuning = {self.D2Lasers_obj.ta_freq}')
@@ -906,7 +906,7 @@ class MOTSequence:
     # TODO: Maybe pass the shutter config into here? This would get rid of all the if statements?
     def do_molasses_dipole_trap_imaging(self, t, do_repump=True, close_all_shutters=False):
         # zero the field
-        _ = self.BField_obj.ramp_bias_field(t, (0,0,0))
+        _ = self.BField_obj.ramp_bias_field(t, bias_field_vector=(0,0,0))
 
         # Ramp to imaging frequencies
         self.D2Lasers_obj.ramp_ta_freq(t, CONST_TA_VCO_RAMP_TIME, ta_freq_calib(0))
@@ -1044,7 +1044,7 @@ class OpticalPumpingSequence(MOTSequence):
         if label == "mot":
             # Use the MOT beams for optical pumping
             # define quantization axis
-            t = self.BField_obj.ramp_bias_field(t, (shot_globals.mw_biasx_field,
+            t = self.BField_obj.ramp_bias_field(t, bias_field_vector=(shot_globals.mw_biasx_field,
                                                  shot_globals.mw_biasy_field,
                                                  shot_globals.mw_biasz_field))
             # Do a repump pulse
@@ -1056,7 +1056,7 @@ class OpticalPumpingSequence(MOTSequence):
             # Use the sigma+ beam for optical pumping
             # TODO: do we want shutters always closed for this ramping?
             op_biasx_field, op_biasy_field, op_biasz_field = self.BField_obj.get_op_bias_fields()
-            _ = self.BField_obj.ramp_bias_field(t, (op_biasx_field,
+            _ = self.BField_obj.ramp_bias_field(t, bias_field_vector=(op_biasx_field,
                                                  op_biasy_field,
                                                  op_biasz_field))
             # ramp detuning to 4 -> 4, 3 -> 4
@@ -1091,7 +1091,7 @@ class OpticalPumpingSequence(MOTSequence):
         if label == "mot":
             # Use the MOT beams for optical depumping
             # define quantization axis
-            t = self.BField_obj.ramp_bias_field(t, (shot_globals.mw_biasx_field,
+            t = self.BField_obj.ramp_bias_field(t, bias_field_vector=(shot_globals.mw_biasx_field,
                                                  shot_globals.mw_biasy_field,
                                                  shot_globals.mw_biasz_field))
             # ramp detuning to 4 -> 4 for TA
@@ -1105,7 +1105,7 @@ class OpticalPumpingSequence(MOTSequence):
             # Use the sigma+ beam for optical pumping
             # TODO: do we want shutters always closed for this ramping?
             op_biasx_field, op_biasy_field, op_biasz_field = self.BField_obj.get_op_bias_fields()
-            _ = self.BField_obj.ramp_bias_field(t, (op_biasx_field,
+            _ = self.BField_obj.ramp_bias_field(t, bias_field_vector=(op_biasx_field,
                                                  op_biasy_field,
                                                  op_biasz_field))
             # ramp detuning to 4 -> 4, 3 -> 3
