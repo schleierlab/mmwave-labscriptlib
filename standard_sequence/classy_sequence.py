@@ -464,10 +464,10 @@ class BField:
         self.mot_coils_on = shot_globals.do_mot_coil
         self.mot_coils_on_current = 10/6
 
-        #Same question as for Dline_lasers, should we automatically initialize the hardware here or in a separate function we can call?
+        # Same question as for Dline_lasers, should we automatically initialize the hardware here or in a separate function we can call?
 
-        #this isn't quite right, we should have an inverse of bias_i_calib function that gives B depending on mot_i_coil_voltage
-        self.B_field = (0,0,0)
+        # initialize bias_field variable to None
+        self.bias_field = None
 
         devices.x_coil_current.constant(t, self.bias_x_voltage)
         devices.y_coil_current.constant(t, self.bias_y_voltage)
@@ -478,12 +478,12 @@ class BField:
         else:
             devices.mot_coil_current_ctrl.constant(t, 0)
 
-    def ramp_B_field(self, t, B_field_vector):
-        #B_field_vector should be a tuple of the form (x,y,z)
+    def ramp_bias_field(self, t, bias_field_vector):
+        # bias_field_vector should be a tuple of the form (x,y,z)
         # Need to start the ramp earlier if the voltage changes sign
-        t_x_coil, t_y_coil, t_z_coil = (t - 4e-3*int(self.bias_x_voltage * biasx_calib(B_field_vector[0]) < 0),
-                                        t - 4e-3*int(self.bias_y_voltage * biasy_calib(B_field_vector[1]) < 0),
-                                        t - 4e-3*int(self.bias_z_voltage * biasz_calib(B_field_vector[2]) < 0))
+        t_x_coil, t_y_coil, t_z_coil = (t - 4e-3*int(self.bias_x_voltage * biasx_calib(bias_field_vector[0]) < 0),
+                                        t - 4e-3*int(self.bias_y_voltage * biasy_calib(bias_field_vector[1]) < 0),
+                                        t - 4e-3*int(self.bias_z_voltage * biasz_calib(bias_field_vector[2]) < 0))
 
         ramp_dur = 100e-6
 
@@ -491,7 +491,7 @@ class BField:
             t_x_coil,
             duration=ramp_dur,
             initial=self.bias_x_voltage,
-            final=biasx_calib(B_field_vector[0]),
+            final=biasx_calib(bias_field_vector[0]),
             samplerate=1e5,
         )
 
@@ -499,7 +499,7 @@ class BField:
             t_y_coil,
             duration=ramp_dur,
             initial=self.bias_y_voltage,
-            final=biasy_calib(B_field_vector[1]),  # 0 mG
+            final=biasy_calib(bias_field_vector[1]),  # 0 mG
             samplerate=1e5,
         )
 
@@ -507,19 +507,19 @@ class BField:
             t_z_coil,
             duration=ramp_dur,
             initial=self.bias_z_voltage,
-            final=biasz_calib(B_field_vector[2]),  # 0 mG
+            final=biasz_calib(bias_field_vector[2]),  # 0 mG
             samplerate=1e5,
         )
 
-        self.B_field = B_field_vector
-        self.bias_x_voltage = biasx_calib(B_field_vector[0])
-        self.bias_y_voltage = biasy_calib(B_field_vector[1])
-        self.bias_z_voltage = biasz_calib(B_field_vector[2])
+        self.bias_field = bias_field_vector
+        self.bias_x_voltage = biasx_calib(bias_field_vector[0])
+        self.bias_y_voltage = biasy_calib(bias_field_vector[1])
+        self.bias_z_voltage = biasz_calib(bias_field_vector[2])
 
         t += ramp_dur
         return t
 
-    def ramp_B_field_voltage(self, t, voltage_vector):
+    def ramp_bias_field_voltage(self, t, voltage_vector):
         #B_field_vector should be a tuple of the form (x,y,z)
         # Need to start the ramp earlier if the voltage changes sign
         t_x_coil, t_y_coil, t_z_coil = (t - 4e-3*int(self.bias_x_voltage * voltage_vector[0] < 0),
@@ -666,8 +666,10 @@ class MOTSequence:
         if not self.BField_obj.mot_coils_on:
             t = self.BField_obj.switch_mot_coils(t)
 
-        mot_bias_voltages = (shot_globals.mot_x_coil_voltage, shot_globals.mot_y_coil_voltage, shot_globals.mot_z_coil_voltage)
-        t = self.BField_obj.ramp_B_field_voltage(t, mot_bias_voltages)
+        mot_bias_voltages = (shot_globals.mot_x_coil_voltage,
+                             shot_globals.mot_y_coil_voltage,
+                             shot_globals.mot_z_coil_voltage)
+        t = self.BField_obj.ramp_bias_field_voltage(t, mot_bias_voltages)
 
         # Reset laser frequency and configuration
         t = self.D2Lasers_obj.reset_to_mot_freq(t)
@@ -750,13 +752,14 @@ class MOTSequence:
         return t
 
     # Molasses sequences
-    def ramp_to_molasses(self, t, ta_bm_detuning, repump_bm_detuning):
-
-        self.D2Lasers_obj.ramp_ta_freq(t, 1e-3, ta_bm_detuning)
-        self.D2Lasers_obj.ramp_repump_freq(t, 1e-3, repump_bm_detuning)
+    def ramp_to_molasses(self, t):
+        # detuning is ramped slowly here (duration = 1e-3) because atoms
+        # see the light during the frequency ramp.
+        self.D2Lasers_obj.ramp_ta_freq(t, 1e-3, shot_globals.bm_ta_detuning)
+        self.D2Lasers_obj.ramp_repump_freq(t, 1e-3, shot_globals.bm_repump_detuning)
 
         self.BField_obj.switch_mot_coils(t)
-        self.BField_obj.ramp_B_field(t, (0,0,0))
+        self.BField_obj.ramp_bias_field(t, (0, 0, 0))
 
         print('Molasses stage')
         print(f'ta_last_detuning = {self.D2Lasers_obj.ta_freq}')
@@ -766,12 +769,10 @@ class MOTSequence:
 
     def do_molasses(self, t, dur, close_all_shutters=False):
         assert (shot_globals.do_molasses_img_beam or shot_globals.do_molasses_mot_beam), "either do_molasses_img_beam or do_molasses_mot_beam has to be on"
-        #TODO: what does this assert statement mean?
-        assert shot_globals.bm_ta_detuning != 0, "bright molasses detuning = 0, did you forget to correct for the new case?"
+        assert shot_globals.bm_ta_detuning != 0, "bright molasses detuning = 0. TA detuning should be none zero for bright molasses."
         print(f"molasses detuning is {shot_globals.bm_ta_detuning}")
 
-        #Should we do this in-sequence?
-        self.ramp_to_molasses(t, shot_globals.bm_ta_detuning, shot_globals.bm_repump_detuning)
+        self.ramp_to_molasses(t)
 
         if shot_globals.do_molasses_mot_beam:
             t = self.D2Lasers_obj.do_pulse(t, dur, ShutterConfig.MOT_FULL, shot_globals.bm_ta_power,
@@ -785,23 +786,19 @@ class MOTSequence:
     #Which arguments are actually necessary to pass or even set as a defualt?
     #How many of them can just be set to globals?
     # TODO: Maybe pass the shutter config into here? This would get rid of all the if statements?
-    def do_molasses_dipole_trap_imaging(self, t, img_ta_detuning=0, img_repump_detuning=0, img_ta_power=1, img_repump_power=1, do_repump=True, close_all_shutters=False):
-        # define quantization axis (Whut?? This is zeroing the field, there's not quantization axis)
-
-        _ = self.BField_obj.ramp_B_field(t, (0,0,0))
-
-        #Is this section needed?
+    def do_molasses_dipole_trap_imaging(self, t, do_repump=True, close_all_shutters=False):
+        # zero the field
+        _ = self.BField_obj.ramp_bias_field(t, (0,0,0))
 
         # Ramp to imaging frequencies
-        self.D2Lasers_obj.ramp_ta_freq(t, CONST_TA_VCO_RAMP_TIME, ta_freq_calib(img_ta_detuning))
-        self.D2Lasers_obj.ramp_repump_freq(t, CONST_TA_VCO_RAMP_TIME, repump_freq_calib(img_repump_detuning))
+        self.D2Lasers_obj.ramp_ta_freq(t, CONST_TA_VCO_RAMP_TIME, ta_freq_calib(0))
+        self.D2Lasers_obj.ramp_repump_freq(t, CONST_TA_VCO_RAMP_TIME, repump_freq_calib(0))
         t+=CONST_TA_VCO_RAMP_TIME
-
 
         shutter_config = ShutterConfig.select_imgaging_shutters(do_repump = do_repump)
 
-        _ = self.D2Lasers_obj.do_pulse(t, shot_globals.bm_exposure_time, shutter_config, img_ta_power, img_repump_power, close_all_shutters = close_all_shutters)
-
+        # full power ta and repump pulse
+        _ = self.D2Lasers_obj.do_pulse(t, shot_globals.bm_exposure_time, shutter_config, 1, 1, close_all_shutters = close_all_shutters)
 
         # TODO: ask Lin and Michelle and max() logic and if we always want it there
         self.Camera_obj.set_type(shot_globals.camera_type)
@@ -929,7 +926,7 @@ class OpticalPumpingSequence(MOTSequence):
         if label == "mot":
             # Use the MOT beams for optical pumping
             # define quantization axis
-            t = self.BField_obj.ramp_B_field(t, (shot_globals.mw_biasx_field,
+            t = self.BField_obj.ramp_bias_field(t, (shot_globals.mw_biasx_field,
                                                  shot_globals.mw_biasy_field,
                                                  shot_globals.mw_biasz_field))
             # Do a repump pulse
@@ -941,7 +938,7 @@ class OpticalPumpingSequence(MOTSequence):
             # Use the sigma+ beam for optical pumping
             # TODO: do we want shutters always closed for this ramping?
             op_biasx_field, op_biasy_field, op_biasz_field = self.BField_obj.get_op_bias_fields()
-            _ = self.BField_obj.ramp_B_field(t, (op_biasx_field,
+            _ = self.BField_obj.ramp_bias_field(t, (op_biasx_field,
                                                  op_biasy_field,
                                                  op_biasz_field))
             # ramp detuning to 4 -> 4, 3 -> 4
@@ -976,7 +973,7 @@ class OpticalPumpingSequence(MOTSequence):
         if label == "mot":
             # Use the MOT beams for optical depumping
             # define quantization axis
-            t = self.BField_obj.ramp_B_field(t, (shot_globals.mw_biasx_field,
+            t = self.BField_obj.ramp_bias_field(t, (shot_globals.mw_biasx_field,
                                                  shot_globals.mw_biasy_field,
                                                  shot_globals.mw_biasz_field))
             # ramp detuning to 4 -> 4 for TA
@@ -990,7 +987,7 @@ class OpticalPumpingSequence(MOTSequence):
             # Use the sigma+ beam for optical pumping
             # TODO: do we want shutters always closed for this ramping?
             op_biasx_field, op_biasy_field, op_biasz_field = self.BField_obj.get_op_bias_fields()
-            _ = self.BField_obj.ramp_B_field(t, (op_biasx_field,
+            _ = self.BField_obj.ramp_bias_field(t, (op_biasx_field,
                                                  op_biasy_field,
                                                  op_biasz_field))
             # ramp detuning to 4 -> 4, 3 -> 3
