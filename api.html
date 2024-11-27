@@ -46,8 +46,8 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API Documentation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#standard_sequence.classy_sequence.BField"><code class="docutils literal notranslate"><span class="pre">BField</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.BField.get_op_bias_fields"><code class="docutils literal notranslate"><span class="pre">BField.get_op_bias_fields()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.BField.ramp_B_field"><code class="docutils literal notranslate"><span class="pre">BField.ramp_B_field()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.BField.ramp_B_field_voltage"><code class="docutils literal notranslate"><span class="pre">BField.ramp_B_field_voltage()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.BField.ramp_bias_field"><code class="docutils literal notranslate"><span class="pre">BField.ramp_bias_field()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.BField.ramp_bias_field_voltage"><code class="docutils literal notranslate"><span class="pre">BField.ramp_bias_field_voltage()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.BField.switch_mot_coils"><code class="docutils literal notranslate"><span class="pre">BField.switch_mot_coils()</span></code></a></li>
 </ul>
 </li>
@@ -205,13 +205,13 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="standard_sequence.classy_sequence.BField.ramp_B_field">
-<span class="sig-name descname"><span class="pre">ramp_B_field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">B_field_vector</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#BField.ramp_B_field"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.BField.ramp_B_field" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="standard_sequence.classy_sequence.BField.ramp_bias_field">
+<span class="sig-name descname"><span class="pre">ramp_bias_field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias_field_vector</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#BField.ramp_bias_field"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.BField.ramp_bias_field" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="standard_sequence.classy_sequence.BField.ramp_B_field_voltage">
-<span class="sig-name descname"><span class="pre">ramp_B_field_voltage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">voltage_vector</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#BField.ramp_B_field_voltage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.BField.ramp_B_field_voltage" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="standard_sequence.classy_sequence.BField.ramp_bias_field_voltage">
+<span class="sig-name descname"><span class="pre">ramp_bias_field_voltage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">voltage_vector</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#BField.ramp_bias_field_voltage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.BField.ramp_bias_field_voltage" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -347,7 +347,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.MOTSequence.do_molasses_dipole_trap_imaging">
-<span class="sig-name descname"><span class="pre">do_molasses_dipole_trap_imaging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_ta_detuning</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_repump_detuning</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_ta_power</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_repump_power</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_repump</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close_all_shutters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#MOTSequence.do_molasses_dipole_trap_imaging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.MOTSequence.do_molasses_dipole_trap_imaging" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">do_molasses_dipole_trap_imaging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_repump</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close_all_shutters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#MOTSequence.do_molasses_dipole_trap_imaging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.MOTSequence.do_molasses_dipole_trap_imaging" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -362,7 +362,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.MOTSequence.ramp_to_molasses">
-<span class="sig-name descname"><span class="pre">ramp_to_molasses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ta_bm_detuning</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repump_bm_detuning</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#MOTSequence.ramp_to_molasses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.MOTSequence.ramp_to_molasses" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">ramp_to_molasses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#MOTSequence.ramp_to_molasses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.MOTSequence.ramp_to_molasses" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">

@@ -106,6 +106,9 @@
 <span class="n">CONST_SHUTTER_TURN_OFF_TIME</span> <span class="o">=</span> <span class="mf">2e-3</span> <span class="c1"># for shutter take from start to open to fully open</span>
 <span class="n">CONST_TA_PUMPING_DETUNING</span> <span class="o">=</span> <span class="o">-</span><span class="mi">251</span>  <span class="c1"># MHz 4-&gt;4 tansition</span>
 <span class="n">CONST_REPUMP_DEPUMPING_DETUNING</span> <span class="o">=</span> <span class="o">-</span><span class="mf">201.24</span>  <span class="c1"># MHz 3-&gt;3 transition</span>
+<span class="n">CONST_BIPOLAR_COIL_FLIP_TIME</span> <span class="o">=</span> <span class="mf">10e-3</span> <span class="c1"># the time takes to flip the polarity of the coil</span>
+<span class="n">CONST_COIL_FEEDBACK_OFF_TIME</span> <span class="o">=</span> <span class="mf">4.5e-3</span> <span class="c1"># how long to turn off the feedback of circuit when flipping polarity</span>
+<span class="n">CONST_COIL_RAMP_TIME</span> <span class="o">=</span> <span class="mf">100e-6</span>
 
 <span class="c1"># lasers_852 =  D2Lasers()</span>
 <span class="c1"># lasers_852.pulse_imaging(t=300e-6, duration=100e-6)</span>
@@ -660,10 +663,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">mot_coils_on</span> <span class="o">=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_mot_coil</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mot_coils_on_current</span> <span class="o">=</span> <span class="mi">10</span><span class="o">/</span><span class="mi">6</span>
 
-        <span class="c1">#Same question as for Dline_lasers, should we automatically initialize the hardware here or in a separate function we can call?</span>
+        <span class="c1"># Same question as for Dline_lasers, should we automatically initialize the hardware here or in a separate function we can call?</span>
 
-        <span class="c1">#this isn&#39;t quite right, we should have an inverse of bias_i_calib function that gives B depending on mot_i_coil_voltage</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">B_field</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># initialize bias_field variable to None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bias_field</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="n">devices</span><span class="o">.</span><span class="n">x_coil_current</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bias_x_voltage</span><span class="p">)</span>
         <span class="n">devices</span><span class="o">.</span><span class="n">y_coil_current</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bias_y_voltage</span><span class="p">)</span>
@@ -674,64 +677,155 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">devices</span><span class="o">.</span><span class="n">mot_coil_current_ctrl</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
-<div class="viewcode-block" id="BField.ramp_B_field">
-<a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.BField.ramp_B_field">[docs]</a>
-    <span class="k">def</span> <span class="nf">ramp_B_field</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">B_field_vector</span><span class="p">):</span>
-        <span class="c1">#B_field_vector should be a tuple of the form (x,y,z)</span>
-        <span class="c1"># Need to start the ramp earlier if the voltage changes sign</span>
-        <span class="n">t_x_coil</span><span class="p">,</span> <span class="n">t_y_coil</span><span class="p">,</span> <span class="n">t_z_coil</span> <span class="o">=</span> <span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_x_voltage</span> <span class="o">*</span> <span class="n">biasx_calib</span><span class="p">(</span><span class="n">B_field_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">),</span>
-                                        <span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_y_voltage</span> <span class="o">*</span> <span class="n">biasy_calib</span><span class="p">(</span><span class="n">B_field_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">),</span>
-                                        <span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_z_voltage</span> <span class="o">*</span> <span class="n">biasz_calib</span><span class="p">(</span><span class="n">B_field_vector</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">_x_coil_flip_polarity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">final</span><span class="p">):</span>
+        <span class="n">coil_voltage_mid_abs</span> <span class="o">=</span> <span class="mf">0.03</span>
+        <span class="n">coil_voltage_mid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">biasx_calib</span><span class="p">(</span><span class="n">final</span><span class="p">))</span> <span class="o">*</span> <span class="n">coil_voltage_mid_abs</span>
+        <span class="n">total_coil_flip_ramp_time</span> <span class="o">=</span> <span class="n">bipolar_coil_flip_time</span> <span class="o">+</span> <span class="n">coil_ramp_time</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">devices</span><span class="o">.</span><span class="n">x_coil_current</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span>
+            <span class="n">t</span><span class="p">,</span>
+            <span class="n">duration</span><span class="o">=</span><span class="n">coil_ramp_time</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">initial</span><span class="o">=</span><span class="n">biasx_calib</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_x_voltage</span><span class="p">),</span>
+            <span class="n">final</span><span class="o">=</span><span class="n">coil_voltage_mid</span><span class="p">,</span>  <span class="c1"># sligtly negative voltage to trigger the polarity change</span>
+            <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">devices</span><span class="o">.</span><span class="n">x_coil_feedback_off</span><span class="o">.</span><span class="n">go_high</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">devices</span><span class="o">.</span><span class="n">x_coil_feedback_off</span><span class="o">.</span><span class="n">go_low</span><span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="n">coil_feedback_off_time</span><span class="p">)</span>
+        <span class="n">devices</span><span class="o">.</span><span class="n">x_coil_current</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">coil_voltage_mid</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">bipolar_coil_flip_time</span>
 
-        <span class="n">ramp_dur</span> <span class="o">=</span> <span class="mf">100e-6</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">devices</span><span class="o">.</span><span class="n">x_coil_current</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span>
+            <span class="n">t</span><span class="p">,</span>
+            <span class="n">duration</span><span class="o">=</span><span class="n">coil_ramp_time</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">initial</span><span class="o">=</span><span class="n">coil_voltage_mid</span><span class="p">,</span>
+            <span class="n">final</span><span class="o">=</span><span class="n">biasx_calib</span><span class="p">(</span><span class="n">final</span><span class="p">),</span>  <span class="c1"># 0 mG</span>
+            <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">t</span> <span class="o">-=</span> <span class="n">total_coil_flip_ramp_time</span> <span class="c1"># subtract to the begining tp set other coils</span>
+
+        <span class="c1"># Update internal state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bias_x_voltage</span> <span class="o">=</span> <span class="n">final</span>
+
+        <span class="k">return</span> <span class="n">t</span>
+
+    <span class="k">def</span> <span class="nf">_y_coil_flip_polarity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">final</span><span class="p">):</span>
+        <span class="n">coil_voltage_mid_abs</span> <span class="o">=</span> <span class="mf">0.03</span>
+        <span class="n">coil_voltage_mid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">biasy_calib</span><span class="p">(</span><span class="n">final</span><span class="p">))</span> <span class="o">*</span> <span class="n">coil_voltage_mid_abs</span>
+        <span class="n">total_coil_flip_ramp_time</span> <span class="o">=</span> <span class="n">bipolar_coil_flip_time</span> <span class="o">+</span> <span class="n">coil_ramp_time</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">devices</span><span class="o">.</span><span class="n">y_coil_current</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span>
+            <span class="n">t</span><span class="p">,</span>
+            <span class="n">duration</span><span class="o">=</span><span class="n">coil_ramp_time</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">initial</span><span class="o">=</span><span class="n">biasy_calib</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_y_voltage</span><span class="p">),</span>
+            <span class="n">final</span><span class="o">=</span><span class="n">coil_voltage_mid</span><span class="p">,</span>  <span class="c1"># sligtly negative voltage to trigger the polarity change</span>
+            <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">devices</span><span class="o">.</span><span class="n">y_coil_feedback_off</span><span class="o">.</span><span class="n">go_high</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;turn feedback off at time t = &#39;</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+        <span class="n">devices</span><span class="o">.</span><span class="n">y_coil_feedback_off</span><span class="o">.</span><span class="n">go_low</span><span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="n">coil_feedback_off_time</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;turn feedback back on at time t = &#39;</span><span class="p">,</span> <span class="n">t</span> <span class="o">+</span> <span class="n">coil_feedback_off_time</span><span class="p">)</span>
+        <span class="n">devices</span><span class="o">.</span><span class="n">y_coil_current</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">coil_voltage_mid</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">bipolar_coil_flip_time</span>
+
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">devices</span><span class="o">.</span><span class="n">y_coil_current</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span>
+            <span class="n">t</span><span class="p">,</span>
+            <span class="n">duration</span><span class="o">=</span><span class="n">coil_ramp_time</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">initial</span><span class="o">=</span><span class="n">coil_voltage_mid</span><span class="p">,</span>
+            <span class="n">final</span><span class="o">=</span><span class="n">biasy_calib</span><span class="p">(</span><span class="n">final</span><span class="p">),</span>  <span class="c1"># 0 mG</span>
+            <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">t</span> <span class="o">-=</span> <span class="n">total_coil_flip_ramp_time</span> <span class="c1"># subtract to the begining tp set other coils</span>
+
+        <span class="c1"># Update internal state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bias_y_voltage</span> <span class="o">=</span> <span class="n">final</span>
+
+        <span class="k">return</span> <span class="n">t</span>
+
+    <span class="k">def</span> <span class="nf">_z_coil_flip_polarity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">final</span><span class="p">):</span>
+        <span class="n">coil_voltage_mid_abs</span> <span class="o">=</span> <span class="mf">0.03</span>
+        <span class="n">coil_voltage_mid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">biasz_calib</span><span class="p">(</span><span class="n">final</span><span class="p">))</span> <span class="o">*</span> <span class="n">coil_voltage_mid_abs</span>
+        <span class="n">total_coil_flip_ramp_time</span> <span class="o">=</span> <span class="n">bipolar_coil_flip_time</span> <span class="o">+</span> <span class="n">coil_ramp_time</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">devices</span><span class="o">.</span><span class="n">z_coil_current</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span>
+            <span class="n">t</span><span class="p">,</span>
+            <span class="n">duration</span><span class="o">=</span><span class="n">coil_ramp_time</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">initial</span><span class="o">=</span><span class="n">biasz_calib</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_z_voltage</span><span class="p">),</span>
+            <span class="n">final</span><span class="o">=</span><span class="n">coil_voltage_mid</span><span class="p">,</span>  <span class="c1"># sligtly negative voltage to trigger the polarity change</span>
+            <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">devices</span><span class="o">.</span><span class="n">z_coil_feedback_off</span><span class="o">.</span><span class="n">go_high</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">devices</span><span class="o">.</span><span class="n">z_coil_feedback_off</span><span class="o">.</span><span class="n">go_low</span><span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="n">coil_feedback_off_time</span><span class="p">)</span>
+        <span class="n">devices</span><span class="o">.</span><span class="n">z_coil_current</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">coil_voltage_mid</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">bipolar_coil_flip_time</span>
+
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">devices</span><span class="o">.</span><span class="n">z_coil_current</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span>
+            <span class="n">t</span><span class="p">,</span>
+            <span class="n">duration</span><span class="o">=</span><span class="n">coil_ramp_time</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">initial</span><span class="o">=</span><span class="n">coil_voltage_mid</span><span class="p">,</span>
+            <span class="n">final</span><span class="o">=</span><span class="n">biasz_calib</span><span class="p">(</span><span class="n">final</span><span class="p">),</span>  <span class="c1"># 0 mG</span>
+            <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">t</span> <span class="o">-=</span> <span class="n">total_coil_flip_ramp_time</span> <span class="c1"># subtract to the begining tp set other coils</span>
+
+        <span class="c1"># Update internal state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bias_z_voltage</span> <span class="o">=</span> <span class="n">final</span>
+
+        <span class="k">return</span> <span class="n">t</span>
+
+<div class="viewcode-block" id="BField.ramp_bias_field">
+<a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.BField.ramp_bias_field">[docs]</a>
+    <span class="k">def</span> <span class="nf">ramp_bias_field</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">bias_field_vector</span><span class="p">):</span>
+        <span class="c1"># bias_field_vector should be a tuple of the form (x,y,z)</span>
+        <span class="c1"># Need to start the ramp earlier if the voltage changes sign</span>
+        <span class="n">t_x_coil</span><span class="p">,</span> <span class="n">t_y_coil</span><span class="p">,</span> <span class="n">t_z_coil</span> <span class="o">=</span> <span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_x_voltage</span> <span class="o">*</span> <span class="n">biasx_calib</span><span class="p">(</span><span class="n">bias_field_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">),</span>
+                                        <span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_y_voltage</span> <span class="o">*</span> <span class="n">biasy_calib</span><span class="p">(</span><span class="n">bias_field_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">),</span>
+                                        <span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_z_voltage</span> <span class="o">*</span> <span class="n">biasz_calib</span><span class="p">(</span><span class="n">bias_field_vector</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">))</span>
 
         <span class="n">devices</span><span class="o">.</span><span class="n">x_coil_current</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span>
             <span class="n">t_x_coil</span><span class="p">,</span>
-            <span class="n">duration</span><span class="o">=</span><span class="n">ramp_dur</span><span class="p">,</span>
+            <span class="n">duration</span><span class="o">=</span><span class="n">CONST_COIL_RAMP_TIME</span><span class="p">,</span>
             <span class="n">initial</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_x_voltage</span><span class="p">,</span>
-            <span class="n">final</span><span class="o">=</span><span class="n">biasx_calib</span><span class="p">(</span><span class="n">B_field_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+            <span class="n">final</span><span class="o">=</span><span class="n">biasx_calib</span><span class="p">(</span><span class="n">bias_field_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
             <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="n">devices</span><span class="o">.</span><span class="n">y_coil_current</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span>
             <span class="n">t_y_coil</span><span class="p">,</span>
-            <span class="n">duration</span><span class="o">=</span><span class="n">ramp_dur</span><span class="p">,</span>
+            <span class="n">duration</span><span class="o">=</span><span class="n">CONST_COIL_RAMP_TIME</span><span class="p">,</span>
             <span class="n">initial</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_y_voltage</span><span class="p">,</span>
-            <span class="n">final</span><span class="o">=</span><span class="n">biasy_calib</span><span class="p">(</span><span class="n">B_field_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>  <span class="c1"># 0 mG</span>
+            <span class="n">final</span><span class="o">=</span><span class="n">biasy_calib</span><span class="p">(</span><span class="n">bias_field_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>  <span class="c1"># 0 mG</span>
             <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="n">devices</span><span class="o">.</span><span class="n">z_coil_current</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span>
             <span class="n">t_z_coil</span><span class="p">,</span>
-            <span class="n">duration</span><span class="o">=</span><span class="n">ramp_dur</span><span class="p">,</span>
+            <span class="n">duration</span><span class="o">=</span><span class="n">CONST_COIL_RAMP_TIME</span><span class="p">,</span>
             <span class="n">initial</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_z_voltage</span><span class="p">,</span>
-            <span class="n">final</span><span class="o">=</span><span class="n">biasz_calib</span><span class="p">(</span><span class="n">B_field_vector</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>  <span class="c1"># 0 mG</span>
+            <span class="n">final</span><span class="o">=</span><span class="n">biasz_calib</span><span class="p">(</span><span class="n">bias_field_vector</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>  <span class="c1"># 0 mG</span>
             <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">B_field</span> <span class="o">=</span> <span class="n">B_field_vector</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bias_x_voltage</span> <span class="o">=</span> <span class="n">biasx_calib</span><span class="p">(</span><span class="n">B_field_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bias_y_voltage</span> <span class="o">=</span> <span class="n">biasy_calib</span><span class="p">(</span><span class="n">B_field_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bias_z_voltage</span> <span class="o">=</span> <span class="n">biasz_calib</span><span class="p">(</span><span class="n">B_field_vector</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bias_field</span> <span class="o">=</span> <span class="n">bias_field_vector</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bias_x_voltage</span> <span class="o">=</span> <span class="n">biasx_calib</span><span class="p">(</span><span class="n">bias_field_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bias_y_voltage</span> <span class="o">=</span> <span class="n">biasy_calib</span><span class="p">(</span><span class="n">bias_field_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bias_z_voltage</span> <span class="o">=</span> <span class="n">biasz_calib</span><span class="p">(</span><span class="n">bias_field_vector</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
 
-        <span class="n">t</span> <span class="o">+=</span> <span class="n">ramp_dur</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_COIL_RAMP_TIME</span>
         <span class="k">return</span> <span class="n">t</span></div>
 
 
-<div class="viewcode-block" id="BField.ramp_B_field_voltage">
-<a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.BField.ramp_B_field_voltage">[docs]</a>
-    <span class="k">def</span> <span class="nf">ramp_B_field_voltage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">voltage_vector</span><span class="p">):</span>
+<div class="viewcode-block" id="BField.ramp_bias_field_voltage">
+<a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.BField.ramp_bias_field_voltage">[docs]</a>
+    <span class="k">def</span> <span class="nf">ramp_bias_field_voltage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">voltage_vector</span><span class="p">):</span>
         <span class="c1">#B_field_vector should be a tuple of the form (x,y,z)</span>
         <span class="c1"># Need to start the ramp earlier if the voltage changes sign</span>
         <span class="n">t_x_coil</span><span class="p">,</span> <span class="n">t_y_coil</span><span class="p">,</span> <span class="n">t_z_coil</span> <span class="o">=</span> <span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_x_voltage</span> <span class="o">*</span> <span class="n">voltage_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">),</span>
                                         <span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_y_voltage</span> <span class="o">*</span> <span class="n">voltage_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">),</span>
                                         <span class="n">t</span> <span class="o">-</span> <span class="mf">4e-3</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_z_voltage</span> <span class="o">*</span> <span class="n">voltage_vector</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">))</span>
 
-        <span class="n">ramp_dur</span> <span class="o">=</span> <span class="mf">100e-6</span>
-
         <span class="n">devices</span><span class="o">.</span><span class="n">x_coil_current</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span>
             <span class="n">t_x_coil</span><span class="p">,</span>
-            <span class="n">duration</span><span class="o">=</span><span class="n">ramp_dur</span><span class="p">,</span>
+            <span class="n">duration</span><span class="o">=</span><span class="n">CONST_COIL_RAMP_TIME</span><span class="p">,</span>
             <span class="n">initial</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_x_voltage</span><span class="p">,</span>
             <span class="n">final</span><span class="o">=</span><span class="n">voltage_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
             <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
@@ -739,7 +833,7 @@
 
         <span class="n">devices</span><span class="o">.</span><span class="n">y_coil_current</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span>
             <span class="n">t_y_coil</span><span class="p">,</span>
-            <span class="n">duration</span><span class="o">=</span><span class="n">ramp_dur</span><span class="p">,</span>
+            <span class="n">duration</span><span class="o">=</span><span class="n">CONST_COIL_RAMP_TIME</span><span class="p">,</span>
             <span class="n">initial</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_y_voltage</span><span class="p">,</span>
             <span class="n">final</span><span class="o">=</span><span class="n">voltage_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
             <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
@@ -747,7 +841,7 @@
 
         <span class="n">devices</span><span class="o">.</span><span class="n">z_coil_current</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span>
             <span class="n">t_z_coil</span><span class="p">,</span>
-            <span class="n">duration</span><span class="o">=</span><span class="n">ramp_dur</span><span class="p">,</span>
+            <span class="n">duration</span><span class="o">=</span><span class="n">CONST_COIL_RAMP_TIME</span><span class="p">,</span>
             <span class="n">initial</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_z_voltage</span><span class="p">,</span>
             <span class="n">final</span><span class="o">=</span><span class="n">voltage_vector</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
             <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
@@ -758,18 +852,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">bias_y_voltage</span> <span class="o">=</span> <span class="n">voltage_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bias_z_voltage</span> <span class="o">=</span> <span class="n">voltage_vector</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
 
-        <span class="n">t</span> <span class="o">+=</span> <span class="n">ramp_dur</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_COIL_RAMP_TIME</span>
         <span class="k">return</span> <span class="n">t</span></div>
 
 
 <div class="viewcode-block" id="BField.switch_mot_coils">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.BField.switch_mot_coils">[docs]</a>
     <span class="k">def</span> <span class="nf">switch_mot_coils</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
-        <span class="n">ramp_dur</span> <span class="o">=</span> <span class="mf">100e-6</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mot_coils_on</span><span class="p">:</span>
             <span class="n">devices</span><span class="o">.</span><span class="n">mot_coil_current_ctrl</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span>
                 <span class="n">t</span><span class="p">,</span>
-                <span class="n">duration</span><span class="o">=</span><span class="n">ramp_dur</span><span class="p">,</span>
+                <span class="n">duration</span><span class="o">=</span><span class="n">CONST_COIL_RAMP_TIME</span><span class="p">,</span>
                 <span class="n">initial</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mot_coils_on_current</span><span class="p">,</span>
                 <span class="n">final</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                 <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
@@ -778,14 +871,14 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">devices</span><span class="o">.</span><span class="n">mot_coil_current_ctrl</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span>
                 <span class="n">t</span><span class="p">,</span>
-                <span class="n">duration</span><span class="o">=</span><span class="n">ramp_dur</span><span class="p">,</span>
+                <span class="n">duration</span><span class="o">=</span><span class="n">CONST_COIL_RAMP_TIME</span><span class="p">,</span>
                 <span class="n">initial</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                 <span class="n">final</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mot_coils_on_current</span><span class="p">,</span>
                 <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">mot_coils_on</span> <span class="o">=</span> <span class="kc">True</span>
 
-        <span class="n">t</span> <span class="o">+=</span> <span class="n">ramp_dur</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_COIL_RAMP_TIME</span>
         <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_COIL_OFF_TIME</span>
         <span class="k">return</span> <span class="n">t</span></div>
 
@@ -894,8 +987,10 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">mot_coils_on</span><span class="p">:</span>
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">switch_mot_coils</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
-        <span class="n">mot_bias_voltages</span> <span class="o">=</span> <span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_x_coil_voltage</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_y_coil_voltage</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_z_coil_voltage</span><span class="p">)</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_B_field_voltage</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">mot_bias_voltages</span><span class="p">)</span>
+        <span class="n">mot_bias_voltages</span> <span class="o">=</span> <span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_x_coil_voltage</span><span class="p">,</span>
+                             <span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_y_coil_voltage</span><span class="p">,</span>
+                             <span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_z_coil_voltage</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_bias_field_voltage</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">mot_bias_voltages</span><span class="p">)</span>
 
         <span class="c1"># Reset laser frequency and configuration</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">reset_to_mot_freq</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
@@ -984,13 +1079,14 @@
     <span class="c1"># Molasses sequences</span>
 <div class="viewcode-block" id="MOTSequence.ramp_to_molasses">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.ramp_to_molasses">[docs]</a>
-    <span class="k">def</span> <span class="nf">ramp_to_molasses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">ta_bm_detuning</span><span class="p">,</span> <span class="n">repump_bm_detuning</span><span class="p">):</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_ta_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="n">ta_bm_detuning</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_repump_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="n">repump_bm_detuning</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">ramp_to_molasses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="c1"># detuning is ramped slowly here (duration = 1e-3) because atoms</span>
+        <span class="c1"># see the light during the frequency ramp.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_ta_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_ta_detuning</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_repump_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_repump_detuning</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">switch_mot_coils</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_B_field</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_bias_field</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Molasses stage&#39;</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;ta_last_detuning = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ta_freq</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -1003,12 +1099,10 @@
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.do_molasses">[docs]</a>
     <span class="k">def</span> <span class="nf">do_molasses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="k">assert</span> <span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">do_molasses_img_beam</span> <span class="ow">or</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_molasses_mot_beam</span><span class="p">),</span> <span class="s2">&quot;either do_molasses_img_beam or do_molasses_mot_beam has to be on&quot;</span>
-        <span class="c1">#TODO: what does this assert statement mean?</span>
-        <span class="k">assert</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_ta_detuning</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;bright molasses detuning = 0, did you forget to correct for the new case?&quot;</span>
+        <span class="k">assert</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_ta_detuning</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;bright molasses detuning = 0. TA detuning should be none zero for bright molasses.&quot;</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;molasses detuning is </span><span class="si">{</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_ta_detuning</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="c1">#Should we do this in-sequence?</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ramp_to_molasses</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_ta_detuning</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_repump_detuning</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ramp_to_molasses</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_molasses_mot_beam</span><span class="p">:</span>
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="p">,</span> <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">MOT_FULL</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_ta_power</span><span class="p">,</span>
@@ -1025,23 +1119,19 @@
     <span class="c1"># TODO: Maybe pass the shutter config into here? This would get rid of all the if statements?</span>
 <div class="viewcode-block" id="MOTSequence.do_molasses_dipole_trap_imaging">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.do_molasses_dipole_trap_imaging">[docs]</a>
-    <span class="k">def</span> <span class="nf">do_molasses_dipole_trap_imaging</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">img_ta_detuning</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">img_repump_detuning</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">img_ta_power</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">img_repump_power</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">do_repump</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="c1"># define quantization axis (Whut?? This is zeroing the field, there&#39;s not quantization axis)</span>
-
-        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_B_field</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
-
-        <span class="c1">#Is this section needed?</span>
+    <span class="k">def</span> <span class="nf">do_molasses_dipole_trap_imaging</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">do_repump</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="c1"># zero the field</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_bias_field</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
 
         <span class="c1"># Ramp to imaging frequencies</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_ta_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">CONST_TA_VCO_RAMP_TIME</span><span class="p">,</span> <span class="n">ta_freq_calib</span><span class="p">(</span><span class="n">img_ta_detuning</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_repump_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">CONST_TA_VCO_RAMP_TIME</span><span class="p">,</span> <span class="n">repump_freq_calib</span><span class="p">(</span><span class="n">img_repump_detuning</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_ta_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">CONST_TA_VCO_RAMP_TIME</span><span class="p">,</span> <span class="n">ta_freq_calib</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_repump_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">CONST_TA_VCO_RAMP_TIME</span><span class="p">,</span> <span class="n">repump_freq_calib</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
         <span class="n">t</span><span class="o">+=</span><span class="n">CONST_TA_VCO_RAMP_TIME</span>
-
 
         <span class="n">shutter_config</span> <span class="o">=</span> <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">select_imgaging_shutters</span><span class="p">(</span><span class="n">do_repump</span> <span class="o">=</span> <span class="n">do_repump</span><span class="p">)</span>
 
-        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_exposure_time</span><span class="p">,</span> <span class="n">shutter_config</span><span class="p">,</span> <span class="n">img_ta_power</span><span class="p">,</span> <span class="n">img_repump_power</span><span class="p">,</span> <span class="n">close_all_shutters</span> <span class="o">=</span> <span class="n">close_all_shutters</span><span class="p">)</span>
-
+        <span class="c1"># full power ta and repump pulse</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_exposure_time</span><span class="p">,</span> <span class="n">shutter_config</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">close_all_shutters</span> <span class="o">=</span> <span class="n">close_all_shutters</span><span class="p">)</span>
 
         <span class="c1"># TODO: ask Lin and Michelle and max() logic and if we always want it there</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span><span class="o">.</span><span class="n">set_type</span><span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">camera_type</span><span class="p">)</span>
@@ -1178,7 +1268,7 @@
         <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;mot&quot;</span><span class="p">:</span>
             <span class="c1"># Use the MOT beams for optical pumping</span>
             <span class="c1"># define quantization axis</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_B_field</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_biasx_field</span><span class="p">,</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_bias_field</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_biasx_field</span><span class="p">,</span>
                                                  <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_biasy_field</span><span class="p">,</span>
                                                  <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_biasz_field</span><span class="p">))</span>
             <span class="c1"># Do a repump pulse</span>
@@ -1190,7 +1280,7 @@
             <span class="c1"># Use the sigma+ beam for optical pumping</span>
             <span class="c1"># TODO: do we want shutters always closed for this ramping?</span>
             <span class="n">op_biasx_field</span><span class="p">,</span> <span class="n">op_biasy_field</span><span class="p">,</span> <span class="n">op_biasz_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">get_op_bias_fields</span><span class="p">()</span>
-            <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_B_field</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="n">op_biasx_field</span><span class="p">,</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_bias_field</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="n">op_biasx_field</span><span class="p">,</span>
                                                  <span class="n">op_biasy_field</span><span class="p">,</span>
                                                  <span class="n">op_biasz_field</span><span class="p">))</span>
             <span class="c1"># ramp detuning to 4 -&gt; 4, 3 -&gt; 4</span>
@@ -1228,7 +1318,7 @@
         <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;mot&quot;</span><span class="p">:</span>
             <span class="c1"># Use the MOT beams for optical depumping</span>
             <span class="c1"># define quantization axis</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_B_field</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_biasx_field</span><span class="p">,</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_bias_field</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_biasx_field</span><span class="p">,</span>
                                                  <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_biasy_field</span><span class="p">,</span>
                                                  <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_biasz_field</span><span class="p">))</span>
             <span class="c1"># ramp detuning to 4 -&gt; 4 for TA</span>
@@ -1242,7 +1332,7 @@
             <span class="c1"># Use the sigma+ beam for optical pumping</span>
             <span class="c1"># TODO: do we want shutters always closed for this ramping?</span>
             <span class="n">op_biasx_field</span><span class="p">,</span> <span class="n">op_biasy_field</span><span class="p">,</span> <span class="n">op_biasz_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">get_op_bias_fields</span><span class="p">()</span>
-            <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_B_field</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="n">op_biasx_field</span><span class="p">,</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_bias_field</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="n">op_biasx_field</span><span class="p">,</span>
                                                  <span class="n">op_biasy_field</span><span class="p">,</span>
                                                  <span class="n">op_biasz_field</span><span class="p">))</span>
             <span class="c1"># ramp detuning to 4 -&gt; 4, 3 -&gt; 3</span>
