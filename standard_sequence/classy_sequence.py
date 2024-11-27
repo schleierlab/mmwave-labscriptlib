@@ -77,7 +77,7 @@ class ShutterConfig(Flag):
 
     # TODO: replace globals with arguments
     @classmethod
-    def select_imgaging_shutters(cls, do_repump = True) -> ShutterConfig:
+    def select_imaging_shutters(cls, do_repump = True) -> ShutterConfig:
         repump_config = (cls.REPUMP if do_repump else cls.NONE)
         label=shot_globals.imaging_label
 
@@ -204,7 +204,7 @@ class D2Lasers:
         )
 
 
-    def update_shutters(self, t, new_shutter_config: ShutterConfig, early_close=False):
+    def update_shutters(self, t, new_shutter_config: ShutterConfig):
         changed_shutters = self.shutter_config ^ new_shutter_config
 
         shutters_to_open = changed_shutters & new_shutter_config
@@ -228,10 +228,7 @@ class D2Lasers:
             if shutter in shutters_to_open:
                 shutter_dict[shutter].open(t)
             if shutter in shutters_to_close:
-                if early_close:
-                    shutter_dict[shutter].close(t - CONST_SHUTTER_TURN_ON_TIME)
-                else:
-                    shutter_dict[shutter].close(t)
+                shutter_dict[shutter].close(t)
 
         self.shutter_config = new_shutter_config
         #return t?
@@ -265,7 +262,7 @@ class D2Lasers:
             print("shutter config changed, adding time to account for switching")
             self.ta_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
             self.repump_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
-            self.update_shutters(t, shutter_config, early_close=True)
+            self.update_shutters(t, shutter_config, early_close=False)
 
         if ta_power != 0:
             self.ta_aom_on(t, ta_power)
@@ -284,6 +281,7 @@ class D2Lasers:
         # If doing close_all_shutters, have to make sure that we aren't opening any of the ones we just closed in the next pulse.
         # Otherwise they won't be able to open in time unless there's enough delay between pulses.
         if close_all_shutters:
+            print("closing all shutters")
             self.update_shutters(t, ShutterConfig.NONE)
             t += CONST_SHUTTER_TURN_OFF_TIME
             self.ta_aom_on(t, 1)
@@ -515,24 +513,24 @@ class BField:
     def _y_coil_flip_polarity(self, t, final):
         coil_voltage_mid_abs = 0.03
         coil_voltage_mid = np.sign(final) * coil_voltage_mid_abs
-        total_coil_flip_ramp_time = bipolar_coil_flip_time + coil_ramp_time
+        total_coil_flip_ramp_time = CONST_BIPOLAR_COIL_FLIP_TIME + CONST_COIL_RAMP_TIME
         t += devices.y_coil_current.ramp(
             t,
-            duration=coil_ramp_time/2,
+            duration=CONST_COIL_RAMP_TIME/2,
             initial=self.bias_y_voltage,
             final=coil_voltage_mid,  # sligtly negative voltage to trigger the polarity change
             samplerate=1e5,
         )
         devices.y_coil_feedback_off.go_high(t)
         print('turn feedback off at time t = ', t)
-        devices.y_coil_feedback_off.go_low(t + coil_feedback_off_time)
-        print('turn feedback back on at time t = ', t + coil_feedback_off_time)
+        devices.y_coil_feedback_off.go_low(t + CONST_COIL_FEEDBACK_OFF_TIME)
+        print('turn feedback back on at time t = ', t + CONST_COIL_FEEDBACK_OFF_TIME)
         devices.y_coil_current.constant(t, coil_voltage_mid)
-        t += bipolar_coil_flip_time
+        t += CONST_BIPOLAR_COIL_FLIP_TIME
 
         t += devices.y_coil_current.ramp(
             t,
-            duration=coil_ramp_time/2,
+            duration=CONST_COIL_RAMP_TIME/2,
             initial=coil_voltage_mid,
             final=final,  # 0 mG
             samplerate=1e5,
@@ -548,22 +546,22 @@ class BField:
     def _z_coil_flip_polarity(self, t, final):
         coil_voltage_mid_abs = 0.03
         coil_voltage_mid = np.sign(final) * coil_voltage_mid_abs
-        total_coil_flip_ramp_time = bipolar_coil_flip_time + coil_ramp_time
+        total_coil_flip_ramp_time = CONST_BIPOLAR_COIL_FLIP_TIME + CONST_COIL_RAMP_TIME
         t += devices.z_coil_current.ramp(
             t,
-            duration=coil_ramp_time/2,
+            duration=CONST_COIL_RAMP_TIME/2,
             initial=self.bias_z_voltage,
             final=coil_voltage_mid,  # sligtly negative voltage to trigger the polarity change
             samplerate=1e5,
         )
         devices.z_coil_feedback_off.go_high(t)
-        devices.z_coil_feedback_off.go_low(t + coil_feedback_off_time)
+        devices.z_coil_feedback_off.go_low(t + CONST_COIL_FEEDBACK_OFF_TIME)
         devices.z_coil_current.constant(t, coil_voltage_mid)
-        t += bipolar_coil_flip_time
+        t += CONST_BIPOLAR_COIL_FLIP_TIME
 
         t += devices.z_coil_current.ramp(
             t,
-            duration=coil_ramp_time/2,
+            duration=CONST_COIL_RAMP_TIME/2,
             initial=coil_voltage_mid,
             final=final,  # 0 mG
             samplerate=1e5,
@@ -597,7 +595,7 @@ class BField:
                 samplerate=1e5,
             )
         else: # coil flip the control voltage sign
-            t = self._x_coil_flip_polarity(self, t_x_coil, voltage_vector[0])
+            t = self._x_coil_flip_polarity(t_x_coil, voltage_vector[0])
 
         if np.sign(self.bias_y_voltage * voltage_vector[1]) > 0:
             devices.y_coil_current.ramp(
@@ -608,7 +606,7 @@ class BField:
                 samplerate=1e5,
             )
         else: # coil flip the control voltage sign
-            t = self._y_coil_flip_polarity(self, t_y_coil, voltage_vector[1])
+            t = self._y_coil_flip_polarity(t_y_coil, voltage_vector[1])
 
         if np.sign(self.bias_z_voltage * voltage_vector[2]) > 0:
             devices.z_coil_current.ramp(
@@ -619,7 +617,7 @@ class BField:
                 samplerate=1e5,
             )
         else: # coil flip the control voltage sign
-            t = self._z_coil_flip_polarity(self, t_z_coil, voltage_vector[2])
+            t = self._z_coil_flip_polarity(t_z_coil, voltage_vector[2])
 
         # check if any of the bias coil polarity/sign is flipped
         cond_x = (np.sign(voltage_vector[0]*biasx_calib(self.bias_x_voltage)) < 0)
@@ -911,12 +909,13 @@ class MOTSequence:
         # Ramp to imaging frequencies
         self.D2Lasers_obj.ramp_ta_freq(t, CONST_TA_VCO_RAMP_TIME, ta_freq_calib(0))
         self.D2Lasers_obj.ramp_repump_freq(t, CONST_TA_VCO_RAMP_TIME, repump_freq_calib(0))
-        t+=CONST_TA_VCO_RAMP_TIME
+        t += CONST_TA_VCO_RAMP_TIME
 
-        shutter_config = ShutterConfig.select_imgaging_shutters(do_repump = do_repump)
+        shutter_config = ShutterConfig.select_imaging_shutters(do_repump=do_repump)
 
         # full power ta and repump pulse
-        _ = self.D2Lasers_obj.do_pulse(t, shot_globals.bm_exposure_time, shutter_config, 1, 1, close_all_shutters = close_all_shutters)
+        _ = self.D2Lasers_obj.do_pulse(t-CONST_SHUTTER_TURN_ON_TIME, shot_globals.bm_exposure_time, shutter_config, 1, 1,
+                                       close_all_shutters=close_all_shutters)
 
         # TODO: ask Lin and Michelle and max() logic and if we always want it there
         self.Camera_obj.set_type(shot_globals.camera_type)
@@ -924,6 +923,8 @@ class MOTSequence:
             exposure = max(shot_globals.bm_exposure_time, 50e-6)
         if self.Camera_obj.type == "kinetix":
             exposure = max(shot_globals.bm_exposure_time, 1e-3)
+
+        # expose the camera
         self.Camera_obj.expose(t, exposure)
 
         # Closes the aom and the specified shutters
@@ -931,17 +932,18 @@ class MOTSequence:
 
         return t
 
-    def _do_molasses_in_situ_sequence(self, t, reset_mot = False):
+    def _do_molasses_in_situ_sequence(self, t, reset_mot=False):
         # MOT loading time 500 ms
         mot_load_dur = 0.5
 
         t += CONST_SHUTTER_TURN_ON_TIME
 
         t = self.do_mot(t, mot_load_dur)
-
+        print("before do molasses", t)
         t = self.do_molasses(t, shot_globals.bm_time)
-
+        print("after molasses, before first image", t)
         t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
+        print("after first image", t)
 
         # Turn off MOT for taking background images
         t += 1e-1
