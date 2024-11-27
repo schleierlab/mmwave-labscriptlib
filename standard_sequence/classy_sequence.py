@@ -75,14 +75,14 @@ class ShutterConfig(Flag):
     OPTICAL_PUMPING_TA = TA | OPTICAL_PUMPING
     OPTICAL_PUMPING_REPUMP = REPUMP | OPTICAL_PUMPING
 
-    # TODO: replace globals with arguments
     @classmethod
-    def select_imaging_shutters(cls, do_repump = True) -> ShutterConfig:
+    def select_imaging_shutters(cls, do_repump=True) -> ShutterConfig:
         repump_config = (cls.REPUMP if do_repump else cls.NONE)
-        label=shot_globals.imaging_label
+        label = shot_globals.imaging_label
 
         # TODO: change handling of labels to make full default and raise error when not one of the options
         if shot_globals.do_mot_beams_during_imaging:
+            print("doing mot beams for imaging")
             if label == "z":
                 shutter_config = cls.MOT_Z | repump_config
             elif label == "xy":
@@ -90,8 +90,9 @@ class ShutterConfig(Flag):
             else:
                 shutter_config = cls.MOT_FULL | repump_config
 
-        #If you're trying to do in-situ imaging, you want to image faster than switch shutters allows for, so you can't do imaging beam imaging
-        if shot_globals.do_img_beams_during_imaging and not shot_globals.do_molasses_in_situ_check:
+        # If you're trying to do in-situ imaging, you want to image faster than switch shutters allows for,
+        # so you can't do imaging beam imaging
+        elif shot_globals.do_img_beams_during_imaging and not shot_globals.do_molasses_in_situ_check:
             if label == "z":
                 shutter_config = cls.IMG_Z | repump_config
             elif label == "xy":
@@ -262,7 +263,7 @@ class D2Lasers:
             print("shutter config changed, adding time to account for switching")
             self.ta_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
             self.repump_aom_off(t - CONST_SHUTTER_TURN_ON_TIME)
-            self.update_shutters(t, shutter_config, early_close=False)
+            self.update_shutters(t, shutter_config)
 
         if ta_power != 0:
             self.ta_aom_on(t, ta_power)
@@ -271,6 +272,7 @@ class D2Lasers:
             self.repump_aom_on(t, repump_power)
             self.repump_power = repump_power
 
+        t_aom_start = t
         t += dur
         self.ta_aom_off(t)
         self.repump_aom_off(t)
@@ -287,7 +289,7 @@ class D2Lasers:
             self.ta_aom_on(t, 1)
             self.repump_aom_on(t, 1)
 
-        return t
+        return t, t_aom_start
 
     def reset_to_mot_freq(self, t):
         self.ramp_repump_freq(t, duration=CONST_TA_VCO_RAMP_TIME,
@@ -309,7 +311,7 @@ class D2Lasers:
         self.ramp_ta_freq(t, duration=0, final=shot_globals.bm_parity_projection_ta_detuning)
         t += CONST_TA_VCO_RAMP_TIME
         # TODO: is this a TA pulse only? Or is repump also supposed to be on?
-        t = self.do_pulse(t, dur, ShutterConfig.MOT_TA,
+        t, _ = self.do_pulse(t, dur, ShutterConfig.MOT_TA,
                       shot_globals.bm_parity_projection_ta_power,
                       0, close_all_shutters=True)
         return t
@@ -717,7 +719,7 @@ class Camera:
         # type = "MOT_manta" or "tweezer_manta" or "kinetix"
         self.type = type
 
-    def expose(self, t, exposure_time, trigger_local_manta = False):
+    def expose(self, t, exposure_time, trigger_local_manta=False):
 
         if trigger_local_manta:
             devices.mot_camera_trigger.go_high(t)
@@ -728,7 +730,7 @@ class Camera:
                 'manta419b',
                 t,
                 'atoms',
-                exposure_time = exposure_time)
+                exposure_time=exposure_time)
 
         if self.type == "tweezer_manta":
             devices.manta419b_tweezer.expose(
@@ -772,7 +774,7 @@ class MOTSequence:
         # if using a long UV duration, want to make sure that the MOT doesn't finish
         # loading leaving the UV is still on for imaging.
         dur = max(dur, shot_globals.uv_duration)
-        t = self.D2Lasers_obj.do_pulse(t, dur, ShutterConfig.MOT_FULL, shot_globals.mot_ta_power,
+        t, _ = self.D2Lasers_obj.do_pulse(t, dur, ShutterConfig.MOT_FULL, shot_globals.mot_ta_power,
                                         shot_globals.mot_repump_power, close_all_shutters = close_all_shutters)
 
         return t
@@ -808,7 +810,7 @@ class MOTSequence:
         self.Camera_obj.expose(t, shot_globals.mot_exposure_time)
         print("before doing a MOT pulse for image t = ", t)
 
-        t = self.D2Lasers_obj.do_pulse(t, shot_globals.mot_exposure_time, ShutterConfig.MOT_FULL, shot_globals.mot_ta_power,
+        t, _ = self.D2Lasers_obj.do_pulse(t, shot_globals.mot_exposure_time, ShutterConfig.MOT_FULL, shot_globals.mot_ta_power,
                                         shot_globals.mot_repump_power, close_all_shutters = close_all_shutters)
 
         return t
@@ -891,11 +893,11 @@ class MOTSequence:
         self.ramp_to_molasses(t)
 
         if shot_globals.do_molasses_mot_beam:
-            t = self.D2Lasers_obj.do_pulse(t, dur, ShutterConfig.MOT_FULL, shot_globals.bm_ta_power,
+            t, _ = self.D2Lasers_obj.do_pulse(t, dur, ShutterConfig.MOT_FULL, shot_globals.bm_ta_power,
                                 shot_globals.bm_repump_power, close_all_shutters=close_all_shutters)
 
         if shot_globals.do_molasses_img_beam:
-            t = self.D2Lasers_obj.do_pulse(t, dur, ShutterConfig.IMG_FULL, shot_globals.bm_ta_power,
+            t, _ = self.D2Lasers_obj.do_pulse(t, dur, ShutterConfig.IMG_FULL, shot_globals.bm_ta_power,
                                 shot_globals.bm_repump_power, close_all_shutters=close_all_shutters)
         return t
 
@@ -912,9 +914,11 @@ class MOTSequence:
         t += CONST_TA_VCO_RAMP_TIME
 
         shutter_config = ShutterConfig.select_imaging_shutters(do_repump=do_repump)
+        print("This is the shutter config in molasses imaging", shutter_config)
 
         # full power ta and repump pulse
-        _ = self.D2Lasers_obj.do_pulse(t-CONST_SHUTTER_TURN_ON_TIME, shot_globals.bm_exposure_time, shutter_config, 1, 1,
+        t_pulse_end, t_aom_start = self.D2Lasers_obj.do_pulse(t, shot_globals.bm_exposure_time,
+                                       shutter_config, 1, 1,
                                        close_all_shutters=close_all_shutters)
 
         # TODO: ask Lin and Michelle and max() logic and if we always want it there
@@ -925,10 +929,11 @@ class MOTSequence:
             exposure = max(shot_globals.bm_exposure_time, 1e-3)
 
         # expose the camera
-        self.Camera_obj.expose(t, exposure)
+        self.Camera_obj.expose(t_aom_start, exposure)
 
         # Closes the aom and the specified shutters
         t += exposure
+        t = max(t, t_pulse_end)
 
         return t
 
@@ -948,7 +953,7 @@ class MOTSequence:
         # Turn off MOT for taking background images
         t += 1e-1
 
-        t += CONST_TA_VCO_RAMP_TIME
+        #t += CONST_SHUTTER_TURN_ON_TIME
         t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
         t += 1e-2
 
@@ -1050,7 +1055,7 @@ class OpticalPumpingSequence(MOTSequence):
                                                  shot_globals.mw_biasy_field,
                                                  shot_globals.mw_biasz_field))
             # Do a repump pulse
-            t = self.D2Lasers_obj.do_pulse(t, shot_globals.op_MOT_op_time,
+            t, _ = self.D2Lasers_obj.do_pulse(t, shot_globals.op_MOT_op_time,
                                     ShutterConfig.MOT_REPUMP, 0, 1, close_all_shutters=True)
             return t
 
@@ -1067,7 +1072,7 @@ class OpticalPumpingSequence(MOTSequence):
             # Do a sigma+ pulse
             # TODO: is shot_globals.op_ramp_delay just extra fudge time? can it be eliminated?
             t += max(CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
-            t = self.D2Lasers_obj.do_pulse(t - CONST_SHUTTER_TURN_ON_TIME,
+            t, _ = self.D2Lasers_obj.do_pulse(t - CONST_SHUTTER_TURN_ON_TIME,
                                        shot_globals.op_repump_time,
                                        ShutterConfig.OPTICAL_PUMPING_FULL,
                                        shot_globals.op_ta_power,
@@ -1099,7 +1104,7 @@ class OpticalPumpingSequence(MOTSequence):
             # ramp detuning to 4 -> 4 for TA
             self.D2Lasers_obj.ramp_ta_freq(t, 0, CONST_TA_PUMPING_DETUNING)
             # Do a repump pulse
-            t = self.D2Lasers_obj.do_pulse(t, shot_globals.op_MOT_odp_time,
+            t, _ = self.D2Lasers_obj.do_pulse(t, shot_globals.op_MOT_odp_time,
                                     ShutterConfig.MOT_REPUMP, 1, 0, close_all_shutters=True)
             return t
 
@@ -1116,7 +1121,7 @@ class OpticalPumpingSequence(MOTSequence):
             # Do a sigma+ pulse
             # TODO: is shot_globals.op_ramp_delay just extra fudge time? can it be eliminated?
             t += max(CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
-            t = self.D2Lasers_obj.do_pulse(t - CONST_SHUTTER_TURN_ON_TIME,
+            t, _ = self.D2Lasers_obj.do_pulse(t - CONST_SHUTTER_TURN_ON_TIME,
                                        shot_globals.odp_repump_time,
                                        ShutterConfig.OPTICAL_PUMPING_FULL,
                                        shot_globals.odp_ta_power,
@@ -1141,7 +1146,7 @@ class OpticalPumpingSequence(MOTSequence):
         self.D2Lasers_obj.ramp_ta_freq(t, 0, 0)
         t += CONST_TA_VCO_RAMP_TIME
         # do a ta pulse via optical pumping path
-        t = self.D2Lasers_obj.do_pulse(t, shot_globals.op_killing_killing_pulse_time,
+        t, _ = self.D2Lasers_obj.do_pulse(t, shot_globals.op_killing_killing_pulse_time,
                                     ShutterConfig.OPTICAL_PUMPING_FULL,
                                     shot_globals.op_killing_ta_power, 0, close_all_shutters=True)
 
