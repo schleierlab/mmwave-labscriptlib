@@ -321,18 +321,35 @@ class D2Lasers:
 class TweezerLaser:
     def __init__(self, t):
         self.tw_power = shot_globals.tw_power
-        self.intensity_servo_keep_on(t)
+        # self.intensity_servo_keep_on(t)
         self.start_tweezers(t)
 
     def start_tweezers(self, t):
+        assert shot_globals.do_sequence_mode, "shot_globals.do_sequence_mode is False, running Fifo mode now. Set to True for sequence mode"
         spectrum_manager.start_card()
         t1 = spectrum_manager.start_tweezers(t)
         print('tweezer start time:', t1)
         self.aom_on(t, self.tw_power)
 
+    def stop_tweezers(self, t):
+        # stop tweezers
+        t2 = spectrum_manager.stop_tweezers(t)
+        print('tweezer stop time:', t2)
+        #t += 1e-3
+
+        ##### dummy segment ######
+        t1 = spectrum_manager.start_tweezers(t)
+        print('tweezer start time:', t1)
+        t += 2e-3
+        t2 = spectrum_manager.stop_tweezers(t)
+        print('tweezer stop time:',t2)
+        #t += 1e-3################
+        spectrum_manager.stop_card(t)
+        return t
+
     def intensity_servo_keep_on(self, t):
         ''' keep the AOM digital high for intensity servo '''
-        self.aom_on(t, 0)
+        self.aom_on(t, 1)
 
     def aom_on(self, t, const):
         """ Turn on the tweezer beam using aom """
@@ -365,9 +382,6 @@ class TweezerLaser:
             dc_offset=self.tw_power,
             samplerate=1e5
         )
-
-
-
 
 
 class Microwave:
@@ -886,8 +900,10 @@ class MOTSequence:
         return t
 
     def do_molasses(self, t, dur, close_all_shutters=False):
-        assert (shot_globals.do_molasses_img_beam or shot_globals.do_molasses_mot_beam), "either do_molasses_img_beam or do_molasses_mot_beam has to be on"
-        assert shot_globals.bm_ta_detuning != 0, "bright molasses detuning = 0. TA detuning should be none zero for bright molasses."
+        assert (shot_globals.do_molasses_img_beam or shot_globals.do_molasses_mot_beam), \
+            "either do_molasses_img_beam or do_molasses_mot_beam has to be on"
+        assert shot_globals.bm_ta_detuning != 0, \
+            "bright molasses detuning = 0. TA detuning should be none zero for bright molasses."
         print(f"molasses detuning is {shot_globals.bm_ta_detuning}")
 
         self.ramp_to_molasses(t)
@@ -918,8 +934,8 @@ class MOTSequence:
 
         # full power ta and repump pulse
         t_pulse_end, t_aom_start = self.D2Lasers_obj.do_pulse(t, shot_globals.bm_exposure_time,
-                                       shutter_config, 1, 1,
-                                       close_all_shutters=close_all_shutters)
+                                                                shutter_config, 1, 1,
+                                                                close_all_shutters=close_all_shutters)
 
         # TODO: ask Lin and Michelle and max() logic and if we always want it there
         self.Camera_obj.set_type(shot_globals.camera_type)
@@ -962,7 +978,7 @@ class MOTSequence:
 
         return t
 
-    def _do_molasses_tof_sequence(self, t, reset_mot = False):
+    def _do_molasses_tof_sequence(self, t, reset_mot=False):
 
         mot_load_dur = 0.5
         t += CONST_SHUTTER_TURN_ON_TIME
@@ -986,64 +1002,10 @@ class MOTSequence:
 
         return t
 
-    #TODO: refactor this more like the do_molasses_imaging thing above
-    def do_kinetix_imaging(self, t, shot_number):
-        self.D2Lasers_obj.open_ta_shutter(t)
-        self.D2Lasers_obj.open_repump_shutter(t)
-
-        # TODO: Change globals away from "do_mot_xy_beams_during_imaging" to label as in open_mot_shutters(t, label=None)
-        if shot_number == 1:
-            if shot_globals.do_mot_beams_during_imaging:
-                self.D2Lasers_obj.open_mot_shutters(t, label=shot_globals.mot_beam_imaging_label)
-            if shot_globals.do_img_beams_during_imaging:
-                self.D2Lasers_obj.open_img_shutters(t, label=shot_globals.img_beam_imaging_label)
-
-        elif shot_number == 2:
-            # pulse for the second shots and wait for the first shot to finish the
-            # first reading
-            kinetix_readout_time = shot_globals.kinetix_roi_row[1] * 4.7065e-6
-            print('kinetix readout time:', kinetix_readout_time)
-            # need extra 7 ms for shutter to close on the second shot
-            t += kinetix_readout_time + shot_globals.kinetix_extra_readout_time
-
-            # TODO: was previously called "do_shutter_close_on_second_shot" but this is a confusing name so
-            # we need to change it in the globals files to what is written here:
-            if shot_globals.shutter_close_after_first_shot:
-                if shot_globals.do_mot_beams_during_imaging:
-                    self.D2Lasers_obj.open_mot_shutters(t, label=shot_globals.mot_beam_imaging_label)
-                if shot_globals.do_img_beams_during_imaging:
-                    self.D2Lasers_obj.open_img_shutters(t, label=shot_globals.img_beam_imaging_label)
-
-        self.D2Lasers_obj.mot_aom_on(t)
-
-        # TODO: what does this assert mean?
-        assert shot_globals.img_exposure_time != 0, ("Imaging exposure time = 0, "
-                                                    "did you forget to adjust "
-                                                    "for the case?")
-
-        #Replace with camera object
-        self.Camera_obj.set_type("kinetix")
-        if shot_globals.do_kinetix_camera:
-            exposure = max(shot_globals.img_exposure_time, 1e-3)
-            self.Camera_obj.expose(t, exposure)
-            t += exposure
-
-        self.D2Lasers_obj.mot_aom_off(t)
-
-        if (shot_number == 1 and shot_globals.shutter_close_after_first_shot) or shot_number == 2:
-            if shot_globals.do_mot_beams_during_imaging:
-                self.D2Lasers_obj.close_mot_shutters(t, label=shot_globals.mot_beam_imaging_label)
-
-            if shot_globals.do_img_beams_during_imaging:
-                self.D2Lasers_obj.close_img_shutters(t, label=shot_globals.img_beam_imaging_label)
-
-        return t
-
-
 class OpticalPumpingSequence(MOTSequence):
 
-    def __init__(self):
-        super(OpticalPumpingSequence, self).__init__()
+    def __init__(self, t):
+        super(OpticalPumpingSequence, self).__init__(t)
 
     def pump_to_F4(self, t, label=None):
         if self.BField_obj.mot_coils_on:
@@ -1155,11 +1117,24 @@ class OpticalPumpingSequence(MOTSequence):
 
 
 
-class TweezerSequence(MOTSequence):
+class TweezerSequence(OpticalPumpingSequence):
 
-    def __init__(self):
-        super(TweezerSequence, self).__init__()
-        self.TweezerLaser_obj = TweezerLaser()
+    def __init__(self, t):
+        super(TweezerSequence, self).__init__(t)
+        self.TweezerLaser_obj = TweezerLaser(t)
+
+    def ramp_to_imaging_parameters(self, t):
+        # ramping to imaging detuning and power, previously referred to as "pre_imaging"
+        # also used for additional cooling
+        self.BField_obj.ramp_bias_field(t, bias_field_vector=(0,0,0))
+        self.D2Lasers_obj.ramp_ta_freq(t, 0, shot_globals.img_ta_detuning)
+        self.D2Lasers_obj.ramp_repump_freq(t, 0, 0)
+        assert shot_globals.img_ta_power != 0, "img_ta_power should not be zero"
+        assert shot_globals.img_repump_power != 0, "img_repump_power should not be zero"
+        self.D2Lasers_obj.ramp_ta_aom(t, 0, shot_globals.img_ta_power)
+        self.D2Lasers_obj.ramp_repump_aom(t, 0, shot_globals.img_repump_power)
+
+        return t
 
     def load_tweezers(self, t):
         t = self.do_mot(t, dur=0.5)
@@ -1168,20 +1143,78 @@ class TweezerSequence(MOTSequence):
         # ramp to full power
         self.TweezerLaser_obj.ramp_power(t, dur=10e-3, final_power=1)
         t += 10e-3
-        t = self.D2Lasers_obj.parity_projection_pulse(t, dur=shot_globals.bm_parity_projection_pulse_dur)
+
+        if shot_globals.do_parity_projection_pulse:
+            t = self.D2Lasers_obj.parity_projection_pulse(t, dur=shot_globals.bm_parity_projection_pulse_dur)
+
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
 
+        t = self.ramp_to_imaging_parameters(t)
+
+        if shot_globals.do_robust_loading_pulse:
+            # additional cooling, previously referred to as "robust_loading"
+            # sometimes don't use this when tweezer debugging is needed?
+            t, _ = self.D2Lasers_obj.do_pulse(t, shot_globals.bm_robust_loading_pulse_dur,
+                                            ShutterConfig.IMG_FULL,
+                                            shot_globals.img_ta_power,
+                                            shot_globals.img_repump_power,
+                                            close_all_shutters=True)
+
+        assert shot_globals.img_tof_imaging_delay > CONST_MIN_SHUTTER_OFF_TIME, \
+            "time of flight needs to be greater than CONST_MIN_SHUTTER_OFF_TIME"
+        t += shot_globals.img_tof_imaging_delay
+
         return t
+
+    def tweezer_modulation(self, t, label='sine'):
+        pass
 
     def rearrange_to_dense(self, t):
         pass
 
     def image_tweezers(self, t, shot_number):
-        # TODO: do_kinetix_imaging needs to include pre_imaging ramps
-        t = self.do_kinetix_imaging(t, shot_number=1)
+        if shot_number == 1:
+            t = self.do_kinetix_imaging(t, close_all_shutters=shot_globals.do_shutter_close_after_first_shot)
+            # t+=7e-3 # wait for shutter to fully close. But do we need this?
+        if shot_number == 2:
+            # pulse for the second shots and wait for the first shot to finish the
+            # first reading
+            kinetix_readout_time = shot_globals.kinetix_roi_row[1] * 4.7065e-6
+            print('kinetix readout time:', kinetix_readout_time)
+            # need extra 7 ms for shutter to close on the second shot
+            t += kinetix_readout_time + shot_globals.kinetix_extra_readout_time
+            t = self.do_kinetix_imaging(t, close_all_shutters = True)
+        return t
 
-    def tweezer_modulation(self, t, label='sine'):
-        pass
+    def do_kinetix_imaging(self, t, close_all_shutters=False):
+        shutter_config = ShutterConfig.select_imaging_shutters(do_repump=True)
+
+        t_pulse_end, t_aom_start = self.D2Lasers_obj.do_pulse(t, shot_globals.img_exposure_time,
+                                                                shutter_config, shot_globals.img_ta_power,
+                                                                shot_globals.img_repump_power,
+                                                                close_all_shutters = close_all_shutters)
+
+        self.Camera_obj.set_type("kinetix")
+        exposure = max(shot_globals.img_exposure_time, 1e-3)
+
+        # expose the camera
+        self.Camera_obj.expose(t_aom_start, exposure)
+
+        # Closes the aom and the specified shutters
+        t += exposure
+        t = max(t, t_pulse_end)
+
+        return t
+
+    def _do_tweezer_check_sequence(self, t):
+        t = self.load_tweezers(t)
+        t = self.image_tweezers(t, shot_number=1)
+        t += shot_globals.img_wait_time_between_shots
+        t = self.image_tweezers(t, shot_number=2)
+        t = self.reset_mot(t)
+        t = self.TweezerLaser_obj.stop_tweezers(t)
+
+        return t
 
     def _tweezer_release_recapture_sequence(self, t):
         pass
@@ -1252,8 +1285,9 @@ if __name__ == "__main__":
     # if shot_globals.do_tweezer_position_check:
     #     t = do_tweezer_position_check(t)
 
-    # if shot_globals.do_tweezer_check:
-    #     t = do_tweezer_check(t)
+    if shot_globals.do_tweezer_check:
+        TweezerSequence_obj = TweezerSequence(t)
+        t = TweezerSequence_obj._do_tweezer_check_sequence(t)
 
     # if shot_globals.do_tweezer_check_fifo:
     #     t = do_tweezer_check_fifo(t)
