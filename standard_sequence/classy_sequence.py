@@ -160,18 +160,11 @@ class D2Lasers:
         devices.ta_aom_analog.constant(t, 0)  # analog off
         self.ta_power = 0
 
-
     def ta_aom_on(self, t, const):
         """ Turn on the ta beam using aom """
         devices.ta_aom_digital.go_high(t)  # digital on
         devices.ta_aom_analog.constant(t, const)  # analog to const
         self.ta_power = const
-
-    def ta_aom_off(self, t):
-        """ Turn off the repump beam using aom """
-        devices.ta_aom_digital.go_low(t)  # digital off
-        devices.ta_aom_analog.constant(t, 0)  # analog off
-        self.ta_power = 0
 
     def repump_aom_off(self, t):
         """ Turn off the repump beam using aom """
