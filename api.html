@@ -47,7 +47,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#standard_sequence.classy_sequence.BField"><code class="docutils literal notranslate"><span class="pre">BField</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.BField.get_op_bias_fields"><code class="docutils literal notranslate"><span class="pre">BField.get_op_bias_fields()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.BField.ramp_bias_field"><code class="docutils literal notranslate"><span class="pre">BField.ramp_bias_field()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.BField.ramp_bias_field_voltage"><code class="docutils literal notranslate"><span class="pre">BField.ramp_bias_field_voltage()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.BField.switch_mot_coils"><code class="docutils literal notranslate"><span class="pre">BField.switch_mot_coils()</span></code></a></li>
 </ul>
 </li>
@@ -76,7 +75,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#standard_sequence.classy_sequence.DiagnosticSequence"><code class="docutils literal notranslate"><span class="pre">DiagnosticSequence</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#standard_sequence.classy_sequence.EField"><code class="docutils literal notranslate"><span class="pre">EField</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#standard_sequence.classy_sequence.MOTSequence"><code class="docutils literal notranslate"><span class="pre">MOTSequence</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.MOTSequence.do_kinetix_imaging"><code class="docutils literal notranslate"><span class="pre">MOTSequence.do_kinetix_imaging()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.MOTSequence.do_molasses"><code class="docutils literal notranslate"><span class="pre">MOTSequence.do_molasses()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.MOTSequence.do_molasses_dipole_trap_imaging"><code class="docutils literal notranslate"><span class="pre">MOTSequence.do_molasses_dipole_trap_imaging()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.MOTSequence.do_mot"><code class="docutils literal notranslate"><span class="pre">MOTSequence.do_mot()</span></code></a></li>
@@ -135,7 +133,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.ShutterConfig.REPUMP"><code class="docutils literal notranslate"><span class="pre">ShutterConfig.REPUMP</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.ShutterConfig.TA"><code class="docutils literal notranslate"><span class="pre">ShutterConfig.TA</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.ShutterConfig.UPSTREAM"><code class="docutils literal notranslate"><span class="pre">ShutterConfig.UPSTREAM</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.ShutterConfig.select_imgaging_shutters"><code class="docutils literal notranslate"><span class="pre">ShutterConfig.select_imgaging_shutters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.ShutterConfig.select_imaging_shutters"><code class="docutils literal notranslate"><span class="pre">ShutterConfig.select_imaging_shutters()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#standard_sequence.classy_sequence.TweezerLaser"><code class="docutils literal notranslate"><span class="pre">TweezerLaser</span></code></a><ul>
@@ -145,11 +143,14 @@
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.TweezerLaser.ramp_power"><code class="docutils literal notranslate"><span class="pre">TweezerLaser.ramp_power()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.TweezerLaser.sine_mod_power"><code class="docutils literal notranslate"><span class="pre">TweezerLaser.sine_mod_power()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.TweezerLaser.start_tweezers"><code class="docutils literal notranslate"><span class="pre">TweezerLaser.start_tweezers()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.TweezerLaser.stop_tweezers"><code class="docutils literal notranslate"><span class="pre">TweezerLaser.stop_tweezers()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#standard_sequence.classy_sequence.TweezerSequence"><code class="docutils literal notranslate"><span class="pre">TweezerSequence</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.TweezerSequence.do_kinetix_imaging"><code class="docutils literal notranslate"><span class="pre">TweezerSequence.do_kinetix_imaging()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.TweezerSequence.image_tweezers"><code class="docutils literal notranslate"><span class="pre">TweezerSequence.image_tweezers()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.TweezerSequence.load_tweezers"><code class="docutils literal notranslate"><span class="pre">TweezerSequence.load_tweezers()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.TweezerSequence.ramp_to_imaging_parameters"><code class="docutils literal notranslate"><span class="pre">TweezerSequence.ramp_to_imaging_parameters()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.TweezerSequence.rearrange_to_dense"><code class="docutils literal notranslate"><span class="pre">TweezerSequence.rearrange_to_dense()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.TweezerSequence.tweezer_modulation"><code class="docutils literal notranslate"><span class="pre">TweezerSequence.tweezer_modulation()</span></code></a></li>
 </ul>
@@ -206,12 +207,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.BField.ramp_bias_field">
-<span class="sig-name descname"><span class="pre">ramp_bias_field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias_field_vector</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#BField.ramp_bias_field"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.BField.ramp_bias_field" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="standard_sequence.classy_sequence.BField.ramp_bias_field_voltage">
-<span class="sig-name descname"><span class="pre">ramp_bias_field_voltage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">voltage_vector</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#BField.ramp_bias_field_voltage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.BField.ramp_bias_field_voltage" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">ramp_bias_field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias_field_vector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">voltage_vector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#BField.ramp_bias_field"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.BField.ramp_bias_field" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -314,7 +310,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.D2Lasers.update_shutters">
-<span class="sig-name descname"><span class="pre">update_shutters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_shutter_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">early_close</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#D2Lasers.update_shutters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.D2Lasers.update_shutters" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">update_shutters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_shutter_config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#D2Lasers.update_shutters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.D2Lasers.update_shutters" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -335,11 +331,6 @@
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.MOTSequence">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">standard_sequence.classy_sequence.</span></span><span class="sig-name descname"><span class="pre">MOTSequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#MOTSequence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.MOTSequence" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="standard_sequence.classy_sequence.MOTSequence.do_kinetix_imaging">
-<span class="sig-name descname"><span class="pre">do_kinetix_imaging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shot_number</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#MOTSequence.do_kinetix_imaging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.MOTSequence.do_kinetix_imaging" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.MOTSequence.do_molasses">
 <span class="sig-name descname"><span class="pre">do_molasses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dur</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close_all_shutters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#MOTSequence.do_molasses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.MOTSequence.do_molasses" title="Link to this definition"></a></dt>
@@ -380,7 +371,7 @@
 
 <dl class="py class">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.OpticalPumpingSequence">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">standard_sequence.classy_sequence.</span></span><span class="sig-name descname"><span class="pre">OpticalPumpingSequence</span></span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#OpticalPumpingSequence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.OpticalPumpingSequence" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">standard_sequence.classy_sequence.</span></span><span class="sig-name descname"><span class="pre">OpticalPumpingSequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#OpticalPumpingSequence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.OpticalPumpingSequence" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#standard_sequence.classy_sequence.MOTSequence" title="standard_sequence.classy_sequence.MOTSequence"><code class="xref py py-class docutils literal notranslate"><span class="pre">MOTSequence</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.OpticalPumpingSequence.depump_to_F3">
@@ -600,8 +591,8 @@
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="standard_sequence.classy_sequence.ShutterConfig.select_imgaging_shutters">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">select_imgaging_shutters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">do_repump</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#ShutterConfig.select_imgaging_shutters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.ShutterConfig.select_imgaging_shutters" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="standard_sequence.classy_sequence.ShutterConfig.select_imaging_shutters">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">select_imaging_shutters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">do_repump</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#ShutterConfig.select_imaging_shutters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.ShutterConfig.select_imaging_shutters" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#standard_sequence.classy_sequence.ShutterConfig" title="standard_sequence.classy_sequence.ShutterConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShutterConfig</span></code></a></span></p>
@@ -648,12 +639,22 @@
 <span class="sig-name descname"><span class="pre">start_tweezers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#TweezerLaser.start_tweezers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.TweezerLaser.start_tweezers" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="standard_sequence.classy_sequence.TweezerLaser.stop_tweezers">
+<span class="sig-name descname"><span class="pre">stop_tweezers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#TweezerLaser.stop_tweezers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.TweezerLaser.stop_tweezers" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.TweezerSequence">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">standard_sequence.classy_sequence.</span></span><span class="sig-name descname"><span class="pre">TweezerSequence</span></span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#TweezerSequence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.TweezerSequence" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#standard_sequence.classy_sequence.MOTSequence" title="standard_sequence.classy_sequence.MOTSequence"><code class="xref py py-class docutils literal notranslate"><span class="pre">MOTSequence</span></code></a></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">standard_sequence.classy_sequence.</span></span><span class="sig-name descname"><span class="pre">TweezerSequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#TweezerSequence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.TweezerSequence" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#standard_sequence.classy_sequence.OpticalPumpingSequence" title="standard_sequence.classy_sequence.OpticalPumpingSequence"><code class="xref py py-class docutils literal notranslate"><span class="pre">OpticalPumpingSequence</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="standard_sequence.classy_sequence.TweezerSequence.do_kinetix_imaging">
+<span class="sig-name descname"><span class="pre">do_kinetix_imaging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close_all_shutters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#TweezerSequence.do_kinetix_imaging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.TweezerSequence.do_kinetix_imaging" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.TweezerSequence.image_tweezers">
 <span class="sig-name descname"><span class="pre">image_tweezers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shot_number</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#TweezerSequence.image_tweezers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.TweezerSequence.image_tweezers" title="Link to this definition"></a></dt>
@@ -662,6 +663,11 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.TweezerSequence.load_tweezers">
 <span class="sig-name descname"><span class="pre">load_tweezers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#TweezerSequence.load_tweezers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.TweezerSequence.load_tweezers" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="standard_sequence.classy_sequence.TweezerSequence.ramp_to_imaging_parameters">
+<span class="sig-name descname"><span class="pre">ramp_to_imaging_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#TweezerSequence.ramp_to_imaging_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.TweezerSequence.ramp_to_imaging_parameters" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
