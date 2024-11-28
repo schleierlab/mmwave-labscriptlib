@@ -117,15 +117,17 @@ class D2Lasers:
         self.repump_freq = 0# shot_globals.mot_repump_detuning
         self.ta_power = shot_globals.mot_ta_power
         self.repump_power = shot_globals.mot_repump_power
-        self.shutter_config = ShutterConfig.NONE
+        # Need initial shutter config to be MOT_FULL, or some way to check if reset_mot was
+        # used in the last shot.
+        self.shutter_config = ShutterConfig.MOT_FULL
 
+        # If do_mot is the first thing that is called, these initializations
+        # produce a warning in the runmanager output because the MOT powers
+        # and frequencies are set twice.
         devices.ta_vco.constant(t, ta_freq_calib(self.ta_freq))
         devices.repump_vco.constant(t, repump_freq_calib(self.repump_freq))
         devices.ta_aom_analog.constant(t, self.ta_power)
         devices.repump_aom_analog.constant(t, self.repump_power)
-
-        # TODO: Initialize shutters??
-
 
     #Move freq_calib to a function within here? Probably not needed.
     def ramp_ta_freq(self, t, duration, final):
@@ -788,8 +790,11 @@ class MOTSequence:
         # if using a long UV duration, want to make sure that the MOT doesn't finish
         # loading leaving the UV is still on for imaging.
         dur = max(dur, shot_globals.uv_duration)
-        t, _ = self.D2Lasers_obj.do_pulse(t, dur, ShutterConfig.MOT_FULL, shot_globals.mot_ta_power,
-                                        shot_globals.mot_repump_power, close_all_shutters = close_all_shutters)
+        t, _ = self.D2Lasers_obj.do_pulse(t, dur,
+                                          ShutterConfig.MOT_FULL,
+                                          shot_globals.mot_ta_power,
+                                          shot_globals.mot_repump_power,
+                                          close_all_shutters=close_all_shutters)
 
         return t
 
@@ -801,7 +806,8 @@ class MOTSequence:
         mot_bias_voltages = (shot_globals.mot_x_coil_voltage,
                              shot_globals.mot_y_coil_voltage,
                              shot_globals.mot_z_coil_voltage)
-        t = self.BField_obj.ramp_bias_field(t, voltage_vector = mot_bias_voltages)
+
+        t = self.BField_obj.ramp_bias_field(t, voltage_vector=mot_bias_voltages)
 
         # Reset laser frequency and configuration
         t = self.D2Lasers_obj.reset_to_mot_freq(t)
@@ -1137,7 +1143,9 @@ class TweezerSequence(OpticalPumpingSequence):
         return t
 
     def load_tweezers(self, t):
+        print("load_tweezers, before do_mot", t)
         t = self.do_mot(t, dur=0.5)
+        print("load_tweezers, do_mot is done, do_molasses next", t)
         t = self.do_molasses(t, dur=shot_globals.bm_time)
         t += 7e-3
         # ramp to full power
@@ -1208,11 +1216,17 @@ class TweezerSequence(OpticalPumpingSequence):
 
     def _do_tweezer_check_sequence(self, t):
         t = self.load_tweezers(t)
+        print("tweezers loaded", t)
         t = self.image_tweezers(t, shot_number=1)
+        print("after image 1", t)
         t += shot_globals.img_wait_time_between_shots
+        print("before image 2", t)
         t = self.image_tweezers(t, shot_number=2)
+        print("after image 2", t)
         t = self.reset_mot(t)
+        print("mot has been reset", t)
         t = self.TweezerLaser_obj.stop_tweezers(t)
+        print("tweezers stopped", t)
 
         return t
 
