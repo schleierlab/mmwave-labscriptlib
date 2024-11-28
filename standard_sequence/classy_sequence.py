@@ -119,7 +119,8 @@ class D2Lasers:
         self.repump_power = shot_globals.mot_repump_power
         # Need initial shutter config to be MOT_FULL, or some way to check if reset_mot was
         # used in the last shot.
-        self.shutter_config = ShutterConfig.MOT_FULL
+        self.shutter_config = ShutterConfig.NONE
+        self.update_shutters(t, ShutterConfig.MOT_FULL)
 
         # If do_mot is the first thing that is called, these initializations
         # produce a warning in the runmanager output because the MOT powers
@@ -178,7 +179,6 @@ class D2Lasers:
         devices.repump_aom_analog.constant(t, const)  # analog to const
         self.repump_power = const
 
-
     def ramp_ta_aom(self, t, dur, final_power):
         """ ramp ta power from current value to final power """
         devices.ta_aom_analog.ramp(
@@ -186,8 +186,7 @@ class D2Lasers:
             duration=dur,
             initial=self.ta_power,
             final=final_power,
-            samplerate=1e5,
-        )
+            samplerate=1e5,)
 
     def ramp_repump_aom(self, t, dur, final_power):
         """ ramp repump power from current value to final power """
@@ -196,9 +195,7 @@ class D2Lasers:
             duration=dur,
             initial=self.repump_power,
             final=final_power,
-            samplerate=1e5,
-        )
-
+            samplerate=1e5,)
 
     def update_shutters(self, t, new_shutter_config: ShutterConfig):
         changed_shutters = self.shutter_config ^ new_shutter_config
@@ -206,7 +203,7 @@ class D2Lasers:
         shutters_to_open = changed_shutters & new_shutter_config
         shutters_to_close = changed_shutters & self.shutter_config
 
-        # Can we put tjhis somewhere nicer?
+        # Can we put this somewhere nicer?
         basic_shutters = [ShutterConfig.TA, ShutterConfig.REPUMP, ShutterConfig.MOT_XY,
                           ShutterConfig.MOT_Z, ShutterConfig.IMG_XY, ShutterConfig.IMG_Z,
                           ShutterConfig.OPTICAL_PUMPING]
@@ -271,6 +268,9 @@ class D2Lasers:
         t += dur
         self.ta_aom_off(t)
         self.repump_aom_off(t)
+        # Remember that even if you don't close the shutters, the beam will turn off
+        # at the end of the pulse duration. Plan accordingly and don't leave long wait
+        # times between pulses accidentally.
 
         if (dur < CONST_MIN_SHUTTER_ON_TIME) and change_shutters:
             t += CONST_MIN_SHUTTER_ON_TIME - dur
@@ -306,9 +306,11 @@ class D2Lasers:
         self.ramp_ta_freq(t, duration=0, final=shot_globals.bm_parity_projection_ta_detuning)
         t += CONST_TA_VCO_RAMP_TIME
         # TODO: is this a TA pulse only? Or is repump also supposed to be on?
+        # TODO: if so, is shot_globals.bm_parity_projection_repump_power ever used. Perhaps it should be deleted
         t, _ = self.do_pulse(t, dur, ShutterConfig.MOT_TA,
                       shot_globals.bm_parity_projection_ta_power,
-                      0, close_all_shutters=True)
+                      0,
+                      close_all_shutters=True)
         return t
 
 
@@ -905,7 +907,7 @@ class MOTSequence:
             "bright molasses detuning = 0. TA detuning should be none zero for bright molasses."
         print(f"molasses detuning is {shot_globals.bm_ta_detuning}")
 
-        self.ramp_to_molasses(t)
+        _ = self.ramp_to_molasses(t)
 
         if shot_globals.do_molasses_mot_beam:
             t, _ = self.D2Lasers_obj.do_pulse(t, dur, ShutterConfig.MOT_FULL, shot_globals.bm_ta_power,
@@ -1139,13 +1141,16 @@ class TweezerSequence(OpticalPumpingSequence):
         print("load_tweezers, before do_mot", t)
         t = self.do_mot(t, dur=0.5)
         print("load_tweezers, do_mot is done, do_molasses next", t)
-        t = self.do_molasses(t, dur=shot_globals.bm_time)
+        t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
+        print("first molasses is done, waiting 7e-3?", t)
         t += 7e-3
         # ramp to full power
+        print("about to ramp tweezer power", t)
         self.TweezerLaser_obj.ramp_power(t, dur=10e-3, final_power=1)
-        t += 10e-3
+        #t += 10e-3
 
         if shot_globals.do_parity_projection_pulse:
+            print("about to do parity projection pulse", t)
             t = self.D2Lasers_obj.parity_projection_pulse(t, dur=shot_globals.bm_parity_projection_pulse_dur)
 
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
