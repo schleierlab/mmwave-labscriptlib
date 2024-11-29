@@ -82,7 +82,6 @@ class ShutterConfig(Flag):
 
         # TODO: change handling of labels to make full default and raise error when not one of the options
         if shot_globals.do_mot_beams_during_imaging:
-            print("doing mot beams for imaging")
             if label == "z":
                 shutter_config = cls.MOT_Z | repump_config
             elif label == "xy":
@@ -333,15 +332,14 @@ class TweezerLaser:
         # stop tweezers
         t2 = spectrum_manager.stop_tweezers(t)
         print('tweezer stop time:', t2)
-        #t += 1e-3
 
+        # TODO: explain what this does
         ##### dummy segment ######
         t1 = spectrum_manager.start_tweezers(t)
         print('tweezer start time:', t1)
         t += 2e-3
         t2 = spectrum_manager.stop_tweezers(t)
         print('tweezer stop time:',t2)
-        #t += 1e-3################
         spectrum_manager.stop_card(t)
         return t
 
@@ -536,9 +534,9 @@ class BField:
             samplerate=1e5,
         )
         devices.y_coil_feedback_off.go_high(t)
-        print('turn feedback off at time t = ', t)
+        print('turn coil feedback off at time t = ', t)
         devices.y_coil_feedback_off.go_low(t + CONST_COIL_FEEDBACK_OFF_TIME)
-        print('turn feedback back on at time t = ', t + CONST_COIL_FEEDBACK_OFF_TIME)
+        print('turn coil feedback back on at time t = ', t + CONST_COIL_FEEDBACK_OFF_TIME)
         devices.y_coil_current.constant(t, coil_voltage_mid)
         t += CONST_BIPOLAR_COIL_FLIP_TIME
 
@@ -824,7 +822,6 @@ class MOTSequence:
 
         self.Camera_obj.set_type("MOT_manta")
         self.Camera_obj.expose(t, shot_globals.mot_exposure_time)
-        print("before doing a MOT pulse for image t = ", t)
 
         t, _ = self.D2Lasers_obj.do_pulse(t, shot_globals.mot_exposure_time, ShutterConfig.MOT_FULL, shot_globals.mot_ta_power,
                                         shot_globals.mot_repump_power, close_all_shutters = close_all_shutters)
@@ -832,7 +829,7 @@ class MOTSequence:
         return t
 
     def _do_mot_in_situ_sequence(self, t, reset_mot=False):
-        print("Running do_mot_in_situ_check")
+        print("Running _do_mot_in_situ_sequence")
 
         print("MOT coils = ", self.BField_obj.mot_coils_on)
         # MOT loading time 500 ms
@@ -857,7 +854,7 @@ class MOTSequence:
 
     # TODO: Needs more experimental debugging. When should the shutter close? What timescales should we expect the MOT to disperse in?
     def _do_mot_tof_sequence(self, t, reset_mot = False):
-        print("Running do_mot_in_situ_check")
+        print("Running _do_mot_tof_sequence")
 
         print("MOT coils = ", self.BField_obj.mot_coils_on)
         # MOT loading time 500 ms
@@ -895,17 +892,13 @@ class MOTSequence:
         self.BField_obj.switch_mot_coils(t)
         self.BField_obj.ramp_bias_field(t, bias_field_vector=(0, 0, 0))
 
-        print('Molasses stage')
-        print(f'ta_last_detuning = {self.D2Lasers_obj.ta_freq}')
-        print(f'repump_last_detuning = {self.D2Lasers_obj.ta_freq}')
-
         return t
 
     def do_molasses(self, t, dur, close_all_shutters=False):
         assert (shot_globals.do_molasses_img_beam or shot_globals.do_molasses_mot_beam), \
             "either do_molasses_img_beam or do_molasses_mot_beam has to be on"
         assert shot_globals.bm_ta_detuning != 0, \
-            "bright molasses detuning = 0. TA detuning should be none zero for bright molasses."
+            "bright molasses detuning = 0. TA detuning should be non-zero for bright molasses."
         print(f"molasses detuning is {shot_globals.bm_ta_detuning}")
 
         _ = self.ramp_to_molasses(t)
@@ -922,7 +915,8 @@ class MOTSequence:
     #Which arguments are actually necessary to pass or even set as a defualt?
     #How many of them can just be set to globals?
     # TODO: Maybe pass the shutter config into here? This would get rid of all the if statements?
-    def do_molasses_dipole_trap_imaging(self, t, do_repump=True, close_all_shutters=False):
+    def do_molasses_dipole_trap_imaging(self, t, do_repump=True,
+                                        close_all_shutters=False):
         # zero the field
         _ = self.BField_obj.ramp_bias_field(t, bias_field_vector=(0,0,0))
 
@@ -932,7 +926,6 @@ class MOTSequence:
         t += CONST_TA_VCO_RAMP_TIME
 
         shutter_config = ShutterConfig.select_imaging_shutters(do_repump=do_repump)
-        print("This is the shutter config in molasses imaging", shutter_config)
 
         # full power ta and repump pulse
         t_pulse_end, t_aom_start = self.D2Lasers_obj.do_pulse(t, shot_globals.bm_exposure_time,
@@ -962,16 +955,12 @@ class MOTSequence:
         t += CONST_SHUTTER_TURN_ON_TIME
 
         t = self.do_mot(t, mot_load_dur)
-        print("before do molasses", t)
         t = self.do_molasses(t, shot_globals.bm_time)
-        print("after molasses, before first image", t)
         t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
-        print("after first image", t)
 
         # Turn off MOT for taking background images
         t += 1e-1
 
-        #t += CONST_SHUTTER_TURN_ON_TIME
         t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
         t += 1e-2
 
@@ -1054,7 +1043,7 @@ class OpticalPumpingSequence(MOTSequence):
         else:
             raise NotImplementedError("This optical pumping method is not implemented")
 
-    def depump_to_F3(self, t):
+    def depump_to_F3(self, t, label):
         # This method should be quite similar to pump_to_F4, but trying to call pump_to_F4 with
         # different parameters would produce a very long argument list
         if self.BField_obj.mot_coils_on:
@@ -1103,7 +1092,6 @@ class OpticalPumpingSequence(MOTSequence):
         else:
             raise NotImplementedError("This optical depumping method is not implemented")
 
-
     def kill_F4(self, t):
         ''' Push away atoms in F = 4 '''
         # tune to resonance
@@ -1116,8 +1104,6 @@ class OpticalPumpingSequence(MOTSequence):
 
     def kill_F3(self, t):
         pass
-
-
 
 class TweezerSequence(OpticalPumpingSequence):
 
@@ -1139,25 +1125,20 @@ class TweezerSequence(OpticalPumpingSequence):
         return t
 
     def load_tweezers(self, t):
-        print("load_tweezers, before do_mot", t)
         t = self.do_mot(t, dur=0.5)
-        print("load_tweezers, do_mot is done, do_molasses next", t)
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
-        print("first molasses is done, waiting 7e-3?", t)
         # TODO: does making this delay longer make the background better when using UV?
         t += 7e-3
         # ramp to full power and parity projection
         if shot_globals.do_parity_projection_pulse:
-            print("about to do parity projection pulse", t)
             _, t_aom_start = self.D2Lasers_obj.parity_projection_pulse(t, dur=shot_globals.bm_parity_projection_pulse_dur)
             # if doing parity projection, synchronize with power ramp
             t = t_aom_start
 
-        print("about to ramp tweezer power", t)
         self.TweezerLaser_obj.ramp_power(t,
                                          dur=shot_globals.bm_parity_projection_pulse_dur,
                                          final_power=1)
-        # TODO: Does it make sense that parity projection occurs during the tweezer power ramp?
+        # TODO: Does it make sense that parity projection and tweezer ramp should have same duration?
 
         t += shot_globals.bm_parity_projection_pulse_dur
 
@@ -1194,7 +1175,6 @@ class TweezerSequence(OpticalPumpingSequence):
             # pulse for the second shots and wait for the first shot to finish the
             # first reading
             kinetix_readout_time = shot_globals.kinetix_roi_row[1] * 4.7065e-6
-            print('kinetix readout time:', kinetix_readout_time)
             # need extra 7 ms for shutter to close on the second shot
             # TODO: is shot_globals.kinetix_extra_readout_time always zero? Delete if so.
             t += kinetix_readout_time + shot_globals.kinetix_extra_readout_time
@@ -1223,18 +1203,12 @@ class TweezerSequence(OpticalPumpingSequence):
 
     def _do_tweezer_check_sequence(self, t):
         t = self.load_tweezers(t)
-        print("tweezers loaded", t)
         t = self.image_tweezers(t, shot_number=1)
-        print("after image 1", t)
         # TODO: add tweezer modulation here, or in a separate sequence?
         t += shot_globals.img_wait_time_between_shots
-        print("before image 2", t)
         t = self.image_tweezers(t, shot_number=2)
-        print("after image 2", t)
         t = self.reset_mot(t)
-        print("mot has been reset", t)
         t = self.TweezerLaser_obj.stop_tweezers(t)
-        print("tweezers stopped", t)
 
         return t
 
@@ -1243,6 +1217,17 @@ class TweezerSequence(OpticalPumpingSequence):
 
     def _tweezer_modulation_sequence(self, t):
         pass
+
+    def _tweezer_basic_pump_kill_sequence(self, t):
+        t = self.load_tweezers(t)
+        t = self.image_tweezers(t, shot_number=1)
+
+        t += shot_globals.img_wait_time_between_shots
+        t = self.image_tweezers(t, shot_number=2)
+        t = self.reset_mot(t)
+        t = self.TweezerLaser_obj.stop_tweezers(t)
+
+        return t
 
 # I think we should leave both 456 and 1064 stuff here because really the only debugging
 # we would need to do is checking their overlap or looking for a Rydberg loss signal in the dipole trap
