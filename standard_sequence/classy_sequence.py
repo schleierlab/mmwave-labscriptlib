@@ -117,8 +117,9 @@ class D2Lasers:
         self.repump_freq = 0# shot_globals.mot_repump_detuning
         self.ta_power = shot_globals.mot_ta_power
         self.repump_power = shot_globals.mot_repump_power
-        # Need initial shutter config to be MOT_FULL, or some way to check if reset_mot was
-        # used in the last shot.
+        # update_shutters compares with self.shutter_config to decide what
+        # changes to make. Do not call self.update_shutters(self.shutter_config),
+        # nothing will happen.
         self.shutter_config = ShutterConfig.NONE
         self.update_shutters(t, ShutterConfig.MOT_FULL)
 
@@ -307,11 +308,11 @@ class D2Lasers:
         t += CONST_TA_VCO_RAMP_TIME
         # TODO: is this a TA pulse only? Or is repump also supposed to be on?
         # TODO: if so, is shot_globals.bm_parity_projection_repump_power ever used. Perhaps it should be deleted
-        t, _ = self.do_pulse(t, dur, ShutterConfig.MOT_TA,
+        t, t_aom_start = self.do_pulse(t, dur, ShutterConfig.MOT_TA,
                       shot_globals.bm_parity_projection_ta_power,
                       0,
                       close_all_shutters=True)
-        return t
+        return t, t_aom_start
 
 
 
@@ -1144,14 +1145,20 @@ class TweezerSequence(OpticalPumpingSequence):
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
         print("first molasses is done, waiting 7e-3?", t)
         t += 7e-3
-        # ramp to full power
-        print("about to ramp tweezer power", t)
-        self.TweezerLaser_obj.ramp_power(t, dur=10e-3, final_power=1)
-        #t += 10e-3
-
+        # ramp to full power and parity projection
         if shot_globals.do_parity_projection_pulse:
             print("about to do parity projection pulse", t)
-            t = self.D2Lasers_obj.parity_projection_pulse(t, dur=shot_globals.bm_parity_projection_pulse_dur)
+            _, t_aom_start = self.D2Lasers_obj.parity_projection_pulse(t, dur=shot_globals.bm_parity_projection_pulse_dur)
+            # if doing parity projection, synchronize with power ramp
+            t = t_aom_start
+
+        print("about to ramp tweezer power", t)
+        self.TweezerLaser_obj.ramp_power(t,
+                                         dur=shot_globals.bm_parity_projection_pulse_dur,
+                                         final_power=1)
+        # TODO: Does it make sense that parity projection occurs during the tweezer power ramp?
+
+        t += shot_globals.bm_parity_projection_pulse_dur
 
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
 
