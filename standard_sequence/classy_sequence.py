@@ -1160,7 +1160,8 @@ class TweezerSequence(OpticalPumpingSequence):
 
         t += shot_globals.bm_parity_projection_pulse_dur
 
-        t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
+        # t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
+        t += shot_globals.bm_time
 
         t = self.ramp_to_imaging_parameters(t)
 
