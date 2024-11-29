@@ -777,7 +777,7 @@ class MOTSequence:
 
     def do_mot(self, t, dur, close_all_shutters=False):
         if shot_globals.do_uv:
-            _ = self.UVLamps_obj.uv_pulse(t, dur=shot_globals.uv_duration)
+            t = self.UVLamps_obj.uv_pulse(t, dur=shot_globals.uv_duration)
             # the uv duration should be determined for each dispenser current
             # generally, get superior loading in the 10s of milliseconds
 
@@ -1020,7 +1020,7 @@ class OpticalPumpingSequence(MOTSequence):
                                                  op_biasy_field,
                                                  op_biasz_field))
             # ramp detuning to 4 -> 4, 3 -> 4
-            self.D2Lasers_obj.ramp_ta_freq(t, 0, CONST_TA_PUMPING_DETUNING)
+            self.D2Lasers_obj.ramp_ta_freq(t, 0, shot_globals.op_ta_pumping_detuning)
             self.D2Lasers_obj.ramp_repump_freq(t, 0, shot_globals.op_repump_pumping_detuning)
             # Do a sigma+ pulse
             # TODO: is shot_globals.op_ramp_delay just extra fudge time? can it be eliminated?
@@ -1030,7 +1030,7 @@ class OpticalPumpingSequence(MOTSequence):
                                        ShutterConfig.OPTICAL_PUMPING_FULL,
                                        shot_globals.op_ta_power,
                                        shot_globals.op_repump_power,)
-            # Need to turn off the TA before repump, Sam claims this timing should work
+
             assert shot_globals.op_ta_time < shot_globals.op_repump_time, \
                 "TA time should be shorter than repump for pumping to F=4"
             # TODO: test this timing
@@ -1076,15 +1076,15 @@ class OpticalPumpingSequence(MOTSequence):
             # TODO: is shot_globals.op_ramp_delay just extra fudge time? can it be eliminated?
             t += max(CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
             t, _ = self.D2Lasers_obj.do_pulse(t - CONST_SHUTTER_TURN_ON_TIME,
-                                       shot_globals.odp_repump_time,
+                                       shot_globals.odp_ta_time,
                                        ShutterConfig.OPTICAL_PUMPING_FULL,
                                        shot_globals.odp_ta_power,
                                        shot_globals.odp_repump_power,)
-            # Need to turn off the TA before repump, Sam claims this timing should work
+
             assert shot_globals.odp_ta_time > shot_globals.odp_repump_time, \
                 "TA time should be longer than repump for depumping to F = 3"
             # TODO: test this timing
-            self.D2Lasers_obj.ta_aom_off(t + shot_globals.odp_ta_time - shot_globals.odp_repump_time)
+            self.D2Lasers_obj.repump_aom_off(t - shot_globals.odp_ta_time + shot_globals.odp_repump_time)
             # Close the shutters
             self.D2Lasers_obj.update_shutters(t, ShutterConfig.NONE)
             t += CONST_SHUTTER_TURN_OFF_TIME
@@ -1228,8 +1228,12 @@ class TweezerSequence(OpticalPumpingSequence):
         t += 10e-3
 
         t = self.pump_to_F4(t, label='sigma')
-        t = self.depump_to_F3(t, label='sigma')
-        t = self.kill_F4(t)
+        # t, _ = self.D2Lasers_obj.do_pulse(t, shot_globals.op_depump_pulse_time,
+        #                                ShutterConfig.OPTICAL_PUMPING_TA,
+        #                                shot_globals.op_depump_power,
+        #                                0,
+        #                                close_all_shutters=True)
+        #t = self.kill_F4(t)
 
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
@@ -1308,8 +1312,9 @@ if __name__ == "__main__":
     # if shot_globals.do_tweezer_check_fifo:
     #     t = do_tweezer_check_fifo(t)
 
-    # if shot_globals.do_optical_pump_in_tweezer_check:
-    #     t = do_optical_pump_in_tweezer_check(t)
+    if shot_globals.do_optical_pump_in_tweezer_check:
+        TweezerSequence_obj = TweezerSequence(t)
+        t = TweezerSequence_obj._tweezer_basic_pump_kill_sequence(t)
 
     # if shot_globals.do_optical_pump_in_microtrap_check:
     #     t = do_optical_pump_in_microtrap_check(t)
