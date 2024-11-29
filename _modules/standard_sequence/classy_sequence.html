@@ -157,7 +157,6 @@
 
         <span class="c1"># TODO: change handling of labels to make full default and raise error when not one of the options</span>
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_mot_beams_during_imaging</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;doing mot beams for imaging&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span>
                 <span class="n">shutter_config</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">MOT_Z</span> <span class="o">|</span> <span class="n">repump_config</span>
             <span class="k">elif</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;xy&quot;</span><span class="p">:</span>
@@ -459,15 +458,14 @@
         <span class="c1"># stop tweezers</span>
         <span class="n">t2</span> <span class="o">=</span> <span class="n">spectrum_manager</span><span class="o">.</span><span class="n">stop_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;tweezer stop time:&#39;</span><span class="p">,</span> <span class="n">t2</span><span class="p">)</span>
-        <span class="c1">#t += 1e-3</span>
 
+        <span class="c1"># TODO: explain what this does</span>
         <span class="c1">##### dummy segment ######</span>
         <span class="n">t1</span> <span class="o">=</span> <span class="n">spectrum_manager</span><span class="o">.</span><span class="n">start_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;tweezer start time:&#39;</span><span class="p">,</span> <span class="n">t1</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">+=</span> <span class="mf">2e-3</span>
         <span class="n">t2</span> <span class="o">=</span> <span class="n">spectrum_manager</span><span class="o">.</span><span class="n">stop_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;tweezer stop time:&#39;</span><span class="p">,</span><span class="n">t2</span><span class="p">)</span>
-        <span class="c1">#t += 1e-3################</span>
         <span class="n">spectrum_manager</span><span class="o">.</span><span class="n">stop_card</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">t</span></div>
 
@@ -735,9 +733,9 @@
             <span class="n">samplerate</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">devices</span><span class="o">.</span><span class="n">y_coil_feedback_off</span><span class="o">.</span><span class="n">go_high</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;turn feedback off at time t = &#39;</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;turn coil feedback off at time t = &#39;</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
         <span class="n">devices</span><span class="o">.</span><span class="n">y_coil_feedback_off</span><span class="o">.</span><span class="n">go_low</span><span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="n">CONST_COIL_FEEDBACK_OFF_TIME</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;turn feedback back on at time t = &#39;</span><span class="p">,</span> <span class="n">t</span> <span class="o">+</span> <span class="n">CONST_COIL_FEEDBACK_OFF_TIME</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;turn coil feedback back on at time t = &#39;</span><span class="p">,</span> <span class="n">t</span> <span class="o">+</span> <span class="n">CONST_COIL_FEEDBACK_OFF_TIME</span><span class="p">)</span>
         <span class="n">devices</span><span class="o">.</span><span class="n">y_coil_current</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">coil_voltage_mid</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_BIPOLAR_COIL_FLIP_TIME</span>
 
@@ -1004,7 +1002,7 @@
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.do_mot">[docs]</a>
     <span class="k">def</span> <span class="nf">do_mot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_uv</span><span class="p">:</span>
-            <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">UVLamps_obj</span><span class="o">.</span><span class="n">uv_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">uv_duration</span><span class="p">)</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">UVLamps_obj</span><span class="o">.</span><span class="n">uv_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">uv_duration</span><span class="p">)</span>
             <span class="c1"># the uv duration should be determined for each dispenser current</span>
             <span class="c1"># generally, get superior loading in the 10s of milliseconds</span>
 
@@ -1055,7 +1053,6 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span><span class="o">.</span><span class="n">set_type</span><span class="p">(</span><span class="s2">&quot;MOT_manta&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span><span class="o">.</span><span class="n">expose</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_exposure_time</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;before doing a MOT pulse for image t = &quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
 
         <span class="n">t</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_exposure_time</span><span class="p">,</span> <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">MOT_FULL</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_ta_power</span><span class="p">,</span>
                                         <span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_repump_power</span><span class="p">,</span> <span class="n">close_all_shutters</span> <span class="o">=</span> <span class="n">close_all_shutters</span><span class="p">)</span>
@@ -1064,7 +1061,7 @@
 
 
     <span class="k">def</span> <span class="nf">_do_mot_in_situ_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running do_mot_in_situ_check&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running _do_mot_in_situ_sequence&quot;</span><span class="p">)</span>
 
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;MOT coils = &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">mot_coils_on</span><span class="p">)</span>
         <span class="c1"># MOT loading time 500 ms</span>
@@ -1089,7 +1086,7 @@
 
     <span class="c1"># TODO: Needs more experimental debugging. When should the shutter close? What timescales should we expect the MOT to disperse in?</span>
     <span class="k">def</span> <span class="nf">_do_mot_tof_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running do_mot_in_situ_check&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running _do_mot_tof_sequence&quot;</span><span class="p">)</span>
 
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;MOT coils = &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">mot_coils_on</span><span class="p">)</span>
         <span class="c1"># MOT loading time 500 ms</span>
@@ -1129,10 +1126,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">switch_mot_coils</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_bias_field</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">bias_field_vector</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Molasses stage&#39;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;ta_last_detuning = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ta_freq</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;repump_last_detuning = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ta_freq</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-
         <span class="k">return</span> <span class="n">t</span></div>
 
 
@@ -1142,7 +1135,7 @@
         <span class="k">assert</span> <span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">do_molasses_img_beam</span> <span class="ow">or</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_molasses_mot_beam</span><span class="p">),</span> \
             <span class="s2">&quot;either do_molasses_img_beam or do_molasses_mot_beam has to be on&quot;</span>
         <span class="k">assert</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_ta_detuning</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> \
-            <span class="s2">&quot;bright molasses detuning = 0. TA detuning should be none zero for bright molasses.&quot;</span>
+            <span class="s2">&quot;bright molasses detuning = 0. TA detuning should be non-zero for bright molasses.&quot;</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;molasses detuning is </span><span class="si">{</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_ta_detuning</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ramp_to_molasses</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
@@ -1162,7 +1155,8 @@
     <span class="c1"># TODO: Maybe pass the shutter config into here? This would get rid of all the if statements?</span>
 <div class="viewcode-block" id="MOTSequence.do_molasses_dipole_trap_imaging">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.do_molasses_dipole_trap_imaging">[docs]</a>
-    <span class="k">def</span> <span class="nf">do_molasses_dipole_trap_imaging</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">do_repump</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">do_molasses_dipole_trap_imaging</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">do_repump</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                        <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="c1"># zero the field</span>
         <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_bias_field</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">bias_field_vector</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
 
@@ -1172,7 +1166,6 @@
         <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_TA_VCO_RAMP_TIME</span>
 
         <span class="n">shutter_config</span> <span class="o">=</span> <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">select_imaging_shutters</span><span class="p">(</span><span class="n">do_repump</span><span class="o">=</span><span class="n">do_repump</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;This is the shutter config in molasses imaging&quot;</span><span class="p">,</span> <span class="n">shutter_config</span><span class="p">)</span>
 
         <span class="c1"># full power ta and repump pulse</span>
         <span class="n">t_pulse_end</span><span class="p">,</span> <span class="n">t_aom_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_exposure_time</span><span class="p">,</span>
@@ -1203,16 +1196,12 @@
         <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_SHUTTER_TURN_ON_TIME</span>
 
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_mot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">mot_load_dur</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;before do molasses&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_molasses</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_time</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;after molasses, before first image&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_molasses_dipole_trap_imaging</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;after first image&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
 
         <span class="c1"># Turn off MOT for taking background images</span>
         <span class="n">t</span> <span class="o">+=</span> <span class="mf">1e-1</span>
 
-        <span class="c1">#t += CONST_SHUTTER_TURN_ON_TIME</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_molasses_dipole_trap_imaging</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">+=</span> <span class="mf">1e-2</span>
 
@@ -1257,7 +1246,7 @@
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.OpticalPumpingSequence.pump_to_F4">[docs]</a>
     <span class="k">def</span> <span class="nf">pump_to_F4</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">mot_coils_on</span><span class="p">:</span>
-            <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">mot_coils_off</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">switch_mot_coils</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;mot&quot;</span><span class="p">:</span>
             <span class="c1"># Use the MOT beams for optical pumping</span>
             <span class="c1"># define quantization axis</span>
@@ -1277,7 +1266,7 @@
                                                  <span class="n">op_biasy_field</span><span class="p">,</span>
                                                  <span class="n">op_biasz_field</span><span class="p">))</span>
             <span class="c1"># ramp detuning to 4 -&gt; 4, 3 -&gt; 4</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_ta_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">CONST_TA_PUMPING_DETUNING</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_ta_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_ta_pumping_detuning</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_repump_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_repump_pumping_detuning</span><span class="p">)</span>
             <span class="c1"># Do a sigma+ pulse</span>
             <span class="c1"># TODO: is shot_globals.op_ramp_delay just extra fudge time? can it be eliminated?</span>
@@ -1287,8 +1276,9 @@
                                        <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">OPTICAL_PUMPING_FULL</span><span class="p">,</span>
                                        <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_ta_power</span><span class="p">,</span>
                                        <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_repump_power</span><span class="p">,)</span>
-            <span class="c1"># Need to turn off the TA before repump, Sam claims this timing should work</span>
-            <span class="k">assert</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_ta_time</span> <span class="o">&lt;</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_repump_time</span><span class="p">,</span> <span class="s2">&quot;TA time should be shorter than repump for pumping to F=4&quot;</span>
+
+            <span class="k">assert</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_ta_time</span> <span class="o">&lt;</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_repump_time</span><span class="p">,</span> \
+                <span class="s2">&quot;TA time should be shorter than repump for pumping to F=4&quot;</span>
             <span class="c1"># TODO: test this timing</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ta_aom_off</span><span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_ta_time</span> <span class="o">-</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_repump_time</span><span class="p">)</span>
             <span class="c1"># Close the shutters</span>
@@ -1303,11 +1293,11 @@
 
 <div class="viewcode-block" id="OpticalPumpingSequence.depump_to_F3">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.OpticalPumpingSequence.depump_to_F3">[docs]</a>
-    <span class="k">def</span> <span class="nf">depump_to_F3</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">depump_to_F3</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
         <span class="c1"># This method should be quite similar to pump_to_F4, but trying to call pump_to_F4 with</span>
         <span class="c1"># different parameters would produce a very long argument list</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">mot_coils_on</span><span class="p">:</span>
-            <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">mot_coils_off</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">switch_mot_coils</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;mot&quot;</span><span class="p">:</span>
             <span class="c1"># Use the MOT beams for optical depumping</span>
             <span class="c1"># define quantization axis</span>
@@ -1316,9 +1306,9 @@
                                                  <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_biasz_field</span><span class="p">))</span>
             <span class="c1"># ramp detuning to 4 -&gt; 4 for TA</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_ta_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">CONST_TA_PUMPING_DETUNING</span><span class="p">)</span>
-            <span class="c1"># Do a repump pulse</span>
+            <span class="c1"># Do a TA pulse</span>
             <span class="n">t</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_MOT_odp_time</span><span class="p">,</span>
-                                    <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">MOT_REPUMP</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                                    <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">MOT_TA</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">t</span>
 
         <span class="k">elif</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;sigma&quot;</span><span class="p">:</span>
@@ -1335,14 +1325,15 @@
             <span class="c1"># TODO: is shot_globals.op_ramp_delay just extra fudge time? can it be eliminated?</span>
             <span class="n">t</span> <span class="o">+=</span> <span class="nb">max</span><span class="p">(</span><span class="n">CONST_TA_VCO_RAMP_TIME</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_ramp_delay</span><span class="p">)</span>
             <span class="n">t</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">CONST_SHUTTER_TURN_ON_TIME</span><span class="p">,</span>
-                                       <span class="n">shot_globals</span><span class="o">.</span><span class="n">odp_repump_time</span><span class="p">,</span>
+                                       <span class="n">shot_globals</span><span class="o">.</span><span class="n">odp_ta_time</span><span class="p">,</span>
                                        <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">OPTICAL_PUMPING_FULL</span><span class="p">,</span>
                                        <span class="n">shot_globals</span><span class="o">.</span><span class="n">odp_ta_power</span><span class="p">,</span>
                                        <span class="n">shot_globals</span><span class="o">.</span><span class="n">odp_repump_power</span><span class="p">,)</span>
-            <span class="c1"># Need to turn off the TA before repump, Sam claims this timing should work</span>
-            <span class="k">assert</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">odp_ta_time</span> <span class="o">&gt;</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">odp_repump_time</span><span class="p">,</span> <span class="s2">&quot;TA time should be longer than repump for depumping to F = 3&quot;</span>
+
+            <span class="k">assert</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">odp_ta_time</span> <span class="o">&gt;</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">odp_repump_time</span><span class="p">,</span> \
+                <span class="s2">&quot;TA time should be longer than repump for depumping to F = 3&quot;</span>
             <span class="c1"># TODO: test this timing</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ta_aom_off</span><span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">odp_ta_time</span> <span class="o">-</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">odp_repump_time</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">repump_aom_off</span><span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">odp_ta_time</span> <span class="o">+</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">odp_repump_time</span><span class="p">)</span>
             <span class="c1"># Close the shutters</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">update_shutters</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">NONE</span><span class="p">)</span>
             <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_SHUTTER_TURN_OFF_TIME</span>
@@ -1353,7 +1344,6 @@
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;This optical depumping method is not implemented&quot;</span><span class="p">)</span></div>
 
 
-
 <div class="viewcode-block" id="OpticalPumpingSequence.kill_F4">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.OpticalPumpingSequence.kill_F4">[docs]</a>
     <span class="k">def</span> <span class="nf">kill_F4</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
@@ -1362,9 +1352,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_ta_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">+=</span> <span class="n">CONST_TA_VCO_RAMP_TIME</span>
         <span class="c1"># do a ta pulse via optical pumping path</span>
-        <span class="n">t</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_killing_killing_pulse_time</span><span class="p">,</span>
-                                    <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">OPTICAL_PUMPING_FULL</span><span class="p">,</span>
-                                    <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_killing_ta_power</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+        <span class="n">t</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_killing_pulse_time</span><span class="p">,</span>
+                                    <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">OPTICAL_PUMPING_TA</span><span class="p">,</span>
+                                    <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_killing_ta_power</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">t</span></div>
 
 
 <div class="viewcode-block" id="OpticalPumpingSequence.kill_F3">
@@ -1372,8 +1364,6 @@
     <span class="k">def</span> <span class="nf">kill_F3</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
         <span class="k">pass</span></div>
 </div>
-
-
 
 
 <div class="viewcode-block" id="TweezerSequence">
@@ -1403,25 +1393,20 @@
 <div class="viewcode-block" id="TweezerSequence.load_tweezers">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.TweezerSequence.load_tweezers">[docs]</a>
     <span class="k">def</span> <span class="nf">load_tweezers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;load_tweezers, before do_mot&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_mot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;load_tweezers, do_mot is done, do_molasses next&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_molasses</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_time</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;first molasses is done, waiting 7e-3?&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
         <span class="c1"># TODO: does making this delay longer make the background better when using UV?</span>
         <span class="n">t</span> <span class="o">+=</span> <span class="mf">7e-3</span>
         <span class="c1"># ramp to full power and parity projection</span>
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_parity_projection_pulse</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;about to do parity projection pulse&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
             <span class="n">_</span><span class="p">,</span> <span class="n">t_aom_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">parity_projection_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_parity_projection_pulse_dur</span><span class="p">)</span>
             <span class="c1"># if doing parity projection, synchronize with power ramp</span>
             <span class="n">t</span> <span class="o">=</span> <span class="n">t_aom_start</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;about to ramp tweezer power&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">ramp_power</span><span class="p">(</span><span class="n">t</span><span class="p">,</span>
                                          <span class="n">dur</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_parity_projection_pulse_dur</span><span class="p">,</span>
                                          <span class="n">final_power</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="c1"># TODO: Does it make sense that parity projection occurs during the tweezer power ramp?</span>
+        <span class="c1"># TODO: Does it make sense that parity projection and tweezer ramp should have same duration?</span>
 
         <span class="n">t</span> <span class="o">+=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_parity_projection_pulse_dur</span>
 
@@ -1467,7 +1452,6 @@
             <span class="c1"># pulse for the second shots and wait for the first shot to finish the</span>
             <span class="c1"># first reading</span>
             <span class="n">kinetix_readout_time</span> <span class="o">=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">kinetix_roi_row</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">4.7065e-6</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;kinetix readout time:&#39;</span><span class="p">,</span> <span class="n">kinetix_readout_time</span><span class="p">)</span>
             <span class="c1"># need extra 7 ms for shutter to close on the second shot</span>
             <span class="c1"># TODO: is shot_globals.kinetix_extra_readout_time always zero? Delete if so.</span>
             <span class="n">t</span> <span class="o">+=</span> <span class="n">kinetix_readout_time</span> <span class="o">+</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">kinetix_extra_readout_time</span>
@@ -1500,18 +1484,12 @@
 
     <span class="k">def</span> <span class="nf">_do_tweezer_check_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;tweezers loaded&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;after image 1&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
         <span class="c1"># TODO: add tweezer modulation here, or in a separate sequence?</span>
         <span class="n">t</span> <span class="o">+=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">img_wait_time_between_shots</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;before image 2&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_number</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;after image 2&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reset_mot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;mot has been reset&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">stop_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;tweezers stopped&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">t</span>
 
@@ -1519,7 +1497,27 @@
         <span class="k">pass</span>
 
     <span class="k">def</span> <span class="nf">_tweezer_modulation_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
-        <span class="k">pass</span></div>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">_tweezer_basic_pump_kill_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="mf">10e-3</span>
+
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pump_to_F4</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;sigma&#39;</span><span class="p">)</span>
+        <span class="c1"># t, _ = self.D2Lasers_obj.do_pulse(t, shot_globals.op_depump_pulse_time,</span>
+        <span class="c1">#                                ShutterConfig.OPTICAL_PUMPING_TA,</span>
+        <span class="c1">#                                shot_globals.op_depump_power,</span>
+        <span class="c1">#                                0,</span>
+        <span class="c1">#                                close_all_shutters=True)</span>
+        <span class="c1">#t = self.kill_F4(t)</span>
+
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">img_wait_time_between_shots</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_number</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reset_mot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">stop_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">t</span></div>
 
 
 <span class="c1"># I think we should leave both 456 and 1064 stuff here because really the only debugging</span>
@@ -1607,8 +1605,9 @@
     <span class="c1"># if shot_globals.do_tweezer_check_fifo:</span>
     <span class="c1">#     t = do_tweezer_check_fifo(t)</span>
 
-    <span class="c1"># if shot_globals.do_optical_pump_in_tweezer_check:</span>
-    <span class="c1">#     t = do_optical_pump_in_tweezer_check(t)</span>
+    <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_optical_pump_in_tweezer_check</span><span class="p">:</span>
+        <span class="n">TweezerSequence_obj</span> <span class="o">=</span> <span class="n">TweezerSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">TweezerSequence_obj</span><span class="o">.</span><span class="n">_tweezer_basic_pump_kill_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
     <span class="c1"># if shot_globals.do_optical_pump_in_microtrap_check:</span>
     <span class="c1">#     t = do_optical_pump_in_microtrap_check(t)</span>
