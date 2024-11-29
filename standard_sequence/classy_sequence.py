@@ -1000,7 +1000,7 @@ class OpticalPumpingSequence(MOTSequence):
 
     def pump_to_F4(self, t, label=None):
         if self.BField_obj.mot_coils_on:
-            _ = self.BField_obj.mot_coils_off(t)
+            _ = self.BField_obj.switch_mot_coils(t)
         if label == "mot":
             # Use the MOT beams for optical pumping
             # define quantization axis
@@ -1047,7 +1047,7 @@ class OpticalPumpingSequence(MOTSequence):
         # This method should be quite similar to pump_to_F4, but trying to call pump_to_F4 with
         # different parameters would produce a very long argument list
         if self.BField_obj.mot_coils_on:
-            _ = self.BField_obj.mot_coils_off(t)
+            _ = self.BField_obj.switch_mot_coils(t)
         if label == "mot":
             # Use the MOT beams for optical depumping
             # define quantization axis
@@ -1098,9 +1098,11 @@ class OpticalPumpingSequence(MOTSequence):
         self.D2Lasers_obj.ramp_ta_freq(t, 0, 0)
         t += CONST_TA_VCO_RAMP_TIME
         # do a ta pulse via optical pumping path
-        t, _ = self.D2Lasers_obj.do_pulse(t, shot_globals.op_killing_killing_pulse_time,
+        t, _ = self.D2Lasers_obj.do_pulse(t, shot_globals.op_killing_pulse_time,
                                     ShutterConfig.OPTICAL_PUMPING_FULL,
                                     shot_globals.op_killing_ta_power, 0, close_all_shutters=True)
+
+        return t
 
     def kill_F3(self, t):
         pass
@@ -1221,6 +1223,9 @@ class TweezerSequence(OpticalPumpingSequence):
     def _tweezer_basic_pump_kill_sequence(self, t):
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
+        t += 10e-3
+        t = self.pump_to_F4(t, label='mot')
+        t = self.kill_F4(t)
 
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
@@ -1294,7 +1299,8 @@ if __name__ == "__main__":
 
     if shot_globals.do_tweezer_check:
         TweezerSequence_obj = TweezerSequence(t)
-        t = TweezerSequence_obj._do_tweezer_check_sequence(t)
+        # t = TweezerSequence_obj._do_tweezer_check_sequence(t)
+        t = TweezerSequence_obj._tweezer_basic_pump_kill_sequence(t)
 
     # if shot_globals.do_tweezer_check_fifo:
     #     t = do_tweezer_check_fifo(t)
