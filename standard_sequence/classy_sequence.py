@@ -1031,7 +1031,8 @@ class OpticalPumpingSequence(MOTSequence):
                                        shot_globals.op_ta_power,
                                        shot_globals.op_repump_power,)
             # Need to turn off the TA before repump, Sam claims this timing should work
-            assert shot_globals.op_ta_time < shot_globals.op_repump_time, "TA time should be shorter than repump for pumping to F=4"
+            assert shot_globals.op_ta_time < shot_globals.op_repump_time, \
+                "TA time should be shorter than repump for pumping to F=4"
             # TODO: test this timing
             self.D2Lasers_obj.ta_aom_off(t + shot_globals.op_ta_time - shot_globals.op_repump_time)
             # Close the shutters
@@ -1056,9 +1057,9 @@ class OpticalPumpingSequence(MOTSequence):
                                                  shot_globals.mw_biasz_field))
             # ramp detuning to 4 -> 4 for TA
             self.D2Lasers_obj.ramp_ta_freq(t, 0, CONST_TA_PUMPING_DETUNING)
-            # Do a repump pulse
+            # Do a TA pulse
             t, _ = self.D2Lasers_obj.do_pulse(t, shot_globals.op_MOT_odp_time,
-                                    ShutterConfig.MOT_REPUMP, 1, 0, close_all_shutters=True)
+                                    ShutterConfig.MOT_TA, 1, 0, close_all_shutters=True)
             return t
 
         elif label == "sigma":
@@ -1080,7 +1081,8 @@ class OpticalPumpingSequence(MOTSequence):
                                        shot_globals.odp_ta_power,
                                        shot_globals.odp_repump_power,)
             # Need to turn off the TA before repump, Sam claims this timing should work
-            assert shot_globals.odp_ta_time > shot_globals.odp_repump_time, "TA time should be longer than repump for depumping to F = 3"
+            assert shot_globals.odp_ta_time > shot_globals.odp_repump_time, \
+                "TA time should be longer than repump for depumping to F = 3"
             # TODO: test this timing
             self.D2Lasers_obj.ta_aom_off(t + shot_globals.odp_ta_time - shot_globals.odp_repump_time)
             # Close the shutters
@@ -1099,7 +1101,7 @@ class OpticalPumpingSequence(MOTSequence):
         t += CONST_TA_VCO_RAMP_TIME
         # do a ta pulse via optical pumping path
         t, _ = self.D2Lasers_obj.do_pulse(t, shot_globals.op_killing_pulse_time,
-                                    ShutterConfig.OPTICAL_PUMPING_FULL,
+                                    ShutterConfig.OPTICAL_PUMPING_TA,
                                     shot_globals.op_killing_ta_power, 0, close_all_shutters=True)
 
         return t
@@ -1224,7 +1226,9 @@ class TweezerSequence(OpticalPumpingSequence):
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
         t += 10e-3
-        t = self.pump_to_F4(t, label='mot')
+
+        t = self.pump_to_F4(t, label='sigma')
+        t = self.depump_to_F3(t, label='sigma')
         t = self.kill_F4(t)
 
         t += shot_globals.img_wait_time_between_shots
@@ -1299,8 +1303,7 @@ if __name__ == "__main__":
 
     if shot_globals.do_tweezer_check:
         TweezerSequence_obj = TweezerSequence(t)
-        # t = TweezerSequence_obj._do_tweezer_check_sequence(t)
-        t = TweezerSequence_obj._tweezer_basic_pump_kill_sequence(t)
+        t = TweezerSequence_obj._do_tweezer_check_sequence(t)
 
     # if shot_globals.do_tweezer_check_fifo:
     #     t = do_tweezer_check_fifo(t)
