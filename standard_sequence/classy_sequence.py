@@ -1144,6 +1144,7 @@ class TweezerSequence(OpticalPumpingSequence):
         print("load_tweezers, do_mot is done, do_molasses next", t)
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
         print("first molasses is done, waiting 7e-3?", t)
+        # TODO: does making this delay longer make the background better when using UV?
         t += 7e-3
         # ramp to full power and parity projection
         if shot_globals.do_parity_projection_pulse:
@@ -1161,7 +1162,7 @@ class TweezerSequence(OpticalPumpingSequence):
         t += shot_globals.bm_parity_projection_pulse_dur
 
         # t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
-        t += shot_globals.bm_time
+        # t += shot_globals.bm_time
 
         t = self.ramp_to_imaging_parameters(t)
 
@@ -1189,13 +1190,13 @@ class TweezerSequence(OpticalPumpingSequence):
     def image_tweezers(self, t, shot_number):
         if shot_number == 1:
             t = self.do_kinetix_imaging(t, close_all_shutters=shot_globals.do_shutter_close_after_first_shot)
-            # t+=7e-3 # wait for shutter to fully close. But do we need this?
         if shot_number == 2:
             # pulse for the second shots and wait for the first shot to finish the
             # first reading
             kinetix_readout_time = shot_globals.kinetix_roi_row[1] * 4.7065e-6
             print('kinetix readout time:', kinetix_readout_time)
             # need extra 7 ms for shutter to close on the second shot
+            # TODO: is shot_globals.kinetix_extra_readout_time always zero? Delete if so.
             t += kinetix_readout_time + shot_globals.kinetix_extra_readout_time
             t = self.do_kinetix_imaging(t, close_all_shutters = True)
         return t
@@ -1209,13 +1210,13 @@ class TweezerSequence(OpticalPumpingSequence):
                                                                 close_all_shutters = close_all_shutters)
 
         self.Camera_obj.set_type("kinetix")
-        exposure = max(shot_globals.img_exposure_time, 1e-3)
+        exposure_time = max(shot_globals.img_exposure_time, 1e-3)
 
         # expose the camera
-        self.Camera_obj.expose(t_aom_start, exposure)
+        self.Camera_obj.expose(t_aom_start, exposure_time)
 
         # Closes the aom and the specified shutters
-        t += exposure
+        t += exposure_time
         t = max(t, t_pulse_end)
 
         return t
@@ -1225,6 +1226,7 @@ class TweezerSequence(OpticalPumpingSequence):
         print("tweezers loaded", t)
         t = self.image_tweezers(t, shot_number=1)
         print("after image 1", t)
+        # TODO: add tweezer modulation here, or in a separate sequence?
         t += shot_globals.img_wait_time_between_shots
         print("before image 2", t)
         t = self.image_tweezers(t, shot_number=2)
