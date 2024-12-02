@@ -28,16 +28,16 @@ if __name__ == "__main__":
 
 # fixed parameters in the script
 CONST_COIL_OFF_TIME = 1.4e-3  # minimum time for the MOT coil to be off
-CONST_TA_VCO_RAMP_TIME = 1.2e-4
+CONST_TA_VCO_RAMP_TIME = 1.2e-4 # minimal ta vco ramp time to stay in beatnote lock
 CONST_MIN_SHUTTER_OFF_TIME = 6.28e-3  # minimum time for shutter to be off and on again
 CONST_MIN_SHUTTER_ON_TIME = 3.6e-3  # minimum time for shutter to be on
-CONST_SHUTTER_TURN_ON_TIME  = 2e-3 # for shutter take from start to close to fully close
-CONST_SHUTTER_TURN_OFF_TIME = 2e-3 # for shutter take from start to open to fully open
+CONST_SHUTTER_TURN_ON_TIME  = 2e-3 # for shutter take from start to close to fully open
+CONST_SHUTTER_TURN_OFF_TIME = 2e-3 # for shutter take from start to open to fully close
 CONST_TA_PUMPING_DETUNING = -251  # MHz 4->4 tansition
 CONST_REPUMP_DEPUMPING_DETUNING = -201.24  # MHz 3->3 transition
 CONST_BIPOLAR_COIL_FLIP_TIME = 10e-3 # the time takes to flip the polarity of the coil
 CONST_COIL_FEEDBACK_OFF_TIME = 4.5e-3 # how long to turn off the feedback of circuit when flipping polarity
-CONST_COIL_RAMP_TIME = 100e-6
+CONST_COIL_RAMP_TIME = 100e-6 # ramp time from initial field to final field
 
 # lasers_852 =  D2Lasers()
 # lasers_852.pulse_imaging(t=300e-6, duration=100e-6)
@@ -113,7 +113,7 @@ class D2Lasers:
     def __init__(self, t):
         # Tune to MOT frequency, full power
         self.ta_freq = shot_globals.mot_ta_detuning
-        self.repump_freq = 0# shot_globals.mot_repump_detuning
+        self.repump_freq = 0  # shot_globals.mot_repump_detuning
         self.ta_power = shot_globals.mot_ta_power
         self.repump_power = shot_globals.mot_repump_power
         # update_shutters compares with self.shutter_config to decide what
@@ -221,7 +221,7 @@ class D2Lasers:
             if shutter in shutters_to_open:
                 shutter_dict[shutter].open(t)
             if shutter in shutters_to_close:
-                shutter_dict[shutter].close(t)
+                shutter_dict[shutter].close(t - CONST_SHUTTER_TURN_OFF_TIME)
 
         self.shutter_config = new_shutter_config
         #return t?
@@ -279,8 +279,8 @@ class D2Lasers:
         # Otherwise they won't be able to open in time unless there's enough delay between pulses.
         if close_all_shutters:
             print("closing all shutters")
-            self.update_shutters(t, ShutterConfig.NONE)
             t += CONST_SHUTTER_TURN_OFF_TIME
+            self.update_shutters(t, ShutterConfig.NONE)
             self.ta_aom_on(t, 1)
             self.repump_aom_on(t, 1)
 
@@ -303,7 +303,7 @@ class D2Lasers:
         return t
 
     def parity_projection_pulse(self, t, dur):
-        self.ramp_ta_freq(t, duration=0, final=shot_globals.bm_parity_projection_ta_detuning)
+        self.ramp_ta_freq(t, duration=CONST_TA_VCO_RAMP_TIME, final=shot_globals.bm_parity_projection_ta_detuning) # fixed the ramp duration for the parity projection
         t += CONST_TA_VCO_RAMP_TIME
         # TODO: is this a TA pulse only? Or is repump also supposed to be on?
         # TODO: if so, is shot_globals.bm_parity_projection_repump_power ever used. Perhaps it should be deleted
@@ -1108,6 +1108,30 @@ class OpticalPumpingSequence(MOTSequence):
 
     def kill_F3(self, t):
         pass
+
+    def _optical_pump_molasses_sequence(self, t):
+        # MOT loading time 500 ms
+        mot_load_dur = 0.5
+
+        t += CONST_SHUTTER_TURN_ON_TIME
+
+        t = self.do_mot(t, mot_load_dur)
+        t = self.do_molasses(t, shot_globals.bm_time)
+
+        t = self.pump_to_F4(t)
+
+        t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
+
+        # Turn off MOT for taking background images
+        t += 1e-1
+
+        t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
+        t += 1e-2
+
+        if reset_mot:
+            t = self.reset_mot(t)
+
+        return t
 
 class TweezerSequence(OpticalPumpingSequence):
 
