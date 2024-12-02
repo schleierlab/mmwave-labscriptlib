@@ -17,7 +17,7 @@ from labscriptlib.shot_globals import shot_globals
 #from shot_globals import shot_globals
 from spectrum_manager_fifo import spectrum_manager_fifo
 from spectrum_manager import spectrum_manager
-from calibration import ta_freq_calib, repump_freq_calib, biasx_calib, biasy_calib, biasz_calib
+from calibration import ta_freq_calib, repump_freq_calib, biasx_calib, biasy_calib, biasz_calib, spec_freq_calib
 from connection_table import devices
 import labscript
 
@@ -305,7 +305,6 @@ class D2Lasers:
     def parity_projection_pulse(self, t, dur):
         self.ramp_ta_freq(t, duration=CONST_TA_VCO_RAMP_TIME, final=shot_globals.bm_parity_projection_ta_detuning) # fixed the ramp duration for the parity projection
         t += CONST_TA_VCO_RAMP_TIME
-        # TODO: is this a TA pulse only? Or is repump also supposed to be on? Answer: only TA pulse is needed
         t, t_aom_start = self.do_pulse(t, dur, ShutterConfig.MOT_TA,
                       shot_globals.bm_parity_projection_ta_power,
                       0,
@@ -381,14 +380,16 @@ class TweezerLaser:
 
 class Microwave:
     def __init__(self, t):
-        # Shutoff microwaves?
-        spectrum_uwave_cable_atten = 4.4  # cable attenutation, dB  meausred at 300 MHz
-        spectrum_uwave_power = -1  # dBm power set at the input of dds switch, this power is set to below the amplifier damage threshold
-        devices.uwave_dds_switch.go_high(t) # dds_switch
-        devices.uwave_absorp_switch.go_low(t)
+        CONST_SPECTRUM_UWAVE_CABLE_ATTEN = 4.4  # cable attenutation, dB  meausred at 300 MHz
+        self.mw_detuning = shot_globals.mw_detuning # tune the microwave detuning here
+        self.uwave_dds_switch_on = True
+        self.uwave_absorp_switch_on = False
+        self.spectrum_uwave_power = -1  # dBm power set at the input of dds switch, this power is set to below the amplifier damage threshold
+        devices.uwave_dds_switch.go_high(t) # dds_switch always on, can be off if need further higher distinguishing ratio
+        devices.uwave_absorp_switch.go_low(t) # absorp switch only on when sending pulse
         devices.spectrum_uwave.set_mode(replay_mode=b'sequence',
                                 channels=[{'name': 'microwaves',
-                                            'power': spectrum_uwave_power + spectrum_uwave_cable_atten,
+                                            'power': self.spectrum_uwave_power + CONST_SPECTRUM_UWAVE_CABLE_ATTEN,
                                             'port': 0,
                                             'is_amplified': False,
                                             'amplifier': None,
@@ -405,7 +406,38 @@ class Microwave:
                                             'max_pulses': 1}],
                                 clock_freq=625,
                                 use_ext_clock=True,
-                                ext_clock_freq=10)
+                                ext_clock_freq=10) # spectrum setup for microwaves & mmwaves, 1st channel for Hyperfine splitting of ground state, 2nd channel for mmwaves on Rydberg levels
+
+    def do_pulse(self, t, dur):
+        """ do microwave pulse """
+        CONST_SPECTRUM_CARD_OFFSET = 52.8e-6 # the delay time between spectrum card output and trigger
+
+        t += CONST_SPECTRUM_CARD_OFFSET
+        devices.uwave_absorp_switch.go_high(t)
+        self.uwave_absorp_switch_on = True
+        devices.spectrum_uwave.single_freq(t-CONST_SPECTRUM_CARD_OFFSET, duration=dur,freq=spec_freq_calib(self.mw_detuning),
+            amplitude=0.99,phase=0,ch=0,loops=1)
+
+        t += dur
+        devices.uwave_absorp_switch.go_low(t)
+        self.uwave_absorp_switch_on = False
+
+        return t
+
+
+
+    def reset_spectrum(self, t):
+        """ stop microwave using dummy segment because of spectrum card, you have to send two pulses to make it work """
+        ##### dummy segment ####
+        devices.spectrum_uwave.single_freq(
+            t,
+            duration=100e-6,
+            freq=10**6,
+            amplitude=0.99,
+            phase=0,
+            ch=0,
+            loops=1)  # dummy segment
+        devices.spectrum_uwave.stop()
 
 class RydLasers:
     def __init__(self, t):
