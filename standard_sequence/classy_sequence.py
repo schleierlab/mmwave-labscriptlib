@@ -544,6 +544,10 @@ class BField:
         else:
             devices.mot_coil_current_ctrl.constant(t, 0)
 
+        coil_dict: dict[str, labscript.Analogout] = {'x': devices.x_coil_current, 'y': devices.y_coil_current, 'z': devices.z_coil_current}
+        coil_feedback_dict: dict[str, labscript.Digitalout] = {'x': devices.x_coil_feedback_off, 'y': devices.y_coil_feedback_off, 'z': devices.z_coil_feedback_off}
+        # TODO: make the flip polarity a single function for all 3 coils instead of 3 functions
+
     def _x_coil_flip_polarity(self, t, final):
         coil_voltage_mid_abs = 0.03
         coil_voltage_mid = np.sign(final) * coil_voltage_mid_abs
@@ -1046,6 +1050,8 @@ class MOTSequence:
 
         return t
 
+
+
 class OpticalPumpingSequence(MOTSequence):
 
     def __init__(self, t):
@@ -1162,7 +1168,7 @@ class OpticalPumpingSequence(MOTSequence):
     def kill_F3(self, t):
         pass
 
-    def _optical_pump_molasses_sequence(self, t):
+    def _optical_pump_molasses_sequence(self, t, reset_mot=False):
         # MOT loading time 500 ms
         mot_load_dur = 0.5
 
@@ -1181,6 +1187,32 @@ class OpticalPumpingSequence(MOTSequence):
         t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
         t += 1e-2
 
+        if reset_mot:
+            t = self.reset_mot(t)
+
+        return t
+
+    def _do_field_calib_in_molasses(self, t, reset_mot=False):
+        mot_load_dur = 0.5
+        t += CONST_SHUTTER_TURN_ON_TIME # TODO: is this necessary?
+        t = self.do_mot(t, mot_load_dur)
+
+        t = self.do_molasses(t, shot_globals.bm_time)
+        t = self.depump_to_F3(t, "mot")
+        t = self.BField_obj.ramp_bias_field(t, bias_field_vector=(shot_globals.mw_biasx_field,shot_globals.mw_biasy_field,shot_globals.mw_biasz_field))
+
+        if shot_globals.do_mw_pulse:
+            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+
+        t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
+
+        # Turn off MOT for taking background images
+        t += 1e-1
+
+        t = self.do_molasses_dipole_trap_imaging(t)
+
+        t += 1e-2
+        self.Microwave_obj.reset_spectrum(t)
         if reset_mot:
             t = self.reset_mot(t)
 
@@ -1370,8 +1402,9 @@ if __name__ == "__main__":
         MOTSeq_obj = MOTSequence(t)
         t = MOTSeq_obj._do_molasses_tof_sequence(t, reset_mot=True)
 
-    # if shot_globals.do_field_calib_in_molasses_check:
-    #     t = do_field_calib_in_molasses_check(t)
+    if shot_globals.do_field_calib_in_molasses_check:
+        MOTSeq_obj = MOTSequence(t)
+        t = MOTSeq_obj._do_field_calib_in_molasses(t, reset_mot=True)
 
     # if shot_globals.do_dipole_trap_tof_check:
     #     t = do_dipole_trap_tof_check(t)
