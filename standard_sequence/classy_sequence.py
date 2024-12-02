@@ -305,8 +305,7 @@ class D2Lasers:
     def parity_projection_pulse(self, t, dur):
         self.ramp_ta_freq(t, duration=CONST_TA_VCO_RAMP_TIME, final=shot_globals.bm_parity_projection_ta_detuning) # fixed the ramp duration for the parity projection
         t += CONST_TA_VCO_RAMP_TIME
-        # TODO: is this a TA pulse only? Or is repump also supposed to be on?
-        # TODO: if so, is shot_globals.bm_parity_projection_repump_power ever used. Perhaps it should be deleted
+        # TODO: is this a TA pulse only? Or is repump also supposed to be on? Answer: only TA pulse is needed
         t, t_aom_start = self.do_pulse(t, dur, ShutterConfig.MOT_TA,
                       shot_globals.bm_parity_projection_ta_power,
                       0,
@@ -333,7 +332,7 @@ class TweezerLaser:
         t2 = spectrum_manager.stop_tweezers(t)
         print('tweezer stop time:', t2)
 
-        # TODO: explain what this does
+        # TODO: explain what this does, Answer: only when there is a dummy segment the spectrum card will actually output waveform, a bug related to the spectrum card server
         ##### dummy segment ######
         t1 = spectrum_manager.start_tweezers(t)
         print('tweezer start time:', t1)
@@ -349,8 +348,8 @@ class TweezerLaser:
 
     def aom_on(self, t, const):
         """ Turn on the tweezer beam using aom """
-        devices.tweezer_aom_digital.go_high(t)  # digital off
-        devices.tweezer_aom_analog.constant(t, const)  # analog off
+        devices.tweezer_aom_digital.go_high(t)  # digital on
+        devices.tweezer_aom_analog.constant(t, const)  # analog on
         self.tw_power = const
 
     def aom_off(self, t):
@@ -383,8 +382,30 @@ class TweezerLaser:
 class Microwave:
     def __init__(self, t):
         # Shutoff microwaves?
-        devices.uwave_dds_switch.go_high(t)
+        spectrum_uwave_cable_atten = 4.4  # cable attenutation, dB  meausred at 300 MHz
+        spectrum_uwave_power = -1  # dBm power set at the input of dds switch, this power is set to below the amplifier damage threshold
+        devices.uwave_dds_switch.go_high(t) # dds_switch
         devices.uwave_absorp_switch.go_low(t)
+        devices.spectrum_uwave.set_mode(replay_mode=b'sequence',
+                                channels=[{'name': 'microwaves',
+                                            'power': spectrum_uwave_power + spectrum_uwave_cable_atten,
+                                            'port': 0,
+                                            'is_amplified': False,
+                                            'amplifier': None,
+                                            'calibration_power': 12,
+                                            'power_mode': 'constant_total',
+                                            'max_pulses': 1},
+                                            {'name': 'mmwaves',
+                                            'power': -11,
+                                            'port': 1,
+                                            'is_amplified': False,
+                                            'amplifier': None,
+                                            'calibration_power': 12,
+                                            'power_mode': 'constant_total',
+                                            'max_pulses': 1}],
+                                clock_freq=625,
+                                use_ext_clock=True,
+                                ext_clock_freq=10)
 
 class RydLasers:
     def __init__(self, t):
