@@ -83,7 +83,11 @@
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.MOTSequence.reset_mot"><code class="docutils literal notranslate"><span class="pre">MOTSequence.reset_mot()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#standard_sequence.classy_sequence.Microwave"><code class="docutils literal notranslate"><span class="pre">Microwave</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#standard_sequence.classy_sequence.Microwave"><code class="docutils literal notranslate"><span class="pre">Microwave</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.Microwave.do_pulse"><code class="docutils literal notranslate"><span class="pre">Microwave.do_pulse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.Microwave.reset_spectrum"><code class="docutils literal notranslate"><span class="pre">Microwave.reset_spectrum()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#standard_sequence.classy_sequence.OpticalPumpingSequence"><code class="docutils literal notranslate"><span class="pre">OpticalPumpingSequence</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.OpticalPumpingSequence.depump_to_F3"><code class="docutils literal notranslate"><span class="pre">OpticalPumpingSequence.depump_to_F3()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.OpticalPumpingSequence.kill_F3"><code class="docutils literal notranslate"><span class="pre">OpticalPumpingSequence.kill_F3()</span></code></a></li>
@@ -338,7 +342,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.MOTSequence.do_molasses_dipole_trap_imaging">
-<span class="sig-name descname"><span class="pre">do_molasses_dipole_trap_imaging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_repump</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close_all_shutters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#MOTSequence.do_molasses_dipole_trap_imaging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.MOTSequence.do_molasses_dipole_trap_imaging" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">do_molasses_dipole_trap_imaging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ta_power</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repump_power</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_repump</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exposure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">labscriptlib.shot_globals.shot_globals.bm_exposure_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close_all_shutters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#MOTSequence.do_molasses_dipole_trap_imaging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.MOTSequence.do_molasses_dipole_trap_imaging" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -367,6 +371,18 @@
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.Microwave">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">standard_sequence.classy_sequence.</span></span><span class="sig-name descname"><span class="pre">Microwave</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#Microwave"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.Microwave" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="standard_sequence.classy_sequence.Microwave.do_pulse">
+<span class="sig-name descname"><span class="pre">do_pulse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dur</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#Microwave.do_pulse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.Microwave.do_pulse" title="Link to this definition"></a></dt>
+<dd><p>do microwave pulse</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="standard_sequence.classy_sequence.Microwave.reset_spectrum">
+<span class="sig-name descname"><span class="pre">reset_spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#Microwave.reset_spectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.Microwave.reset_spectrum" title="Link to this definition"></a></dt>
+<dd><p>stop microwave using dummy segment because of spectrum card, you have to send two pulses to make it work</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -391,7 +407,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.OpticalPumpingSequence.pump_to_F4">
-<span class="sig-name descname"><span class="pre">pump_to_F4</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#OpticalPumpingSequence.pump_to_F4"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.OpticalPumpingSequence.pump_to_F4" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">pump_to_F4</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#OpticalPumpingSequence.pump_to_F4"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.OpticalPumpingSequence.pump_to_F4" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
