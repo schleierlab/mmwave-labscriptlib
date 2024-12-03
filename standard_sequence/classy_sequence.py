@@ -1061,7 +1061,7 @@ class OpticalPumpingSequence(MOTSequence):
     def __init__(self, t):
         super(OpticalPumpingSequence, self).__init__(t)
 
-    def pump_to_F4(self, t, label=None):
+    def pump_to_F4(self, t, label):
         if self.BField_obj.mot_coils_on:
             _ = self.BField_obj.switch_mot_coils(t)
         if label == "mot":
@@ -1194,7 +1194,10 @@ class OpticalPumpingSequence(MOTSequence):
         t = self.do_mot(t, mot_load_dur)
 
         t = self.do_molasses(t, shot_globals.bm_time)
-        t = self.depump_to_F3(t, "mot")
+        if shot_globals.do_dp:
+            t = self.depump_to_F3(t, shot_globals.op_label)
+        elif shot_globals.do_op:
+            t = self.pump_to_F4(t, shot_globals.op_label)
         t_depump = t
         t = self.BField_obj.ramp_bias_field(t, bias_field_vector=(shot_globals.mw_biasx_field,shot_globals.mw_biasy_field,shot_globals.mw_biasz_field))
 
@@ -1203,6 +1206,8 @@ class OpticalPumpingSequence(MOTSequence):
 
         if t-t_depump < CONST_MIN_SHUTTER_OFF_TIME:
             t =  t_depump + CONST_MIN_SHUTTER_OFF_TIME
+
+        # This is the only place required for the special value of imaging
         t = self.do_molasses_dipole_trap_imaging(t, ta_power=0.1, repump_power=1, exposure= 10e-3,
                                                  do_repump=shot_globals.mw_imaging_do_repump,
                                                  close_all_shutters=True)
