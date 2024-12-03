@@ -78,30 +78,32 @@ class ShutterConfig(Flag):
     @classmethod
     def select_imaging_shutters(cls, do_repump=True) -> ShutterConfig:
         repump_config = (cls.REPUMP if do_repump else cls.NONE)
+        # print("Repump_config = ", repump_config)
         label = shot_globals.imaging_label
 
         # TODO: change handling of labels to make full default and raise error when not one of the options
         if shot_globals.do_mot_beams_during_imaging:
             if label == "z":
-                shutter_config = cls.MOT_Z | repump_config
+                shutter_config = cls.MOT_Z | cls.TA | repump_config
             elif label == "xy":
-                shutter_config = cls.MOT_XY | repump_config
+                shutter_config = cls.MOT_XY | cls.TA | repump_config
             else:
-                shutter_config = cls.MOT_FULL | repump_config
+                shutter_config = cls.MOT_TA | repump_config
 
         # If you're trying to do in-situ imaging, you want to image faster than switch shutters allows for,
         # so you can't do imaging beam imaging
         elif shot_globals.do_img_beams_during_imaging and not shot_globals.do_molasses_in_situ_check:
             if label == "z":
-                shutter_config = cls.IMG_Z | repump_config
+                shutter_config = cls.IMG_Z | cls.TA | repump_config
             elif label == "xy":
-                shutter_config = cls.IMG_XY | repump_config
+                shutter_config = cls.IMG_XY | cls.TA | repump_config
             else:
-                shutter_config = cls.IMG_FULL | repump_config
+                shutter_config = cls.IMG_TA | repump_config
 
         else:
             shutter_config = cls.NONE
 
+        # print("Shutter config = ", shutter_config)
         return shutter_config
 
 
@@ -438,6 +440,8 @@ class Microwave:
             ch=0,
             loops=1)  # dummy segment
         devices.spectrum_uwave.stop()
+
+        return t+100e-6
 
 class RydLasers:
     def __init__(self, t):
@@ -972,29 +976,29 @@ class MOTSequence:
     #Which arguments are actually necessary to pass or even set as a defualt?
     #How many of them can just be set to globals?
     # TODO: Maybe pass the shutter config into here? This would get rid of all the if statements?
-    def do_molasses_dipole_trap_imaging(self, t, do_repump=True,
-                                        close_all_shutters=False):
+    def do_molasses_dipole_trap_imaging(self, t, ta_power = 1, repump_power = 1, do_repump=True,
+                                        exposure = shot_globals.bm_exposure_time, close_all_shutters=False):
         # zero the field
         _ = self.BField_obj.ramp_bias_field(t, bias_field_vector=(0,0,0))
 
         # Ramp to imaging frequencies
-        self.D2Lasers_obj.ramp_ta_freq(t, CONST_TA_VCO_RAMP_TIME, ta_freq_calib(0))
-        self.D2Lasers_obj.ramp_repump_freq(t, CONST_TA_VCO_RAMP_TIME, repump_freq_calib(0))
+        self.D2Lasers_obj.ramp_ta_freq(t, CONST_TA_VCO_RAMP_TIME, 0)
+        self.D2Lasers_obj.ramp_repump_freq(t, CONST_TA_VCO_RAMP_TIME, 0)
         t += CONST_TA_VCO_RAMP_TIME
 
         shutter_config = ShutterConfig.select_imaging_shutters(do_repump=do_repump)
 
         # full power ta and repump pulse
-        t_pulse_end, t_aom_start = self.D2Lasers_obj.do_pulse(t, shot_globals.bm_exposure_time,
-                                                                shutter_config, 1, 1,
+        t_pulse_end, t_aom_start = self.D2Lasers_obj.do_pulse(t, exposure,
+                                                                shutter_config, ta_power, repump_power,
                                                                 close_all_shutters=close_all_shutters)
 
         # TODO: ask Lin and Michelle and max() logic and if we always want it there
         self.Camera_obj.set_type(shot_globals.camera_type)
         if self.Camera_obj.type =="MOT_manta" or "tweezer_manta":
-            exposure = max(shot_globals.bm_exposure_time, 50e-6)
+            exposure = max(exposure, 50e-6)
         if self.Camera_obj.type == "kinetix":
-            exposure = max(shot_globals.bm_exposure_time, 1e-3)
+            exposure = max(exposure, 1e-3)
 
         # expose the camera
         self.Camera_obj.expose(t_aom_start, exposure)
@@ -1062,10 +1066,6 @@ class OpticalPumpingSequence(MOTSequence):
             _ = self.BField_obj.switch_mot_coils(t)
         if label == "mot":
             # Use the MOT beams for optical pumping
-            # define quantization axis
-            t = self.BField_obj.ramp_bias_field(t, bias_field_vector=(shot_globals.mw_biasx_field,
-                                                 shot_globals.mw_biasy_field,
-                                                 shot_globals.mw_biasz_field))
             # Do a repump pulse
             t, _ = self.D2Lasers_obj.do_pulse(t, shot_globals.op_MOT_op_time,
                                     ShutterConfig.MOT_REPUMP, 0, 1, close_all_shutters=True)
@@ -1110,10 +1110,6 @@ class OpticalPumpingSequence(MOTSequence):
             _ = self.BField_obj.switch_mot_coils(t)
         if label == "mot":
             # Use the MOT beams for optical depumping
-            # define quantization axis
-            t = self.BField_obj.ramp_bias_field(t, bias_field_vector=(shot_globals.mw_biasx_field,
-                                                 shot_globals.mw_biasy_field,
-                                                 shot_globals.mw_biasz_field))
             # ramp detuning to 4 -> 4 for TA
             self.D2Lasers_obj.ramp_ta_freq(t, 0, CONST_TA_PUMPING_DETUNING)
             # Do a TA pulse
@@ -1199,20 +1195,26 @@ class OpticalPumpingSequence(MOTSequence):
 
         t = self.do_molasses(t, shot_globals.bm_time)
         t = self.depump_to_F3(t, "mot")
+        t_depump = t
         t = self.BField_obj.ramp_bias_field(t, bias_field_vector=(shot_globals.mw_biasx_field,shot_globals.mw_biasy_field,shot_globals.mw_biasz_field))
 
         if shot_globals.do_mw_pulse:
             t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
 
-        t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
+        if t-t_depump < CONST_MIN_SHUTTER_OFF_TIME:
+            t =  t_depump + CONST_MIN_SHUTTER_OFF_TIME
+        t = self.do_molasses_dipole_trap_imaging(t, ta_power=0.1, repump_power=1, exposure= 10e-3,
+                                                 do_repump=shot_globals.mw_imaging_do_repump,
+                                                 close_all_shutters=True)
 
         # Turn off MOT for taking background images
         t += 1e-1
 
-        t = self.do_molasses_dipole_trap_imaging(t)
-
+        t = self.do_molasses_dipole_trap_imaging(t, ta_power=0.1, repump_power=1, exposure= 10e-3,
+                                                 do_repump=shot_globals.mw_imaging_do_repump,
+                                                 close_all_shutters=True)
         t += 1e-2
-        self.Microwave_obj.reset_spectrum(t)
+        t = self.Microwave_obj.reset_spectrum(t)
         if reset_mot:
             t = self.reset_mot(t)
 
@@ -1403,8 +1405,8 @@ if __name__ == "__main__":
         t = MOTSeq_obj._do_molasses_tof_sequence(t, reset_mot=True)
 
     if shot_globals.do_field_calib_in_molasses_check:
-        MOTSeq_obj = MOTSequence(t)
-        t = MOTSeq_obj._do_field_calib_in_molasses(t, reset_mot=True)
+        OPSeq_obj = OpticalPumpingSequence(t)
+        t = OPSeq_obj._do_field_calib_in_molasses(t, reset_mot=True)
 
     # if shot_globals.do_dipole_trap_tof_check:
     #     t = do_dipole_trap_tof_check(t)
