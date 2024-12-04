@@ -344,15 +344,15 @@ class OpticalPumpingSequence(MOTSequence):
                 t, bias_field_vector=(op_biasx_field, op_biasy_field, op_biasz_field)
             )
             # ramp detuning to 4 -> 4, 3 -> 4
-            self.D2Lasers_obj.ramp_ta_freq(t, 0, shot_globals.op_ta_pumping_detuning)
+            self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ta_pumping_detuning)
             self.D2Lasers_obj.ramp_repump_freq(
-                t, 0, shot_globals.op_repump_pumping_detuning
+                t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_repump_pumping_detuning
             )
             # Do a sigma+ pulse
             # TODO: is shot_globals.op_ramp_delay just extra fudge time? can it be eliminated?
             t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
             t, _ = self.D2Lasers_obj.do_pulse(
-                t - D2Lasers.CONST_SHUTTER_TURN_ON_TIME,
+                t, #- D2Lasers.CONST_SHUTTER_TURN_ON_TIME,
                 shot_globals.op_repump_time,
                 ShutterConfig.OPTICAL_PUMPING_FULL,
                 shot_globals.op_ta_power,
@@ -484,8 +484,11 @@ class OpticalPumpingSequence(MOTSequence):
         mot_load_dur = 0.5
         t += D2Lasers.CONST_SHUTTER_TURN_ON_TIME  # TODO: is this necessary?
         t = self.do_mot(t, mot_load_dur)
+        if shot_globals.op_label == "mot":
+            t = self.do_molasses(t, shot_globals.bm_time)
+        elif shot_globals.op_label == "sigma":
+            t = self.do_molasses(t, shot_globals.bm_time, close_all_shutters=True)
 
-        t = self.do_molasses(t, shot_globals.bm_time)
         if shot_globals.do_dp:
             t = self.depump_to_F3(t, shot_globals.op_label)
         if shot_globals.do_op:
@@ -503,8 +506,8 @@ class OpticalPumpingSequence(MOTSequence):
         if shot_globals.do_mw_pulse:
             t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
 
-        if t - t_depump < D2Lasers.CONST_MIN_SHUTTER_OFF_TIME:
-            t = t_depump + D2Lasers.CONST_MIN_SHUTTER_OFF_TIME
+        # postpone next sequence until shutter off time reached
+        t = max(t, t_depump + D2Lasers.CONST_MIN_SHUTTER_OFF_TIME)
 
         # This is the only place required for the special value of imaging
         t = self.do_molasses_dipole_trap_imaging(
