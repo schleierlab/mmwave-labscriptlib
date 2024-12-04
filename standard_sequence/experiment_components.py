@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from enum import Flag, auto
-from typing import ClassVar
+from typing import ClassVar, Literal
 
 import numpy as np
 
+from labscript import AnalogOut, DigitalOut
 import labscript
 from labscriptlib.shot_globals import shot_globals
 from connection_table import devices
@@ -85,13 +86,22 @@ class ShutterConfig(Flag):
 class D2Lasers:
     shutter_config: ShutterConfig
 
-    CONST_TA_VCO_RAMP_TIME: ClassVar[float] = 1.2e-4  # minimal ta vco ramp time to stay in beatnote lock
-    CONST_SHUTTER_TURN_OFF_TIME: ClassVar[float] = 2e-3  # for shutter take from start to open to fully close
-    CONST_SHUTTER_TURN_ON_TIME: ClassVar[float] = 2e-3  # for shutter take from start to close to fully open
+    CONST_TA_VCO_RAMP_TIME: ClassVar[float] = (
+        1.2e-4  # minimal ta vco ramp time to stay in beatnote lock
+    )
+    CONST_SHUTTER_TURN_OFF_TIME: ClassVar[float] = (
+        2e-3  # for shutter take from start to open to fully close
+    )
+    CONST_SHUTTER_TURN_ON_TIME: ClassVar[float] = (
+        2e-3  # for shutter take from start to close to fully open
+    )
 
-    CONST_MIN_SHUTTER_OFF_TIME: ClassVar[float] = 6.28e-3  # minimum time for shutter to be off and on again
-    CONST_MIN_SHUTTER_ON_TIME: ClassVar[float] = 3.6e-3  # minimum time for shutter to be on
-
+    CONST_MIN_SHUTTER_OFF_TIME: ClassVar[float] = (
+        6.28e-3  # minimum time for shutter to be off and on again
+    )
+    CONST_MIN_SHUTTER_ON_TIME: ClassVar[float] = (
+        3.6e-3  # minimum time for shutter to be on
+    )
 
     def __init__(self, t):
         # Tune to MOT frequency, full power
@@ -550,16 +560,31 @@ class UVLamps:
 
 
 class BField:
-    CONST_COIL_OFF_TIME: ClassVar[float] = 1.4e-3  # minimum time for the MOT coil to be off
-    CONST_COIL_RAMP_TIME: ClassVar[float] = 100e-6  # ramp time from initial field to final field
-    CONST_BIPOLAR_COIL_FLIP_TIME: ClassVar[float] = 10e-3  # the time takes to flip the polarity of the coil
+    CONST_COIL_OFF_TIME: ClassVar[float] = (
+        1.4e-3  # minimum time for the MOT coil to be off
+    )
+    CONST_COIL_RAMP_TIME: ClassVar[float] = (
+        100e-6  # ramp time from initial field to final field
+    )
+    CONST_BIPOLAR_COIL_FLIP_TIME: ClassVar[float] = (
+        10e-3  # the time takes to flip the polarity of the coil
+    )
     CONST_COIL_FEEDBACK_OFF_TIME: ClassVar[float] = (
         4.5e-3  # how long to turn off the feedback of circuit when flipping polarity
     )
-    def __init__(self, t):
-        self.bias_x_voltage = shot_globals.mot_x_coil_voltage
-        self.bias_y_voltage = shot_globals.mot_y_coil_voltage
-        self.bias_z_voltage = shot_globals.mot_z_coil_voltage
+
+    bias_voltages = list[float]
+    mot_coils_on: bool
+    mot_coils_on_current: float
+    current_outputs = tuple[AnalogOut, AnalogOut, AnalogOut]
+    feedback_disable_ttls = tuple[DigitalOut, DigitalOut, DigitalOut]
+
+    def __init__(self, t: float):
+        self.bias_voltages = [
+            shot_globals.mot_x_coil_voltage,
+            shot_globals.mot_y_coil_voltage,
+            shot_globals.mot_z_coil_voltage,
+        ]
         self.mot_coils_on = shot_globals.do_mot_coil
         self.mot_coils_on_current = 10 / 6
 
@@ -568,236 +593,108 @@ class BField:
         # initialize bias_field variable to None
         # self.bias_field = None
 
-        devices.x_coil_current.constant(t, self.bias_x_voltage)
-        devices.y_coil_current.constant(t, self.bias_y_voltage)
-        devices.z_coil_current.constant(t, self.bias_z_voltage)
+        self.current_outputs = (
+            devices.x_coil_current,
+            devices.y_coil_current,
+            devices.z_coil_current,
+        )
+
+        self.feedback_disable_ttls = (
+            devices.x_coil_feedback_off,
+            devices.y_coil_feedback_off,
+            devices.z_coil_feedback_off,
+        )
+
+        for current_output, bias_voltage_cmpnt in zip(self.current_outputs, self.bias_voltages):
+            current_output.constant(t, bias_voltage_cmpnt)
 
         if self.mot_coils_on:
             devices.mot_coil_current_ctrl.constant(t, self.mot_coils_on_current)
         else:
             devices.mot_coil_current_ctrl.constant(t, 0)
 
-        # coil_dict: dict[str, labscript.Analogout] = {
-        #     "x": devices.x_coil_current,
-        #     "y": devices.y_coil_current,
-        #     "z": devices.z_coil_current,
-        # }
-        # coil_feedback_dict: dict[str, labscript.Digitalout] = {
-        #     "x": devices.x_coil_feedback_off,
-        #     "y": devices.y_coil_feedback_off,
-        #     "z": devices.z_coil_feedback_off,
-        # }
-        # TODO: make the flip polarity a single function for all 3 coils instead of 3 functions
-
-    def _x_coil_flip_polarity(self, t, final):
+    def flip_coil_polarity(self, t: float, final_voltage: float, component: Literal[0, 1, 2]):
+        """
+        t: float
+            Time to begin coil polarity flipping
+        final_voltage: float
+            Final control voltage on the coil
+        component: {0, 1, 2}
+            Specifies the field component to flip (x, y, or z)
+        """
         coil_voltage_mid_abs = 0.03
-        coil_voltage_mid = np.sign(final) * coil_voltage_mid_abs
-        total_coil_flip_ramp_time = self.CONST_BIPOLAR_COIL_FLIP_TIME + self.CONST_COIL_RAMP_TIME
-        t += devices.x_coil_current.ramp(
+        coil_voltage_mid = np.sign(final_voltage) * coil_voltage_mid_abs
+        total_coil_flip_ramp_time = (
+            self.CONST_BIPOLAR_COIL_FLIP_TIME + self.CONST_COIL_RAMP_TIME
+        )
+
+        current_output = self.current_outputs[component]
+        feedback_disable_ttl = self.feedback_disable_ttls[component]
+
+        t += current_output.ramp(
             t,
             duration=self.CONST_COIL_RAMP_TIME / 2,
-            initial=self.bias_x_voltage,
+            initial=self.bias_voltages[component],
             final=coil_voltage_mid,  # sligtly negative voltage to trigger the polarity change
             samplerate=1e5,
         )
-        devices.x_coil_feedback_off.go_high(t)
-        devices.x_coil_feedback_off.go_low(t + self.CONST_COIL_FEEDBACK_OFF_TIME)
-        devices.x_coil_current.constant(t, coil_voltage_mid)
+        feedback_disable_ttl.go_high(t)
+        feedback_disable_ttl.go_low(t + self.CONST_COIL_FEEDBACK_OFF_TIME)
+        self.current_outputs[component].constant(t, coil_voltage_mid)
         t += self.CONST_BIPOLAR_COIL_FLIP_TIME
 
-        t += devices.x_coil_current.ramp(
+        t += current_output.ramp(
             t,
             duration=self.CONST_COIL_RAMP_TIME / 2,
             initial=coil_voltage_mid,
-            final=final,  # 0 mG
+            final=final_voltage,  # 0 mG
             samplerate=1e5,
         )
 
         t -= total_coil_flip_ramp_time  # subtract to the begining tp set other coils
 
         # Update internal state
-        self.bias_x_voltage = final
-
-        return t
-
-    def _y_coil_flip_polarity(self, t, final):
-        coil_voltage_mid_abs = 0.03
-        coil_voltage_mid = np.sign(final) * coil_voltage_mid_abs
-        total_coil_flip_ramp_time = self.CONST_BIPOLAR_COIL_FLIP_TIME + self.CONST_COIL_RAMP_TIME
-        t += devices.y_coil_current.ramp(
-            t,
-            duration=self.CONST_COIL_RAMP_TIME / 2,
-            initial=self.bias_y_voltage,
-            final=coil_voltage_mid,  # sligtly negative voltage to trigger the polarity change
-            samplerate=1e5,
-        )
-        devices.y_coil_feedback_off.go_high(t)
-        print("turn coil feedback off at time t = ", t)
-        devices.y_coil_feedback_off.go_low(t + self.CONST_COIL_FEEDBACK_OFF_TIME)
-        print(
-            "turn coil feedback back on at time t = ", t + self.CONST_COIL_FEEDBACK_OFF_TIME
-        )
-        devices.y_coil_current.constant(t, coil_voltage_mid)
-        t += self.CONST_BIPOLAR_COIL_FLIP_TIME
-
-        t += devices.y_coil_current.ramp(
-            t,
-            duration=self.CONST_COIL_RAMP_TIME / 2,
-            initial=coil_voltage_mid,
-            final=final,  # 0 mG
-            samplerate=1e5,
-        )
-
-        t -= total_coil_flip_ramp_time  # subtract to the begining tp set other coils
-
-        # Update internal state
-        self.bias_y_voltage = final
-
-        return t
-
-    def _z_coil_flip_polarity(self, t, final):
-        coil_voltage_mid_abs = 0.03
-        coil_voltage_mid = np.sign(final) * coil_voltage_mid_abs
-        total_coil_flip_ramp_time = self.CONST_BIPOLAR_COIL_FLIP_TIME + self.CONST_COIL_RAMP_TIME
-        t += devices.z_coil_current.ramp(
-            t,
-            duration=self.CONST_COIL_RAMP_TIME / 2,
-            initial=self.bias_z_voltage,
-            final=coil_voltage_mid,  # sligtly negative voltage to trigger the polarity change
-            samplerate=1e5,
-        )
-        devices.z_coil_feedback_off.go_high(t)
-        devices.z_coil_feedback_off.go_low(t + self.CONST_COIL_FEEDBACK_OFF_TIME)
-        devices.z_coil_current.constant(t, coil_voltage_mid)
-        t += self.CONST_BIPOLAR_COIL_FLIP_TIME
-
-        t += devices.z_coil_current.ramp(
-            t,
-            duration=self.CONST_COIL_RAMP_TIME / 2,
-            initial=coil_voltage_mid,
-            final=final,  # 0 mG
-            samplerate=1e5,
-        )
-
-        t -= total_coil_flip_ramp_time  # subtract to the begining tp set other coils
-
-        # Update internal state
-        self.bias_z_voltage = final
-
+        self.bias_voltages[component] = final_voltage
         return t
 
     def ramp_bias_field(self, t, bias_field_vector=None, voltage_vector=None):
         # bias_field_vector should be a tuple of the form (x,y,z)
         # Need to start the ramp earlier if the voltage changes sign
         if bias_field_vector is not None:
-            voltage_vector = [
+            voltage_vector = np.array([
                 biasx_calib(bias_field_vector[0]),
                 biasy_calib(bias_field_vector[1]),
                 biasz_calib(bias_field_vector[2]),
-            ]
+            ])
 
-        t_x_coil, t_y_coil, t_z_coil = (
-            t
-            - self.CONST_BIPOLAR_COIL_FLIP_TIME
-            * int(self.bias_x_voltage * voltage_vector[0] < 0),
-            t
-            - self.CONST_BIPOLAR_COIL_FLIP_TIME
-            * int(self.bias_y_voltage * voltage_vector[1] < 0),
-            t
-            - self.CONST_BIPOLAR_COIL_FLIP_TIME
-            * int(self.bias_z_voltage * voltage_vector[2] < 0),
-        )
+        sign_flip_in_ramp = voltage_vector * np.asarray(self.bias_voltages) < 0
+        coil_ramp_start_times = t - self.CONST_BIPOLAR_COIL_FLIP_TIME * sign_flip_in_ramp
 
-        if np.sign(self.bias_x_voltage * voltage_vector[0]) > 0:
-            devices.x_coil_current.ramp(
-                t_x_coil,
-                duration=self.CONST_COIL_RAMP_TIME,
-                initial=self.bias_x_voltage,
-                final=voltage_vector[0],
-                samplerate=1e5,
-            )
-        else:  # coil flip the control voltage sign
-            t = self._x_coil_flip_polarity(t_x_coil, voltage_vector[0])
+        for i in range(3):
+            if sign_flip_in_ramp[i]:
+                t = self.flip_coil_polarity(coil_ramp_start_times[i], voltage_vector[i], component=i)
+            else:
+                self.current_outputs[i].ramp(
+                    coil_ramp_start_times[i],
+                    duration=self.CONST_COIL_RAMP_TIME,
+                    initial=self.bias_voltages[i],
+                    final=voltage_vector[i],
+                    samplerate=1e+5,
+                )
 
-        if np.sign(self.bias_y_voltage * voltage_vector[1]) > 0:
-            devices.y_coil_current.ramp(
-                t_y_coil,
-                duration=self.CONST_COIL_RAMP_TIME,
-                initial=self.bias_y_voltage,
-                final=voltage_vector[1],  # 0 mG
-                samplerate=1e5,
-            )
-        else:  # coil flip the control voltage sign
-            t = self._y_coil_flip_polarity(t_y_coil, voltage_vector[1])
+        end_time = t + self.CONST_COIL_RAMP_TIME
+        if np.any(sign_flip_in_ramp):
+            end_time += self.CONST_BIPOLAR_COIL_FLIP_TIME
 
-        if np.sign(self.bias_z_voltage * voltage_vector[2]) > 0:
-            devices.z_coil_current.ramp(
-                t_z_coil,
-                duration=self.CONST_COIL_RAMP_TIME,
-                initial=self.bias_z_voltage,
-                final=voltage_vector[2],  # 0 mG
-                samplerate=1e5,
-            )
-        else:  # coil flip the control voltage sign
-            t = self._z_coil_flip_polarity(t_z_coil, voltage_vector[2])
-
-        # check if any of the bias coil polarity/sign is flipped
-        cond_x = np.sign(voltage_vector[0] * biasx_calib(self.bias_x_voltage)) < 0
-        cond_y = np.sign(voltage_vector[1] * biasy_calib(self.bias_y_voltage)) < 0
-        cond_z = np.sign(voltage_vector[2] * biasz_calib(self.bias_z_voltage)) < 0
-        if cond_x or cond_y or cond_z:
-            # if any bias coils are flipped, add extra time to account for the settling time
-            t += self.CONST_BIPOLAR_COIL_FLIP_TIME
 
         # TODO: add the inverse function of bias_i_calib
         # otherwise, if only voltage vector is provided on input, the bias field will not be updated
         # if bias_field_vector is not None:
         #     self.bias_field = bias_field_vector
-        self.bias_x_voltage = voltage_vector[0]
-        self.bias_y_voltage = voltage_vector[1]
-        self.bias_z_voltage = voltage_vector[2]
 
-        t += self.CONST_COIL_RAMP_TIME
-        return t
+        self.bias_voltages = voltage_vector
 
-    # def ramp_bias_field_voltage(self, t, voltage_vector):
-    #     #B_field_vector should be a tuple of the form (x,y,z)
-    #     # Need to start the ramp earlier if the voltage changes sign
-    #     t_x_coil, t_y_coil, t_z_coil = (t - 4e-3*int(self.bias_x_voltage * voltage_vector[0] < 0),
-    #                                     t - 4e-3*int(self.bias_y_voltage * voltage_vector[1] < 0),
-    #                                     t - 4e-3*int(self.bias_z_voltage * voltage_vector[2] < 0))
-
-    #     devices.x_coil_current.ramp(
-    #         t_x_coil,
-    #         duration=self.CONST_COIL_RAMP_TIME,
-    #         initial=self.bias_x_voltage,
-    #         final=voltage_vector[0],
-    #         samplerate=1e5,
-    #     )
-
-    #     devices.y_coil_current.ramp(
-    #         t_y_coil,
-    #         duration=self.CONST_COIL_RAMP_TIME,
-    #         initial=self.bias_y_voltage,
-    #         final=voltage_vector[1],
-    #         samplerate=1e5,
-    #     )
-
-    #     devices.z_coil_current.ramp(
-    #         t_z_coil,
-    #         duration=self.CONST_COIL_RAMP_TIME,
-    #         initial=self.bias_z_voltage,
-    #         final=voltage_vector[2],
-    #         samplerate=1e5,
-    #     )
-    #     # TODO: add the inverse function of bias_i_calib
-    #     # self.B_field = B_field_vector
-    #     self.bias_x_voltage = voltage_vector[0]
-    #     self.bias_y_voltage = voltage_vector[1]
-    #     self.bias_z_voltage = voltage_vector[2]
-
-    #     t += self.CONST_COIL_RAMP_TIME
-    #     return t
+        return end_time
 
     def switch_mot_coils(self, t):
         if self.mot_coils_on:
@@ -819,24 +716,23 @@ class BField:
             )
             self.mot_coils_on = True
 
-        t += self.CONST_COIL_RAMP_TIME
-        t += self.CONST_COIL_OFF_TIME
-        return t
+        endtime = t + self.CONST_COIL_RAMP_TIME + self.CONST_COIL_OFF_TIME
+        return endtime
 
     def get_op_bias_fields(self):
         """Compute the proper bias fields for a given quantization angle from shot globals"""
         op_biasx_field = (
             shot_globals.op_bias_amp
-            * np.cos(shot_globals.op_bias_phi / 180 * np.pi)
-            * np.sin(shot_globals.op_bias_theta / 180 * np.pi)
+            * np.cos(np.deg2rad(shot_globals.op_bias_phi))
+            * np.sin(np.deg2rad(shot_globals.op_bias_theta))
         )
         op_biasy_field = (
             shot_globals.op_bias_amp
-            * np.sin(shot_globals.op_bias_phi / 180 * np.pi)
-            * np.sin(shot_globals.op_bias_theta / 180 * np.pi)
+            * np.sin(np.deg2rad(shot_globals.op_bias_phi))
+            * np.sin(np.deg2rad(shot_globals.op_bias_theta))
         )
         op_biasz_field = shot_globals.op_bias_amp * np.cos(
-            shot_globals.op_bias_theta / 180 * np.pi
+            np.deg2rad(shot_globals.op_bias_theta),
         )
 
         return op_biasx_field, op_biasy_field, op_biasz_field
