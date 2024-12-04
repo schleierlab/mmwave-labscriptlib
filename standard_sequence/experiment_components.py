@@ -3,21 +3,22 @@ from __future__ import annotations
 from enum import Flag, auto
 from typing import ClassVar, Literal
 
-import numpy as np
-
-from labscript import AnalogOut, DigitalOut
 import labscript
-from labscriptlib.shot_globals import shot_globals
-from connection_table import devices
+import numpy as np
+from labscript import AnalogOut, DigitalOut
+
 from calibration import (
-    ta_freq_calib,
-    repump_freq_calib,
     biasx_calib,
     biasy_calib,
     biasz_calib,
+    repump_freq_calib,
     spec_freq_calib,
+    ta_freq_calib,
 )
+from connection_table import devices
+from labscriptlib.shot_globals import shot_globals
 from spectrum_manager import spectrum_manager
+
 # from shot_globals import shot_globals
 # from spectrum_manager_fifo import spectrum_manager_fifo
 
@@ -135,6 +136,7 @@ class D2Lasers:
             samplerate=4e5,
         )
         self.ta_freq = final
+        return t+duration
 
     def ramp_repump_freq(self, t, duration, final):
         # TODO: check that duration statement here is valid for optical pumping
@@ -147,6 +149,7 @@ class D2Lasers:
             samplerate=4e5,
         )
         self.repump_freq = final
+        return t+duration
 
     def ta_aom_off(self, t):
         """Turn off the ta beam using aom"""
@@ -638,6 +641,7 @@ class BField:
             final=coil_voltage_mid,  # sligtly negative voltage to trigger the polarity change
             samplerate=1e5,
         )
+        print(f"feed_disable_ttl in coil {component}")
         feedback_disable_ttl.go_high(t)
         feedback_disable_ttl.go_low(t + self.CONST_COIL_FEEDBACK_OFF_TIME)
         self.current_outputs[component].constant(t, coil_voltage_mid)
@@ -673,6 +677,7 @@ class BField:
         for i in range(3):
             if sign_flip_in_ramp[i]:
                 t = self.flip_coil_polarity(coil_ramp_start_times[i], voltage_vector[i], component=i)
+                print(f"sign flip in vector {i} at time {t}")
             else:
                 self.current_outputs[i].ramp(
                     coil_ramp_start_times[i],

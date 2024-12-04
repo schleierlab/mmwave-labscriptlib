@@ -1,23 +1,19 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Feb 16 11:33:13 2023
-
-@author: sslab
-"""
-
 from __future__ import annotations
-# import sys
 
-# root_path = r"X:\userlib\labscriptlib"
-
-# if root_path not in sys.path:
-#     sys.path.append(root_path)
-
-from labscriptlib.shot_globals import shot_globals
+import labscript
 
 from connection_table import devices
-import labscript
-from labscriptlib.standard_sequence.experiment_components import D2Lasers, Camera, BField, ShutterConfig, Microwave, UVLamps, TweezerLaser, RydLasers
+from labscriptlib.shot_globals import shot_globals
+from labscriptlib.standard_sequence.experiment_components import (
+    BField,
+    Camera,
+    D2Lasers,
+    Microwave,
+    RydLasers,
+    ShutterConfig,
+    TweezerLaser,
+    UVLamps,
+)
 
 spcm_sequence_mode = shot_globals.do_sequence_mode
 
