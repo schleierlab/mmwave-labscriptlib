@@ -487,7 +487,6 @@ class OpticalPumpingSequence(MOTSequence):
         t = self.do_molasses(t, shot_globals.bm_time)
 
 
-
         if shot_globals.do_dp:
             t = self.depump_to_F3(t, shot_globals.op_label)
         if shot_globals.do_op:
