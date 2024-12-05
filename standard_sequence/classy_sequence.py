@@ -358,6 +358,8 @@ class OpticalPumpingSequence(MOTSequence):
                 shot_globals.op_repump_power,
             )
 
+            t_aom_off = t_aom_start + shot_globals.op_repump_time
+
             assert (
                 shot_globals.op_ta_time < shot_globals.op_repump_time
             ), "TA time should be shorter than repump for pumping to F=4"
@@ -369,11 +371,11 @@ class OpticalPumpingSequence(MOTSequence):
             if close_all_shutters:
                 self.D2Lasers_obj.update_shutters(t, ShutterConfig.NONE)
                 t += D2Lasers.CONST_SHUTTER_TURN_OFF_TIME
-
-            return t
-
+            return t, t_aom_off
         else:
             raise NotImplementedError("This optical pumping method is not implemented")
+
+
 
     def depump_ta_pulse(self, t, close_all_shutters = True):
         # This method is only depump pulse with ta alone to pump atom from F=4 -> F=3
@@ -464,7 +466,7 @@ class OpticalPumpingSequence(MOTSequence):
     def kill_F4(self, t):
         """Push away atoms in F = 4"""
         # tune to resonance
-        self.D2Lasers_obj.ramp_ta_freq(t, 0, 0)
+        self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
         t += D2Lasers.CONST_TA_VCO_RAMP_TIME
         # do a ta pulse via optical pumping path
         t, _ = self.D2Lasers_obj.do_pulse(
@@ -515,9 +517,11 @@ class OpticalPumpingSequence(MOTSequence):
         if shot_globals.do_dp:
             t = self.depump_to_F3(t, shot_globals.op_label)
         if shot_globals.do_op:
-            t = self.pump_to_F4(t, shot_globals.op_label)
+            t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
         if shot_globals.do_depump_pulse_after_pumping:
-            t = self.depump_ta_pulse(t)
+            t = self.depump_ta_pulse(t_aom_off, close_all_shutters = False)
+        if shot_globals.do_killing_pulse:
+            t = self.kill_F4(t)
         t_depump = t
 
         t = self.BField_obj.ramp_bias_field(
