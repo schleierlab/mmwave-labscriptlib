@@ -717,7 +717,7 @@ class BField:
 
         self.bias_voltages = voltage_vector
 
-        return end_time
+        return end_time + self.CONST_COIL_OFF_TIME
 
     def switch_mot_coils(self, t):
         if self.mot_coils_on:

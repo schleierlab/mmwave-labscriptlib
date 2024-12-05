@@ -530,6 +530,9 @@ class OpticalPumpingSequence(MOTSequence):
                 shot_globals.mw_biasz_field,
             ),
         )
+
+
+
         if shot_globals.do_mw_pulse:
             t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
 
