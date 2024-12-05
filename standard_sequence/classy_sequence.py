@@ -384,20 +384,17 @@ class OpticalPumpingSequence(MOTSequence):
         if self.BField_obj.mot_coils_on:
             _ = self.BField_obj.switch_mot_coils(t)
 
-        self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_TA_PUMPING_DETUNING)
-        t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
-        t, t_aom_start = self.D2Lasers_obj.do_pulse(
+        t = self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_TA_PUMPING_DETUNING)
+        #t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
+        t, _ = self.D2Lasers_obj.do_pulse(
                 t,
                 shot_globals.op_depump_pulse_time,
                 ShutterConfig.OPTICAL_PUMPING_FULL,
                 shot_globals.odp_ta_power,
                 0,
+                close_all_shutters = close_all_shutters
             )
 
-                    # Close the shutters
-        if close_all_shutters:
-            self.D2Lasers_obj.update_shutters(t, ShutterConfig.NONE)
-            t += D2Lasers.CONST_SHUTTER_TURN_OFF_TIME
 
         return t
 
@@ -418,7 +415,7 @@ class OpticalPumpingSequence(MOTSequence):
                 ShutterConfig.MOT_TA,
                 1,
                 0,
-                close_all_shutters=True,
+                close_all_shutters = close_all_shutters,
             )
             return t
 
@@ -442,6 +439,7 @@ class OpticalPumpingSequence(MOTSequence):
                 ShutterConfig.OPTICAL_PUMPING_FULL,
                 shot_globals.odp_ta_power,
                 shot_globals.odp_repump_power,
+                close_all_shutters = close_all_shutters
             )
 
             assert (
@@ -451,10 +449,7 @@ class OpticalPumpingSequence(MOTSequence):
             self.D2Lasers_obj.repump_aom_off(
                 t_aom_start + shot_globals.odp_repump_time
             )
-            # Close the shutters
-            if close_all_shutters:
-                self.D2Lasers_obj.update_shutters(t, ShutterConfig.NONE)
-                t += D2Lasers.CONST_SHUTTER_TURN_OFF_TIME
+
 
             return t
 
@@ -463,7 +458,7 @@ class OpticalPumpingSequence(MOTSequence):
                 "This optical depumping method is not implemented"
             )
 
-    def kill_F4(self, t):
+    def kill_F4(self, t, close_all_shutters = True):
         """Push away atoms in F = 4"""
         # tune to resonance
         self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
@@ -475,7 +470,7 @@ class OpticalPumpingSequence(MOTSequence):
             ShutterConfig.OPTICAL_PUMPING_TA,
             shot_globals.op_killing_ta_power,
             0,
-            close_all_shutters=True,
+            close_all_shutters=close_all_shutters,
         )
 
         return t
@@ -519,7 +514,7 @@ class OpticalPumpingSequence(MOTSequence):
         if shot_globals.do_op:
             t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
         if shot_globals.do_depump_pulse_after_pumping:
-            t = self.depump_ta_pulse(t_aom_off, close_all_shutters = False)
+            t = self.depump_ta_pulse(t_aom_off, close_all_shutters = True)
         if shot_globals.do_killing_pulse:
             t = self.kill_F4(t)
         t_depump = t
