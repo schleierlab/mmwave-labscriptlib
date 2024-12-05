@@ -318,7 +318,7 @@ class OpticalPumpingSequence(MOTSequence):
     def __init__(self, t):
         super(OpticalPumpingSequence, self).__init__(t)
 
-    def pump_to_F4(self, t, label):
+    def pump_to_F4(self, t, label, close_all_shutters = True):
         if self.BField_obj.mot_coils_on:
             _ = self.BField_obj.switch_mot_coils(t)
         if label == "mot":
@@ -336,7 +336,6 @@ class OpticalPumpingSequence(MOTSequence):
 
         elif label == "sigma":
             # Use the sigma+ beam for optical pumping
-            # TODO: do we want shutters always closed for this ramping?
             op_biasx_field, op_biasy_field, op_biasz_field = (
                 self.BField_obj.get_op_bias_fields()
             )
@@ -351,8 +350,8 @@ class OpticalPumpingSequence(MOTSequence):
             # Do a sigma+ pulse
             # TODO: is shot_globals.op_ramp_delay just extra fudge time? can it be eliminated?
             t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
-            t, _ = self.D2Lasers_obj.do_pulse(
-                t, #- D2Lasers.CONST_SHUTTER_TURN_ON_TIME,
+            t, t_aom_start = self.D2Lasers_obj.do_pulse(
+                t,
                 shot_globals.op_repump_time,
                 ShutterConfig.OPTICAL_PUMPING_FULL,
                 shot_globals.op_ta_power,
@@ -364,18 +363,19 @@ class OpticalPumpingSequence(MOTSequence):
             ), "TA time should be shorter than repump for pumping to F=4"
             # TODO: test this timing
             self.D2Lasers_obj.ta_aom_off(
-                t + shot_globals.op_ta_time - shot_globals.op_repump_time
+                t_aom_start + shot_globals.op_ta_time
             )
             # Close the shutters
-            self.D2Lasers_obj.update_shutters(t, ShutterConfig.NONE)
-            t += D2Lasers.CONST_SHUTTER_TURN_OFF_TIME
+            if close_all_shutters:
+                self.D2Lasers_obj.update_shutters(t, ShutterConfig.NONE)
+                t += D2Lasers.CONST_SHUTTER_TURN_OFF_TIME
 
             return t
 
         else:
             raise NotImplementedError("This optical pumping method is not implemented")
 
-    def depump_to_F3(self, t, label):
+    def depump_to_F3(self, t, label, close_all_shutters = True):
         # This method should be quite similar to pump_to_F4, but trying to call pump_to_F4 with
         # different parameters would produce a very long argument list
         if self.BField_obj.mot_coils_on:
@@ -397,7 +397,6 @@ class OpticalPumpingSequence(MOTSequence):
 
         elif label == "sigma":
             # Use the sigma+ beam for optical pumping
-            # TODO: do we want shutters always closed for this ramping?
             op_biasx_field, op_biasy_field, op_biasz_field = (
                 self.BField_obj.get_op_bias_fields()
             )
@@ -405,13 +404,13 @@ class OpticalPumpingSequence(MOTSequence):
                 t, bias_field_vector=(op_biasx_field, op_biasy_field, op_biasz_field)
             )
             # ramp detuning to 4 -> 4, 3 -> 3
-            self.D2Lasers_obj.ramp_ta_freq(t, 0, CONST_TA_PUMPING_DETUNING)
-            self.D2Lasers_obj.ramp_repump_freq(t, 0, CONST_REPUMP_DEPUMPING_DETUNING)
+            self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_TA_PUMPING_DETUNING)
+            self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_REPUMP_DEPUMPING_DETUNING)
             # Do a sigma+ pulse
             # TODO: is shot_globals.op_ramp_delay just extra fudge time? can it be eliminated?
             t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
-            t, _ = self.D2Lasers_obj.do_pulse(
-                t - D2Lasers.CONST_SHUTTER_TURN_ON_TIME,
+            t, t_aom_start = self.D2Lasers_obj.do_pulse(
+                t,
                 shot_globals.odp_ta_time,
                 ShutterConfig.OPTICAL_PUMPING_FULL,
                 shot_globals.odp_ta_power,
@@ -423,11 +422,12 @@ class OpticalPumpingSequence(MOTSequence):
             ), "TA time should be longer than repump for depumping to F = 3"
             # TODO: test this timing
             self.D2Lasers_obj.repump_aom_off(
-                t - shot_globals.odp_ta_time + shot_globals.odp_repump_time
+                t_aom_start + shot_globals.odp_repump_time
             )
             # Close the shutters
-            self.D2Lasers_obj.update_shutters(t, ShutterConfig.NONE)
-            t += D2Lasers.CONST_SHUTTER_TURN_OFF_TIME
+            if close_all_shutters:
+                self.D2Lasers_obj.update_shutters(t, ShutterConfig.NONE)
+                t += D2Lasers.CONST_SHUTTER_TURN_OFF_TIME
 
             return t
 
@@ -484,10 +484,9 @@ class OpticalPumpingSequence(MOTSequence):
         mot_load_dur = 0.5
         t += D2Lasers.CONST_SHUTTER_TURN_ON_TIME  # TODO: is this necessary?
         t = self.do_mot(t, mot_load_dur)
-        if shot_globals.op_label == "mot":
-            t = self.do_molasses(t, shot_globals.bm_time)
-        elif shot_globals.op_label == "sigma":
-            t = self.do_molasses(t, shot_globals.bm_time, close_all_shutters=True)
+        t = self.do_molasses(t, shot_globals.bm_time)
+
+
 
         if shot_globals.do_dp:
             t = self.depump_to_F3(t, shot_globals.op_label)

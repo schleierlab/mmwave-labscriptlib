@@ -247,11 +247,11 @@ class LabDevices():
             open_state=1,
         )
 
-        # self.digital_out_ch22 = DigitalOut(
-        #     name='digital_out_ch22',
-        #     parent_device=ni_6363_0,
-        #     connection='port0/line22',
-        # )
+        self.digital_out_ch22 = DigitalOut(
+            name='digital_out_ch22',
+            parent_device=ni_6363_0,
+            connection='port0/line22',
+        )
 
         self.mmwave_switch = DigitalOut(
             name='mmwave_switch',
@@ -267,11 +267,11 @@ class LabDevices():
             open_state=1,
         )
 
-        # self.digital_out_ch26 = DigitalOut(
-        #     name='digital_out_ch26',
-        #     parent_device=ni_6363_0,
-        #     connection='port0/line26',
-        # )
+        self.digital_out_ch26 = DigitalOut(
+            name='digital_out_ch26',
+            parent_device=ni_6363_0,
+            connection='port0/line26',
+        )
 
 
 

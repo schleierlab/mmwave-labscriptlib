@@ -136,7 +136,7 @@ class D2Lasers:
             samplerate=4e5,
         )
         self.ta_freq = final
-        return t+duration
+        return t + duration
 
     def ramp_repump_freq(self, t, duration, final):
         # TODO: check that duration statement here is valid for optical pumping
@@ -149,7 +149,7 @@ class D2Lasers:
             samplerate=4e5,
         )
         self.repump_freq = final
-        return t+duration
+        return t + duration
 
     def ta_aom_off(self, t):
         """Turn off the ta beam using aom"""
@@ -608,7 +608,11 @@ class BField:
             devices.z_coil_feedback_off,
         )
 
-        for current_output, bias_voltage_cmpnt in zip(self.current_outputs, self.bias_voltages):
+        self.t_last_change = 0
+
+        for current_output, bias_voltage_cmpnt in zip(
+            self.current_outputs, self.bias_voltages
+        ):
             current_output.constant(t, bias_voltage_cmpnt)
 
         if self.mot_coils_on:
@@ -616,7 +620,9 @@ class BField:
         else:
             devices.mot_coil_current_ctrl.constant(t, 0)
 
-    def flip_coil_polarity(self, t: float, final_voltage: float, component: Literal[0, 1, 2]):
+    def flip_coil_polarity(
+        self, t: float, final_voltage: float, component: Literal[0, 1, 2]
+    ):
         """
         t: float
             Time to begin coil polarity flipping
@@ -665,32 +671,36 @@ class BField:
         # bias_field_vector should be a tuple of the form (x,y,z)
         # Need to start the ramp earlier if the voltage changes sign
         if bias_field_vector is not None:
-            voltage_vector = np.array([
-                biasx_calib(bias_field_vector[0]),
-                biasy_calib(bias_field_vector[1]),
-                biasz_calib(bias_field_vector[2]),
-            ])
+            voltage_vector = np.array(
+                [
+                    biasx_calib(bias_field_vector[0]),
+                    biasy_calib(bias_field_vector[1]),
+                    biasz_calib(bias_field_vector[2]),
+                ]
+            )
 
         sign_flip_in_ramp = voltage_vector * np.asarray(self.bias_voltages) < 0
-        coil_ramp_start_times = t - self.CONST_BIPOLAR_COIL_FLIP_TIME * sign_flip_in_ramp
+        coil_ramp_start_times = (
+            t - self.CONST_BIPOLAR_COIL_FLIP_TIME * sign_flip_in_ramp
+        )
 
         for i in range(3):
             if sign_flip_in_ramp[i]:
-                t = self.flip_coil_polarity(coil_ramp_start_times[i], voltage_vector[i], component=i)
-                print(f"sign flip in vector {i} at time {t}")
+                coil_ramp_start_times[i] = np.max([self.t_last_change, coil_ramp_start_times[i]])
+                _ = self.flip_coil_polarity(
+                    coil_ramp_start_times[i], voltage_vector[i], component=i
+                )
             else:
                 self.current_outputs[i].ramp(
                     coil_ramp_start_times[i],
                     duration=self.CONST_COIL_RAMP_TIME,
                     initial=self.bias_voltages[i],
                     final=voltage_vector[i],
-                    samplerate=1e+5,
+                    samplerate=1e5,
                 )
 
         end_time = t + self.CONST_COIL_RAMP_TIME
-        if np.any(sign_flip_in_ramp):
-            end_time += self.CONST_BIPOLAR_COIL_FLIP_TIME
-
+        self.t_last_change = end_time
 
         # TODO: add the inverse function of bias_i_calib
         # otherwise, if only voltage vector is provided on input, the bias field will not be updated
