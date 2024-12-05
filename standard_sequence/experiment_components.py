@@ -127,29 +127,37 @@ class D2Lasers:
     # Move freq_calib to a function within here? Probably not needed.
     def ramp_ta_freq(self, t, duration, final):
         # TODO: check that duration statement here is valid for optical pumping
-        duration = max(self.CONST_TA_VCO_RAMP_TIME, duration)
-        devices.ta_vco.ramp(
-            t,
-            duration=duration,
-            initial=ta_freq_calib(self.ta_freq),
-            final=ta_freq_calib(final),
-            samplerate=4e5,
-        )
-        self.ta_freq = final
-        return t + duration
+        if self.ta_freq == final:
+            print("ta freq is same for initial and final, skip ramp")
+            return t
+        else:
+            duration = max(self.CONST_TA_VCO_RAMP_TIME, duration)
+            devices.ta_vco.ramp(
+                t,
+                duration=duration,
+                initial=ta_freq_calib(self.ta_freq),
+                final=ta_freq_calib(final),
+                samplerate=4e5,
+            )
+            self.ta_freq = final
+            return t + duration
 
     def ramp_repump_freq(self, t, duration, final):
         # TODO: check that duration statement here is valid for optical pumping
-        duration = max(self.CONST_TA_VCO_RAMP_TIME, duration)
-        devices.repump_vco.ramp(
-            t,
-            duration=duration,
-            initial=repump_freq_calib(self.repump_freq),
-            final=repump_freq_calib(final),
-            samplerate=4e5,
-        )
-        self.repump_freq = final
-        return t + duration
+        if self.repump_freq == final:
+            print("repump freq is same for initial and final, skip ramp")
+            return t
+        else:
+            duration = max(self.CONST_TA_VCO_RAMP_TIME, duration)
+            devices.repump_vco.ramp(
+                t,
+                duration=duration,
+                initial=repump_freq_calib(self.repump_freq),
+                final=repump_freq_calib(final),
+                samplerate=4e5,
+            )
+            self.repump_freq = final
+            return t + duration
 
     def ta_aom_off(self, t):
         """Turn off the ta beam using aom"""
