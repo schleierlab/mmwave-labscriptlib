@@ -390,7 +390,7 @@ class OpticalPumpingSequence(MOTSequence):
                 t,
                 shot_globals.op_depump_pulse_time,
                 ShutterConfig.OPTICAL_PUMPING_FULL,
-                shot_globals.odp_ta_power,
+                shot_globals.op_depump_power,
                 0,
                 close_all_shutters = close_all_shutters
             )
@@ -429,6 +429,7 @@ class OpticalPumpingSequence(MOTSequence):
             )
             # ramp detuning to 4 -> 4, 3 -> 3
             self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_TA_PUMPING_DETUNING)
+            # self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
             self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_REPUMP_DEPUMPING_DETUNING)
             # Do a sigma+ pulse
             # TODO: is shot_globals.op_ramp_delay just extra fudge time? can it be eliminated?
@@ -442,6 +443,8 @@ class OpticalPumpingSequence(MOTSequence):
                 close_all_shutters = close_all_shutters
             )
 
+            t_aom_off = t_aom_start + shot_globals.odp_ta_time
+
             assert (
                 shot_globals.odp_ta_time > shot_globals.odp_repump_time
             ), "TA time should be longer than repump for depumping to F = 3"
@@ -451,14 +454,14 @@ class OpticalPumpingSequence(MOTSequence):
             )
 
 
-            return t
+            return t, t_aom_off
 
         else:
             raise NotImplementedError(
                 "This optical depumping method is not implemented"
             )
 
-    def kill_F4(self, t, close_all_shutters = True):
+    def kill_F4(self, t, shutter_config = ShutterConfig.OPTICAL_PUMPING_TA, close_all_shutters = True):
         """Push away atoms in F = 4"""
         # tune to resonance
         self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
@@ -467,7 +470,7 @@ class OpticalPumpingSequence(MOTSequence):
         t, _ = self.D2Lasers_obj.do_pulse(
             t,
             shot_globals.op_killing_pulse_time,
-            ShutterConfig.OPTICAL_PUMPING_TA,
+            shutter_config,
             shot_globals.op_killing_ta_power,
             0,
             close_all_shutters=close_all_shutters,
@@ -510,13 +513,13 @@ class OpticalPumpingSequence(MOTSequence):
 
 
         if shot_globals.do_dp:
-            t = self.depump_to_F3(t, shot_globals.op_label)
+            t, t_aom_off= self.depump_to_F3(t, shot_globals.op_label)
         if shot_globals.do_op:
             t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
         if shot_globals.do_depump_pulse_after_pumping:
             t = self.depump_ta_pulse(t_aom_off, close_all_shutters = True)
         if shot_globals.do_killing_pulse:
-            t = self.kill_F4(t)
+            t = self.kill_F4(t_aom_off, shutter_config = ShutterConfig.OPTICAL_PUMPING_FULL)
         t_depump = t
 
         t = self.BField_obj.ramp_bias_field(
