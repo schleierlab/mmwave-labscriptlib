@@ -375,6 +375,30 @@ class OpticalPumpingSequence(MOTSequence):
         else:
             raise NotImplementedError("This optical pumping method is not implemented")
 
+    def depump_ta_pulse(self, t, close_all_shutters = True):
+        # This method is only depump pulse with ta alone to pump atom from F=4 -> F=3
+        # This will determine the minimum time offset between repump and ta when doing depump_to_F3
+        # This will also be used in dark state measurement
+        if self.BField_obj.mot_coils_on:
+            _ = self.BField_obj.switch_mot_coils(t)
+
+        self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_TA_PUMPING_DETUNING)
+        t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
+        t, t_aom_start = self.D2Lasers_obj.do_pulse(
+                t,
+                shot_globals.op_depump_pulse_time,
+                ShutterConfig.OPTICAL_PUMPING_FULL,
+                shot_globals.odp_ta_power,
+                0,
+            )
+
+                    # Close the shutters
+        if close_all_shutters:
+            self.D2Lasers_obj.update_shutters(t, ShutterConfig.NONE)
+            t += D2Lasers.CONST_SHUTTER_TURN_OFF_TIME
+
+        return t
+
     def depump_to_F3(self, t, label, close_all_shutters = True):
         # This method should be quite similar to pump_to_F4, but trying to call pump_to_F4 with
         # different parameters would produce a very long argument list
@@ -383,7 +407,7 @@ class OpticalPumpingSequence(MOTSequence):
         if label == "mot":
             # Use the MOT beams for optical depumping
             # ramp detuning to 4 -> 4 for TA
-            self.D2Lasers_obj.ramp_ta_freq(t, 0, CONST_TA_PUMPING_DETUNING)
+            self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_TA_PUMPING_DETUNING)
             # Do a TA pulse
             t, _ = self.D2Lasers_obj.do_pulse(
                 t,
@@ -491,7 +515,10 @@ class OpticalPumpingSequence(MOTSequence):
             t = self.depump_to_F3(t, shot_globals.op_label)
         if shot_globals.do_op:
             t = self.pump_to_F4(t, shot_globals.op_label)
+        if shot_globals.do_depump_pulse_after_pumping:
+            t = self.depump_ta_pulse(t)
         t_depump = t
+
         t = self.BField_obj.ramp_bias_field(
             t,
             bias_field_vector=(
@@ -500,7 +527,6 @@ class OpticalPumpingSequence(MOTSequence):
                 shot_globals.mw_biasz_field,
             ),
         )
-
         if shot_globals.do_mw_pulse:
             t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
 
