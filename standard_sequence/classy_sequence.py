@@ -408,6 +408,7 @@ class OpticalPumpingSequence(MOTSequence):
             # Use the MOT beams for optical depumping
             # ramp detuning to 4 -> 4 for TA
             self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_TA_PUMPING_DETUNING)
+            t += D2Lasers.CONST_TA_VCO_RAMP_TIME
             # Do a TA pulse
             t, _ = self.D2Lasers_obj.do_pulse(
                 t,
