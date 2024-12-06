@@ -241,6 +241,7 @@ class MOTSequence:
 
         shutter_config = ShutterConfig.select_imaging_shutters(do_repump=do_repump)
 
+
         # full power ta and repump pulse
         t_pulse_end, t_aom_start = self.D2Lasers_obj.do_pulse(
             t,
@@ -290,7 +291,6 @@ class MOTSequence:
 
     def _do_molasses_tof_sequence(self, t, reset_mot=False):
         mot_load_dur = 0.5
-        t += D2Lasers.CONST_SHUTTER_TURN_ON_TIME
 
         t = self.do_mot(t, mot_load_dur)
 
@@ -324,15 +324,17 @@ class OpticalPumpingSequence(MOTSequence):
         if label == "mot":
             # Use the MOT beams for optical pumping
             # Do a repump pulse
-            t, _ = self.D2Lasers_obj.do_pulse(
+            t, t_aom_start = self.D2Lasers_obj.do_pulse(
                 t,
                 shot_globals.op_MOT_op_time,
                 ShutterConfig.MOT_REPUMP,
                 0,
                 1,
-                close_all_shutters=True,
+                close_all_shutters=close_all_shutters,
             )
-            return t
+
+            t_aom_off = t_aom_start + shot_globals.op_MOT_op_time
+            return t, t_aom_off
 
         elif label == "sigma":
             # Use the sigma+ beam for optical pumping
@@ -356,6 +358,7 @@ class OpticalPumpingSequence(MOTSequence):
                 ShutterConfig.OPTICAL_PUMPING_FULL,
                 shot_globals.op_ta_power,
                 shot_globals.op_repump_power,
+                close_all_shutters=close_all_shutters
             )
 
             t_aom_off = t_aom_start + shot_globals.op_repump_time
@@ -368,9 +371,6 @@ class OpticalPumpingSequence(MOTSequence):
                 t_aom_start + shot_globals.op_ta_time
             )
             # Close the shutters
-            if close_all_shutters:
-                self.D2Lasers_obj.update_shutters(t, ShutterConfig.NONE)
-                t += D2Lasers.CONST_SHUTTER_TURN_OFF_TIME
             return t, t_aom_off
         else:
             raise NotImplementedError("This optical pumping method is not implemented")
@@ -507,7 +507,6 @@ class OpticalPumpingSequence(MOTSequence):
 
     def _do_field_calib_in_molasses(self, t, reset_mot=False):
         mot_load_dur = 0.5
-        t += D2Lasers.CONST_SHUTTER_TURN_ON_TIME  # TODO: is this necessary?
         t = self.do_mot(t, mot_load_dur)
         t = self.do_molasses(t, shot_globals.bm_time)
 
@@ -570,11 +569,8 @@ class OpticalPumpingSequence(MOTSequence):
 
     def _do_F4_microwave_spec_molasses(self, t, reset_mot=False):
         mot_load_dur = 0.5
-        t += D2Lasers.CONST_SHUTTER_TURN_ON_TIME  # TODO: is this necessary?
         t = self.do_mot(t, mot_load_dur)
         t = self.do_molasses(t, shot_globals.bm_time)
-
-
         t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
 
         t = self.BField_obj.ramp_bias_field(
@@ -586,10 +582,13 @@ class OpticalPumpingSequence(MOTSequence):
             ),
         )
 
-        t = self.Microwave_obj.do_pulse(t_aom_off + BField.CONST_COIL_RAMP_TIME, shot_globals.mw_time)
+        t += self.BField_obj.CONST_COIL_OFF_TIME
+
+        # t = self.Microwave_obj.do_pulse(t_aom_off + BField.CONST_COIL_RAMP_TIME, shot_globals.mw_time)
+        if shot_globals.do_mw_pulse:
+            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
 
         t = self.kill_F4(t, shutter_config = ShutterConfig.OPTICAL_PUMPING_FULL, close_all_shutters = True)
-
         # This is the only place required for the special value of imaging
         t = self.do_molasses_dipole_trap_imaging(
             t,
@@ -599,7 +598,6 @@ class OpticalPumpingSequence(MOTSequence):
             do_repump=True,
             close_all_shutters=True,
         )
-
         # Turn off MOT for taking background images
         t += 1e-1
 
