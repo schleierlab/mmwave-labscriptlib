@@ -417,7 +417,6 @@ class OpticalPumpingSequence(MOTSequence):
                 0,
                 close_all_shutters = close_all_shutters,
             )
-
             return t
 
         elif label == "sigma":
@@ -514,11 +513,11 @@ class OpticalPumpingSequence(MOTSequence):
 
 
         if shot_globals.do_dp:
-            t, t_aom_off= self.depump_to_F3(t, shot_globals.op_label, close_all_shutters = False)
-        elif shot_globals.do_op:
+            t, t_aom_off= self.depump_to_F3(t, shot_globals.op_label)
+        if shot_globals.do_op:
             t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
-            if shot_globals.do_depump_pulse_after_pumping:
-                t = self.depump_ta_pulse(t_aom_off, close_all_shutters = True)
+        if shot_globals.do_depump_pulse_after_pumping:
+            t = self.depump_ta_pulse(t_aom_off, close_all_shutters = True)
         if shot_globals.do_killing_pulse:
             t = self.kill_F4(t_aom_off, shutter_config = ShutterConfig.OPTICAL_PUMPING_FULL)
         t_depump = t
@@ -535,6 +534,9 @@ class OpticalPumpingSequence(MOTSequence):
         if shot_globals.do_mw_pulse:
             t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
 
+        if shot_globals.do_killing_pulse:
+            t = self.kill_F4(t_aom_off, shutter_config = ShutterConfig.OPTICAL_PUMPING_FULL)
+
         # postpone next sequence until shutter off time reached
         t = max(t, t_depump + D2Lasers.CONST_MIN_SHUTTER_OFF_TIME)
 
@@ -545,6 +547,56 @@ class OpticalPumpingSequence(MOTSequence):
             repump_power=1,
             exposure=10e-3,
             do_repump=shot_globals.mw_imaging_do_repump,
+            close_all_shutters=True,
+        )
+
+        # Turn off MOT for taking background images
+        t += 1e-1
+
+        t = self.do_molasses_dipole_trap_imaging(
+            t,
+            ta_power=0.1,
+            repump_power=1,
+            exposure=10e-3,
+            do_repump=shot_globals.mw_imaging_do_repump,
+            close_all_shutters=True,
+        )
+        t += 1e-2
+        t = self.Microwave_obj.reset_spectrum(t)
+        if reset_mot:
+            t = self.reset_mot(t)
+
+        return t
+
+    def _do_F4_microwave_spec_molasses(self, t, reset_mot=False):
+        mot_load_dur = 0.5
+        t += D2Lasers.CONST_SHUTTER_TURN_ON_TIME  # TODO: is this necessary?
+        t = self.do_mot(t, mot_load_dur)
+        t = self.do_molasses(t, shot_globals.bm_time)
+
+
+        t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
+
+        # t = self.BField_obj.ramp_bias_field(
+        #     t,
+        #     bias_field_vector=(
+        #         shot_globals.mw_biasx_field,
+        #         shot_globals.mw_biasy_field,
+        #         shot_globals.mw_biasz_field,
+        #     ),
+        # )
+
+        t = self.Microwave_obj.do_pulse(t_aom_off, shot_globals.mw_time)
+
+        t = self.kill_F4(t, shutter_config = ShutterConfig.OPTICAL_PUMPING_FULL, close_all_shutters = True)
+
+        # This is the only place required for the special value of imaging
+        t = self.do_molasses_dipole_trap_imaging(
+            t,
+            ta_power=0.1,
+            repump_power=1,
+            exposure=10e-3,
+            do_repump=True,
             close_all_shutters=True,
         )
 
@@ -763,6 +815,10 @@ if __name__ == "__main__":
     if shot_globals.do_field_calib_in_molasses_check:
         OPSeq_obj = OpticalPumpingSequence(t)
         t = OPSeq_obj._do_field_calib_in_molasses(t, reset_mot=True)
+
+    if shot_globals.do_F4_microwave_spec_molasses:
+        OPSeq_obj = OpticalPumpingSequence(t)
+        t = OPSeq_obj._do_F4_microwave_spec_molasses(t, reset_mot=True)
 
     # if shot_globals.do_dipole_trap_tof_check:
     #     t = do_dipole_trap_tof_check(t)

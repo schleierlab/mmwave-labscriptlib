@@ -604,6 +604,8 @@ class BField:
         # initialize bias_field variable to None
         # self.bias_field = None
 
+        self.t_last_change = 0
+
         self.current_outputs = (
             devices.x_coil_current,
             devices.y_coil_current,
@@ -689,8 +691,6 @@ class BField:
         coil_ramp_start_times = (
             t - self.CONST_BIPOLAR_COIL_FLIP_TIME * sign_flip_in_ramp
         )
-
-        print(coil_ramp_start_times)
 
         print(coil_ramp_start_times)
 
