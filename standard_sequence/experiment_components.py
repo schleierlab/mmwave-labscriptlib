@@ -686,18 +686,19 @@ class BField:
             )
 
         sign_flip_in_ramp = voltage_vector * np.asarray(self.bias_voltages) < 0
-
-        if np.any(sign_flip_in_ramp):
-            t += self.CONST_BIPOLAR_COIL_FLIP_TIME
-
         coil_ramp_start_times = (
             t - self.CONST_BIPOLAR_COIL_FLIP_TIME * sign_flip_in_ramp
         )
 
         print(coil_ramp_start_times)
 
+        print(coil_ramp_start_times)
+
         for i in range(3):
             if sign_flip_in_ramp[i]:
+                coil_ramp_start_times[i] = np.max(
+                    [self.t_last_change + 100e-6, coil_ramp_start_times[i]]
+                )
                 _ = self.flip_coil_polarity(
                     coil_ramp_start_times[i], voltage_vector[i], component=i
                 )
@@ -709,6 +710,13 @@ class BField:
                     final=voltage_vector[i],
                     samplerate=1e5,
                 )
+        print(coil_ramp_start_times)
+        end_time = (
+            np.min(coil_ramp_start_times)
+            + self.CONST_COIL_RAMP_TIME
+            + self.CONST_BIPOLAR_COIL_FLIP_TIME
+        )
+        self.t_last_change = end_time
         print(coil_ramp_start_times)
 
         # TODO: add the inverse function of bias_i_calib
@@ -760,8 +768,6 @@ class BField:
         )
 
         return op_biasx_field, op_biasy_field, op_biasz_field
-
-
 class Camera:
     def __init__(self, t):
         self.type = None
