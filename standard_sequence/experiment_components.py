@@ -387,6 +387,7 @@ class TweezerLaser:
         devices.tweezer_aom_analog.ramp(
             t, duration=dur, initial=self.tw_power, final=final_power, samplerate=1e5
         )
+        self.tw_power = final_power
         return t + dur
 
     def sine_mod_power(self, t, dur, amp, freq):
@@ -691,7 +692,7 @@ class BField:
                 ]
             )
 
-        if self.bias_voltages == voltage_vector:
+        if np.all(self.bias_voltages == voltage_vector):
             print("bias field initial and final are the same, skip ramp")
             return t
 

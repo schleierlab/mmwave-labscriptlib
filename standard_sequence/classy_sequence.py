@@ -659,10 +659,7 @@ class TweezerSequence(OpticalPumpingSequence):
             )
             # if doing parity projection, synchronize with power ramp
             t = t_aom_start
-
-        # TODO: Does it make sense that parity projection and tweezer ramp should have same duration?
-
-        t += shot_globals.bm_parity_projection_pulse_dur
+            t += shot_globals.bm_parity_projection_pulse_dur
 
         # t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
         # t += shot_globals.bm_time
