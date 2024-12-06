@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+root_path = r"X:\userlib\labscriptlib"
+import sys
+
+if root_path not in sys.path:
+    sys.path.append(root_path)
 import labscript
 
 from connection_table import devices
@@ -506,7 +511,7 @@ class OpticalPumpingSequence(MOTSequence):
 
         return t
 
-    def _do_field_calib_in_molasses(self, t, reset_mot=False):
+    def _do_pump_debug_in_molasses(self, t, reset_mot=False):
         mot_load_dur = 0.5
         t = self.do_mot(t, mot_load_dur)
         t = self.do_molasses(t, shot_globals.bm_time)
@@ -586,13 +591,12 @@ class OpticalPumpingSequence(MOTSequence):
         t += self.BField_obj.CONST_COIL_OFF_TIME
 
         # t = self.Microwave_obj.do_pulse(t_aom_off + BField.CONST_COIL_RAMP_TIME, shot_globals.mw_time)
-        if shot_globals.do_mw_pulse:
-            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+        t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
 
-        if shot_globals.do_killing_pulse:
-            t = self.kill_F4(t, shutter_config = ShutterConfig.OPTICAL_PUMPING_FULL, close_all_shutters = True)
+        t = self.kill_F4(t, shutter_config = ShutterConfig.OPTICAL_PUMPING_FULL, close_all_shutters = True)
         # This is the only place required for the special value of imaging
-        t += 1e-3
+        t += 1e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
+        # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
         t = self.do_molasses_dipole_trap_imaging(
             t,
             ta_power=0.1,
@@ -609,7 +613,7 @@ class OpticalPumpingSequence(MOTSequence):
             ta_power=0.1,
             repump_power=1,
             exposure=10e-3,
-            do_repump=shot_globals.mw_imaging_do_repump,
+            do_repump=True,
             close_all_shutters=True,
         )
         t += 1e-2
@@ -638,11 +642,16 @@ class TweezerSequence(OpticalPumpingSequence):
 
         return t
 
+
     def load_tweezers(self, t):
         t = self.do_mot(t, dur=0.5)
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
+
         # TODO: does making this delay longer make the background better when using UV?
         t += 7e-3
+        t = self.TweezerLaser_obj.ramp_power(
+            t, dur=TweezerLaser.CONST_TWEEZER_RAMPING_TIME, final_power=1
+        )
         # ramp to full power and parity projection
         if shot_globals.do_parity_projection_pulse:
             _, t_aom_start = self.D2Lasers_obj.parity_projection_pulse(
@@ -651,9 +660,6 @@ class TweezerSequence(OpticalPumpingSequence):
             # if doing parity projection, synchronize with power ramp
             t = t_aom_start
 
-        self.TweezerLaser_obj.ramp_power(
-            t, dur=shot_globals.bm_parity_projection_pulse_dur, final_power=1
-        )
         # TODO: Does it make sense that parity projection and tweezer ramp should have same duration?
 
         t += shot_globals.bm_parity_projection_pulse_dur
@@ -744,19 +750,31 @@ class TweezerSequence(OpticalPumpingSequence):
     def _tweezer_modulation_sequence(self, t):
         pass
 
-    def _tweezer_basic_pump_kill_sequence(self, t):
+    def _do_optical_pump_in_tweezer_check(self, t):
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
-        t += 10e-3
 
-        t = self.pump_to_F4(t, label="sigma")
-        # t, _ = self.D2Lasers_obj.do_pulse(t, shot_globals.op_depump_pulse_time,
-        #                                ShutterConfig.OPTICAL_PUMPING_TA,
-        #                                shot_globals.op_depump_power,
-        #                                0,
-        #                                close_all_shutters=True)
-        # t = self.kill_F4(t)
+        t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
 
+        t = self.BField_obj.ramp_bias_field(
+            t_aom_off,
+            bias_field_vector=(
+                shot_globals.mw_biasx_field,
+                shot_globals.mw_biasy_field,
+                shot_globals.mw_biasz_field,
+            ),
+        )
+
+        t += self.BField_obj.CONST_COIL_OFF_TIME
+
+
+        t += self.TweezerLaser_obj.ramp_power(t, self.TweezerLaser_obj.CONST_TWEEZER_RAMPING_TIME, )
+
+        t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+
+        t = self.kill_F4(t, shutter_config = ShutterConfig.OPTICAL_PUMPING_FULL, close_all_shutters = True)
+        t += 1e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
+        # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
         t = self.reset_mot(t)
@@ -813,9 +831,9 @@ if __name__ == "__main__":
         MOTSeq_obj = MOTSequence(t)
         t = MOTSeq_obj._do_molasses_tof_sequence(t, reset_mot=True)
 
-    if shot_globals.do_field_calib_in_molasses_check:
+    if shot_globals.do_pump_debug_in_molasses:
         OPSeq_obj = OpticalPumpingSequence(t)
-        t = OPSeq_obj._do_field_calib_in_molasses(t, reset_mot=True)
+        t = OPSeq_obj._do_pump_debug_in_molasses(t, reset_mot=True)
 
     if shot_globals.do_F4_microwave_spec_molasses:
         OPSeq_obj = OpticalPumpingSequence(t)
@@ -839,7 +857,7 @@ if __name__ == "__main__":
 
     if shot_globals.do_optical_pump_in_tweezer_check:
         TweezerSequence_obj = TweezerSequence(t)
-        t = TweezerSequence_obj._tweezer_basic_pump_kill_sequence(t)
+        t = TweezerSequence_obj._do_optical_pump_in_tweezer_check(t)
 
     # if shot_globals.do_optical_pump_in_microtrap_check:
     #     t = do_optical_pump_in_microtrap_check(t)

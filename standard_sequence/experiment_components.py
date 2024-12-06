@@ -336,8 +336,11 @@ class D2Lasers:
 
 
 class TweezerLaser:
+    CONST_TWEEZER_RAMPING_TIME: ClassVar[float] = 10e-3
+
     def __init__(self, t):
         self.tw_power = shot_globals.tw_power
+
         # self.intensity_servo_keep_on(t)
         self.start_tweezers(t)
 
@@ -384,6 +387,7 @@ class TweezerLaser:
         devices.tweezer_aom_analog.ramp(
             t, duration=dur, initial=self.tw_power, final=final_power, samplerate=1e5
         )
+        return t + dur
 
     def sine_mod_power(self, t, dur, amp, freq):
         devices.tweezer_aom_analog.sine(
@@ -686,6 +690,10 @@ class BField:
                     biasz_calib(bias_field_vector[2]),
                 ]
             )
+
+        if self.bias_voltages == voltage_vector:
+            print("bias field initial and final are the same, skip ramp")
+            return t
 
         sign_flip_in_ramp = voltage_vector * np.asarray(self.bias_voltages) < 0
         coil_ramp_start_times = (
