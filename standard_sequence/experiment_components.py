@@ -616,8 +616,6 @@ class BField:
             devices.z_coil_feedback_off,
         )
 
-        self.t_last_change = 0
-
         for current_output, bias_voltage_cmpnt in zip(
             self.current_outputs, self.bias_voltages
         ):
@@ -688,6 +686,10 @@ class BField:
             )
 
         sign_flip_in_ramp = voltage_vector * np.asarray(self.bias_voltages) < 0
+
+        if np.any(sign_flip_in_ramp):
+            t += self.CONST_BIPOLAR_COIL_FLIP_TIME
+
         coil_ramp_start_times = (
             t - self.CONST_BIPOLAR_COIL_FLIP_TIME * sign_flip_in_ramp
         )
@@ -696,9 +698,6 @@ class BField:
 
         for i in range(3):
             if sign_flip_in_ramp[i]:
-                coil_ramp_start_times[i] = np.max(
-                    [self.t_last_change + 100e-6, coil_ramp_start_times[i]]
-                )
                 _ = self.flip_coil_polarity(
                     coil_ramp_start_times[i], voltage_vector[i], component=i
                 )
@@ -711,12 +710,6 @@ class BField:
                     samplerate=1e5,
                 )
         print(coil_ramp_start_times)
-        end_time = (
-            np.min(coil_ramp_start_times)
-            + self.CONST_COIL_RAMP_TIME
-            + self.CONST_BIPOLAR_COIL_FLIP_TIME
-        )
-        self.t_last_change = end_time
 
         # TODO: add the inverse function of bias_i_calib
         # otherwise, if only voltage vector is provided on input, the bias field will not be updated
@@ -725,7 +718,7 @@ class BField:
 
         self.bias_voltages = voltage_vector
 
-        return end_time + self.CONST_COIL_OFF_TIME
+        return t + self.CONST_COIL_RAMP_TIME
 
     def switch_mot_coils(self, t):
         if self.mot_coils_on:
