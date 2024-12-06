@@ -722,7 +722,6 @@ class BField:
         # TODO: add the inverse function of bias_i_calib
         # otherwise, if only voltage vector is provided on input, the bias field will not be updated
         # if bias_field_vector is not None:
-        #     self.bias_field = bias_field_vector
 
         self.bias_voltages = voltage_vector
 
