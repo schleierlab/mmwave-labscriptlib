@@ -324,6 +324,7 @@ class OpticalPumpingSequence(MOTSequence):
         if label == "mot":
             # Use the MOT beams for optical pumping
             # Do a repump pulse
+            print("I'm using mot beams for optical pumping")
             t, t_aom_start = self.D2Lasers_obj.do_pulse(
                 t,
                 shot_globals.op_MOT_op_time,
@@ -588,8 +589,10 @@ class OpticalPumpingSequence(MOTSequence):
         if shot_globals.do_mw_pulse:
             t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
 
-        t = self.kill_F4(t, shutter_config = ShutterConfig.OPTICAL_PUMPING_FULL, close_all_shutters = True)
+        if shot_globals.do_killing_pulse:
+            t = self.kill_F4(t, shutter_config = ShutterConfig.OPTICAL_PUMPING_FULL, close_all_shutters = True)
         # This is the only place required for the special value of imaging
+        t += 1e-3
         t = self.do_molasses_dipole_trap_imaging(
             t,
             ta_power=0.1,
