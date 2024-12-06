@@ -127,7 +127,7 @@ class MOTSequence:
         print("MOT coils = ", self.BField_obj.mot_coils_on)
         # MOT loading time 500 ms
         mot_load_dur = 0.5
-        t += D2Lasers.CONST_SHUTTER_TURN_ON_TIME
+
         t = self.do_mot(t, mot_load_dur)
 
         t = self.image_mot(t)
@@ -577,16 +577,16 @@ class OpticalPumpingSequence(MOTSequence):
 
         t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
 
-        # t = self.BField_obj.ramp_bias_field(
-        #     t,
-        #     bias_field_vector=(
-        #         shot_globals.mw_biasx_field,
-        #         shot_globals.mw_biasy_field,
-        #         shot_globals.mw_biasz_field,
-        #     ),
-        # )
+        t = self.BField_obj.ramp_bias_field(
+            t_aom_off,
+            bias_field_vector=(
+                shot_globals.mw_biasx_field,
+                shot_globals.mw_biasy_field,
+                shot_globals.mw_biasz_field,
+            ),
+        )
 
-        t = self.Microwave_obj.do_pulse(t_aom_off, shot_globals.mw_time)
+        t = self.Microwave_obj.do_pulse(t_aom_off + BField.CONST_COIL_RAMP_TIME, shot_globals.mw_time)
 
         t = self.kill_F4(t, shutter_config = ShutterConfig.OPTICAL_PUMPING_FULL, close_all_shutters = True)
 
