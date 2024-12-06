@@ -692,9 +692,13 @@ class BField:
             t - self.CONST_BIPOLAR_COIL_FLIP_TIME * sign_flip_in_ramp
         )
 
+        print(coil_ramp_start_times)
+
         for i in range(3):
             if sign_flip_in_ramp[i]:
-                coil_ramp_start_times[i] = np.max([self.t_last_change, coil_ramp_start_times[i]])
+                coil_ramp_start_times[i] = np.max(
+                    [self.t_last_change + 100e-6, coil_ramp_start_times[i]]
+                )
                 _ = self.flip_coil_polarity(
                     coil_ramp_start_times[i], voltage_vector[i], component=i
                 )
@@ -706,8 +710,12 @@ class BField:
                     final=voltage_vector[i],
                     samplerate=1e5,
                 )
-
-        end_time = t + self.CONST_COIL_RAMP_TIME
+        print(coil_ramp_start_times)
+        end_time = (
+            np.min(coil_ramp_start_times)
+            + self.CONST_COIL_RAMP_TIME
+            + self.CONST_BIPOLAR_COIL_FLIP_TIME
+        )
         self.t_last_change = end_time
 
         # TODO: add the inverse function of bias_i_calib

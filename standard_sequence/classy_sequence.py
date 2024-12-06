@@ -417,6 +417,7 @@ class OpticalPumpingSequence(MOTSequence):
                 0,
                 close_all_shutters = close_all_shutters,
             )
+
             return t
 
         elif label == "sigma":
@@ -513,11 +514,11 @@ class OpticalPumpingSequence(MOTSequence):
 
 
         if shot_globals.do_dp:
-            t, t_aom_off= self.depump_to_F3(t, shot_globals.op_label)
-        if shot_globals.do_op:
+            t, t_aom_off= self.depump_to_F3(t, shot_globals.op_label, close_all_shutters = False)
+        elif shot_globals.do_op:
             t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
-        if shot_globals.do_depump_pulse_after_pumping:
-            t = self.depump_ta_pulse(t_aom_off, close_all_shutters = True)
+            if shot_globals.do_depump_pulse_after_pumping:
+                t = self.depump_ta_pulse(t_aom_off, close_all_shutters = True)
         if shot_globals.do_killing_pulse:
             t = self.kill_F4(t_aom_off, shutter_config = ShutterConfig.OPTICAL_PUMPING_FULL)
         t_depump = t
@@ -530,8 +531,6 @@ class OpticalPumpingSequence(MOTSequence):
                 shot_globals.mw_biasz_field,
             ),
         )
-
-
 
         if shot_globals.do_mw_pulse:
             t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
