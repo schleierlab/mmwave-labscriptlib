@@ -470,7 +470,7 @@ class OpticalPumpingSequence(MOTSequence):
     def kill_F4(self, t, shutter_config = ShutterConfig.OPTICAL_PUMPING_TA, close_all_shutters = True):
         """Push away atoms in F = 4"""
         # tune to resonance
-        self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
+        self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.killing_pulse_detuning)
         t += D2Lasers.CONST_TA_VCO_RAMP_TIME
         # do a ta pulse via optical pumping path
         t, _ = self.D2Lasers_obj.do_pulse(
@@ -708,7 +708,6 @@ class TweezerSequence(OpticalPumpingSequence):
 
     def do_kinetix_imaging(self, t, close_all_shutters=False):
         shutter_config = ShutterConfig.select_imaging_shutters(do_repump=True)
-
         t_pulse_end, t_aom_start = self.D2Lasers_obj.do_pulse(
             t,
             shot_globals.img_exposure_time,
@@ -768,14 +767,15 @@ class TweezerSequence(OpticalPumpingSequence):
         if shot_globals.do_mw_pulse:
             t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
                 # ramp up to full power before imaging
-        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 1-1e-10)
+
 
         if shot_globals.do_killing_pulse:
+            #Labscript screws up the ramp if close_all_shutters is false...
             t = self.kill_F4(t, shutter_config = ShutterConfig.OPTICAL_PUMPING_FULL, close_all_shutters = True)
-            t += 1e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
+
+        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 1-1e-10)
+        t += 1e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
             # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
-
-
 
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
