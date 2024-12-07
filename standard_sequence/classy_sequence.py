@@ -588,6 +588,7 @@ class OpticalPumpingSequence(MOTSequence):
             ),
         )
 
+
         t += self.BField_obj.CONST_COIL_OFF_TIME
 
         # t = self.Microwave_obj.do_pulse(t_aom_off + BField.CONST_COIL_RAMP_TIME, shot_globals.mw_time)
@@ -632,13 +633,11 @@ class TweezerSequence(OpticalPumpingSequence):
     def ramp_to_imaging_parameters(self, t):
         # ramping to imaging detuning and power, previously referred to as "pre_imaging"
         # also used for additional cooling
-        self.BField_obj.ramp_bias_field(t, bias_field_vector=(0, 0, 0))
-        self.D2Lasers_obj.ramp_ta_freq(t, 0, shot_globals.img_ta_detuning)
-        self.D2Lasers_obj.ramp_repump_freq(t, 0, 0)
+        t = self.BField_obj.ramp_bias_field(t, bias_field_vector=(0, 0, 0))
+        t = self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.img_ta_detuning)
+        self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
         assert shot_globals.img_ta_power != 0, "img_ta_power should not be zero"
         assert shot_globals.img_repump_power != 0, "img_repump_power should not be zero"
-        self.D2Lasers_obj.ramp_ta_aom(t, 0, shot_globals.img_ta_power)
-        self.D2Lasers_obj.ramp_repump_aom(t, 0, shot_globals.img_repump_power)
 
         return t
 
@@ -692,6 +691,7 @@ class TweezerSequence(OpticalPumpingSequence):
         pass
 
     def image_tweezers(self, t, shot_number):
+        t = self.ramp_to_imaging_parameters(t)
         if shot_number == 1:
             t = self.do_kinetix_imaging(
                 t, close_all_shutters=shot_globals.do_shutter_close_after_first_shot
@@ -750,7 +750,6 @@ class TweezerSequence(OpticalPumpingSequence):
     def _do_optical_pump_in_tweezer_check(self, t):
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
-
         t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
 
         t = self.BField_obj.ramp_bias_field(
@@ -764,14 +763,20 @@ class TweezerSequence(OpticalPumpingSequence):
 
         t += self.BField_obj.CONST_COIL_OFF_TIME
 
+        # ramp down power before microwave
+        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power)
+        if shot_globals.do_mw_pulse:
+            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+                # ramp up to full power before imaging
+        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 1-1e-10)
 
-        t += self.TweezerLaser_obj.ramp_power(t, self.TweezerLaser_obj.CONST_TWEEZER_RAMPING_TIME, )
+        if shot_globals.do_killing_pulse:
+            t = self.kill_F4(t, shutter_config = ShutterConfig.OPTICAL_PUMPING_FULL, close_all_shutters = True)
+            t += 1e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
+            # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
 
-        t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
 
-        t = self.kill_F4(t, shutter_config = ShutterConfig.OPTICAL_PUMPING_FULL, close_all_shutters = True)
-        t += 1e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
-        # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
+
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
         t = self.reset_mot(t)

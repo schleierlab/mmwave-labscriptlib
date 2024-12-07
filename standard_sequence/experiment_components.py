@@ -317,7 +317,7 @@ class D2Lasers:
 
         return t
 
-    def parity_projection_pulse(self, t, dur):
+    def parity_projection_pulse(self, t, dur, close_all_shutters = False):
         self.ramp_ta_freq(
             t,
             duration=self.CONST_TA_VCO_RAMP_TIME,
@@ -330,7 +330,7 @@ class D2Lasers:
             ShutterConfig.MOT_TA,
             shot_globals.bm_parity_projection_ta_power,
             0,
-            close_all_shutters=True,
+            close_all_shutters=close_all_shutters,
         )
         return t, t_aom_start
 
