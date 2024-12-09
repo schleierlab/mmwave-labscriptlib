@@ -317,7 +317,7 @@ class D2Lasers:
 
         return t
 
-    def parity_projection_pulse(self, t, dur, close_all_shutters = False):
+    def parity_projection_pulse(self, t, dur, close_all_shutters=False):
         self.ramp_ta_freq(
             t,
             duration=self.CONST_TA_VCO_RAMP_TIME,
@@ -460,10 +460,10 @@ class Microwave:
             t - CONST_SPECTRUM_CARD_OFFSET,
             duration=dur,
             freq=spec_freq_calib(self.mw_detuning),
-            amplitude=0.99,
-            phase=0,
-            ch=0,
-            loops=1,
+            amplitude=0.99,  # the amplitude can not be 1 due to the bug in spectrum card server
+            phase=0,  # initial phase = 0
+            ch=0,  # using channel 0
+            loops=1,  # doing 1 loop
         )
 
         t += dur
@@ -576,18 +576,17 @@ class UVLamps:
 
 
 class BField:
-    CONST_COIL_OFF_TIME: ClassVar[float] = (
-        1.4e-3  # minimum time for the MOT coil to be off
-    )
-    CONST_COIL_RAMP_TIME: ClassVar[float] = (
-        100e-6  # ramp time from initial field to final field
-    )
-    CONST_BIPOLAR_COIL_FLIP_TIME: ClassVar[float] = (
-        10e-3  # the time takes to flip the polarity of the coil
-    )
-    CONST_COIL_FEEDBACK_OFF_TIME: ClassVar[float] = (
-        4.5e-3  # how long to turn off the feedback of circuit when flipping polarity
-    )
+    # minimum time for the MOT coil to be off
+    CONST_COIL_OFF_TIME: ClassVar[float] = 1.4e-3
+
+    # ramp time from initial field to final field
+    CONST_COIL_RAMP_TIME: ClassVar[float] = 100e-6
+
+    # the time takes to flip the polarity of the coil
+    CONST_BIPOLAR_COIL_FLIP_TIME: ClassVar[float] = 10e-3
+
+    # how long to turn off the feedback of circuit when flipping polarity
+    CONST_COIL_FEEDBACK_OFF_TIME: ClassVar[float] = 4.5e-3
 
     bias_voltages = list[float]
     mot_coils_on: bool
@@ -631,7 +630,9 @@ class BField:
         if self.mot_coils_on:
             devices.mot_coil_current_ctrl.constant(t, self.mot_coils_on_current)
         else:
-            devices.mot_coil_current_ctrl.constant(t, 0)
+            devices.mot_coil_current_ctrl.constant(
+                t, 0
+            )  # when changing bias field make sure the magnetic field gradient is off
 
     def flip_coil_polarity(
         self, t: float, final_voltage: float, component: Literal[0, 1, 2]
@@ -776,6 +777,8 @@ class BField:
         )
 
         return op_biasx_field, op_biasy_field, op_biasz_field
+
+
 class Camera:
     def __init__(self, t):
         self.type = None
