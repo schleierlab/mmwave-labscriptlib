@@ -602,7 +602,7 @@
 <div class="viewcode-block" id="OpticalPumpingSequence.kill_F3">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.OpticalPumpingSequence.kill_F3">[docs]</a>
     <span class="k">def</span> <span class="nf">kill_F3</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
-        <span class="k">pass</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
     <span class="k">def</span> <span class="nf">_optical_pump_molasses_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -635,12 +635,16 @@
 
 
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_dp</span><span class="p">:</span>
+            <span class="c1"># do optical depumping to F=3</span>
             <span class="n">t</span><span class="p">,</span> <span class="n">t_aom_off</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">depump_to_F3</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_label</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_op</span><span class="p">:</span>
+            <span class="c1"># do optical pumping to F=4</span>
             <span class="n">t</span><span class="p">,</span> <span class="n">t_aom_off</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pump_to_F4</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_label</span><span class="p">,</span> <span class="n">close_all_shutters</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_depump_pulse_after_pumping</span><span class="p">:</span>
+            <span class="c1"># do depump pulse to meausre the dark state lifetime</span>
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">depump_ta_pulse</span><span class="p">(</span><span class="n">t_aom_off</span><span class="p">,</span> <span class="n">close_all_shutters</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_killing_pulse</span><span class="p">:</span>
+            <span class="c1"># do kill pulse to remove all atom in F=4</span>
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kill_F4</span><span class="p">(</span><span class="n">t_aom_off</span><span class="p">)</span>
         <span class="n">t_depump</span> <span class="o">=</span> <span class="n">t</span>
 
@@ -654,9 +658,11 @@
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_mw_pulse</span><span class="p">:</span>
+            <span class="c1"># do microwave in molasses</span>
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Microwave_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_time</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_killing_pulse</span><span class="p">:</span>
+            <span class="c1"># do kill pulse after microwave to remove F=4 atom</span>
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kill_F4</span><span class="p">(</span><span class="n">t_aom_off</span><span class="p">)</span>
 
         <span class="c1"># postpone next sequence until shutter off time reached</span>
@@ -691,13 +697,15 @@
         <span class="k">return</span> <span class="n">t</span>
 
     <span class="k">def</span> <span class="nf">_do_F4_microwave_spec_molasses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; measuring the microwave transition with atom initially pumping to F=4</span>
+<span class="sd">        OP + microwave + killing + imaging atom with repump&quot;&quot;&quot;</span>
         <span class="n">mot_load_dur</span> <span class="o">=</span> <span class="mf">0.5</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_mot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">mot_load_dur</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_molasses</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_time</span><span class="p">)</span>
         <span class="n">t</span><span class="p">,</span> <span class="n">t_aom_off</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pump_to_F4</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_label</span><span class="p">,</span> <span class="n">close_all_shutters</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
 
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_bias_field</span><span class="p">(</span>
-            <span class="n">t_aom_off</span><span class="p">,</span>
+            <span class="n">t_aom_off</span> <span class="o">+</span> <span class="mf">100e-6</span><span class="p">,</span>
             <span class="n">bias_field_vector</span><span class="o">=</span><span class="p">(</span>
                 <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_biasx_field</span><span class="p">,</span>
                 <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_biasy_field</span><span class="p">,</span>
@@ -827,7 +835,7 @@
     <span class="k">def</span> <span class="nf">image_tweezers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">shot_number</span><span class="p">):</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ramp_to_imaging_parameters</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">shot_number</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_kinetix_imaging</span><span class="p">(</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_tweezer_imaging</span><span class="p">(</span>
                 <span class="n">t</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">do_shutter_close_after_first_shot</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="n">shot_number</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
@@ -837,13 +845,13 @@
             <span class="c1"># need extra 7 ms for shutter to close on the second shot</span>
             <span class="c1"># TODO: is shot_globals.kinetix_extra_readout_time always zero? Delete if so.</span>
             <span class="n">t</span> <span class="o">+=</span> <span class="n">kinetix_readout_time</span> <span class="o">+</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">kinetix_extra_readout_time</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_kinetix_imaging</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_tweezer_imaging</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">t</span></div>
 
 
-<div class="viewcode-block" id="TweezerSequence.do_kinetix_imaging">
-<a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.TweezerSequence.do_kinetix_imaging">[docs]</a>
-    <span class="k">def</span> <span class="nf">do_kinetix_imaging</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="TweezerSequence.do_tweezer_imaging">
+<a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.TweezerSequence.do_tweezer_imaging">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_tweezer_imaging</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="n">shutter_config</span> <span class="o">=</span> <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">select_imaging_shutters</span><span class="p">(</span><span class="n">do_repump</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">t_pulse_end</span><span class="p">,</span> <span class="n">t_aom_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span>
             <span class="n">t</span><span class="p">,</span>
@@ -956,12 +964,6 @@
 
 
 
-<span class="c1"># Should we separate this from ScienceSequence?</span>
-<div class="viewcode-block" id="DiagnosticSequence">
-<a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.DiagnosticSequence">[docs]</a>
-<span class="k">class</span> <span class="nc">DiagnosticSequence</span><span class="p">(</span><span class="n">RydSequence</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">DiagnosticSequence</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span></div>
 
 
 
