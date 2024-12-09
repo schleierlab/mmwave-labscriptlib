@@ -403,6 +403,9 @@ class TweezerLaser:
 
 
 class Microwave:
+    CONST_SPECTRUM_CARD_OFFSET: ClassVar[float] = 52.8e-6
+    """ the delay time between spectrum card output and trigger """
+
     def __init__(self, t):
         CONST_SPECTRUM_UWAVE_CABLE_ATTEN = (
             4.4  # cable attenutation, dB  meausred at 300 MHz
@@ -410,13 +413,18 @@ class Microwave:
         self.mw_detuning = shot_globals.mw_detuning  # tune the microwave detuning here
         self.uwave_dds_switch_on = True
         self.uwave_absorp_switch_on = False
-        self.spectrum_uwave_power = -1  # dBm power set at the input of dds switch, this power is set to below the amplifier damage threshold
-        devices.uwave_dds_switch.go_high(
-            t
-        )  # dds_switch always on, can be off if need further higher distinguishing ratio
+        self.spectrum_uwave_power = -1
+        # dBm power set at the input of dds switch, this power is set
+        # to below the amplifier damage threshold
+        devices.uwave_dds_switch.go_high(t)
+        # dds_switch always on, can be off if need further higher
+        # extinction ratio
         devices.uwave_absorp_switch.go_low(
             t
         )  # absorp switch only on when sending pulse
+
+        # spectrum setup for microwaves & mmwaves, 1st channel for
+        # Hyperfine splitting of ground state, 2nd channel for mmwaves on Rydberg levels
         devices.spectrum_uwave.set_mode(
             replay_mode=b"sequence",
             channels=[
@@ -445,13 +453,10 @@ class Microwave:
             clock_freq=625,
             use_ext_clock=True,
             ext_clock_freq=10,
-        )  # spectrum setup for microwaves & mmwaves, 1st channel for Hyperfine splitting of ground state, 2nd channel for mmwaves on Rydberg levels
+        )
 
     def do_pulse(self, t, dur):
         """do microwave pulse"""
-        CONST_SPECTRUM_CARD_OFFSET = (
-            52.8e-6  # the delay time between spectrum card output and trigger
-        )
 
         t += CONST_SPECTRUM_CARD_OFFSET
         devices.uwave_absorp_switch.go_high(t)
@@ -579,14 +584,11 @@ class BField:
     CONST_COIL_OFF_TIME: ClassVar[float] = 1.4e-3
     """minimum time for the MOT coil to be off"""
 
-
     CONST_COIL_RAMP_TIME: ClassVar[float] = 100e-6
     """ramp time from initial field to final field"""
 
-
     CONST_BIPOLAR_COIL_FLIP_TIME: ClassVar[float] = 10e-3
     """ the time takes to flip the polarity of the coil """
-
 
     CONST_COIL_FEEDBACK_OFF_TIME: ClassVar[float] = 4.5e-3
     """how long to turn off the feedback of circuit when flipping polarity"""
