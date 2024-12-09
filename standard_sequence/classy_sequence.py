@@ -158,8 +158,6 @@ class MOTSequence:
         # MOT loading time 500 ms
         mot_load_dur = 0.5
 
-        t += D2Lasers.CONST_SHUTTER_TURN_ON_TIME
-
         t = self.do_mot(t, mot_load_dur)
 
         # assert shot_globals.mot_tof_imaging_delay > CONST_MIN_SHUTTER_OFF_TIME, "time of flight too short for shutter"
@@ -276,8 +274,6 @@ class MOTSequence:
     def _do_molasses_in_situ_sequence(self, t, reset_mot=False):
         # MOT loading time 500 ms
         mot_load_dur = 0.5
-
-        t += D2Lasers.CONST_SHUTTER_TURN_ON_TIME
 
         t = self.do_mot(t, mot_load_dur)
         t = self.do_molasses(t, shot_globals.bm_time)
@@ -491,7 +487,6 @@ class OpticalPumpingSequence(MOTSequence):
         # MOT loading time 500 ms
         mot_load_dur = 0.5
 
-        t += D2Lasers.CONST_SHUTTER_TURN_ON_TIME
 
         t = self.do_mot(t, mot_load_dur)
         t = self.do_molasses(t, shot_globals.bm_time)
