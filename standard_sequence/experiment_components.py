@@ -576,17 +576,20 @@ class UVLamps:
 
 
 class BField:
-    # minimum time for the MOT coil to be off
     CONST_COIL_OFF_TIME: ClassVar[float] = 1.4e-3
+    """minimum time for the MOT coil to be off"""
 
-    # ramp time from initial field to final field
+
     CONST_COIL_RAMP_TIME: ClassVar[float] = 100e-6
+    """ramp time from initial field to final field"""
 
-    # the time takes to flip the polarity of the coil
+
     CONST_BIPOLAR_COIL_FLIP_TIME: ClassVar[float] = 10e-3
+    """ the time takes to flip the polarity of the coil """
 
-    # how long to turn off the feedback of circuit when flipping polarity
+
     CONST_COIL_FEEDBACK_OFF_TIME: ClassVar[float] = 4.5e-3
+    """how long to turn off the feedback of circuit when flipping polarity"""
 
     bias_voltages = list[float]
     mot_coils_on: bool
