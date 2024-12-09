@@ -240,8 +240,6 @@
         <span class="c1"># MOT loading time 500 ms</span>
         <span class="n">mot_load_dur</span> <span class="o">=</span> <span class="mf">0.5</span>
 
-        <span class="n">t</span> <span class="o">+=</span> <span class="n">D2Lasers</span><span class="o">.</span><span class="n">CONST_SHUTTER_TURN_ON_TIME</span>
-
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_mot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">mot_load_dur</span><span class="p">)</span>
 
         <span class="c1"># assert shot_globals.mot_tof_imaging_delay &gt; CONST_MIN_SHUTTER_OFF_TIME, &quot;time of flight too short for shutter&quot;</span>
@@ -368,8 +366,6 @@
         <span class="c1"># MOT loading time 500 ms</span>
         <span class="n">mot_load_dur</span> <span class="o">=</span> <span class="mf">0.5</span>
 
-        <span class="n">t</span> <span class="o">+=</span> <span class="n">D2Lasers</span><span class="o">.</span><span class="n">CONST_SHUTTER_TURN_ON_TIME</span>
-
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_mot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">mot_load_dur</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_molasses</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_time</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_molasses_dipole_trap_imaging</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -491,6 +487,11 @@
 
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_ta_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">D2Lasers</span><span class="o">.</span><span class="n">CONST_TA_VCO_RAMP_TIME</span><span class="p">,</span> <span class="n">CONST_TA_PUMPING_DETUNING</span><span class="p">)</span>
         <span class="c1">#t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)</span>
+
+        <span class="c1"># The shutter configuration needs to be optical_pumping_full</span>
+        <span class="c1"># to make sure no shutter switch from the depump_to_F3/pump_to_F4</span>
+        <span class="c1"># sequence, this allow the two pulse sequence purely switched</span>
+        <span class="c1"># with aom so that they are next to each other</span>
         <span class="n">t</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span>
                 <span class="n">t</span><span class="p">,</span>
                 <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_depump_pulse_time</span><span class="p">,</span>
@@ -572,8 +573,16 @@
 
 <div class="viewcode-block" id="OpticalPumpingSequence.kill_F4">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.OpticalPumpingSequence.kill_F4">[docs]</a>
-    <span class="k">def</span> <span class="nf">kill_F4</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">shutter_config</span> <span class="o">=</span> <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">OPTICAL_PUMPING_TA</span><span class="p">,</span> <span class="n">close_all_shutters</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">kill_F4</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">close_all_shutters</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Push away atoms in F = 4&quot;&quot;&quot;</span>
+        <span class="c1"># The shutter configuration can be optical_pumping_full or optical_pump_TA</span>
+        <span class="c1"># optical_pumping_full allow the two pulse sequence purely switched with aom after</span>
+        <span class="c1"># pump_to_F4 / depump_to_F3</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">shutter_config</span> <span class="o">==</span> <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">OPTICAL_PUMPING_FULL</span><span class="p">:</span>
+            <span class="n">shutter_config</span> <span class="o">=</span> <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">OPTICAL_PUMPING_FULL</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">shutter_config</span> <span class="o">=</span> <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">OPTICAL_PUMPING_TA</span>
+
         <span class="c1"># tune to resonance</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_ta_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">D2Lasers</span><span class="o">.</span><span class="n">CONST_TA_VCO_RAMP_TIME</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">killing_pulse_detuning</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">+=</span> <span class="n">D2Lasers</span><span class="o">.</span><span class="n">CONST_TA_VCO_RAMP_TIME</span>
@@ -600,7 +609,6 @@
         <span class="c1"># MOT loading time 500 ms</span>
         <span class="n">mot_load_dur</span> <span class="o">=</span> <span class="mf">0.5</span>
 
-        <span class="n">t</span> <span class="o">+=</span> <span class="n">D2Lasers</span><span class="o">.</span><span class="n">CONST_SHUTTER_TURN_ON_TIME</span>
 
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_mot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">mot_load_dur</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_molasses</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_time</span><span class="p">)</span>
@@ -633,7 +641,7 @@
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_depump_pulse_after_pumping</span><span class="p">:</span>
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">depump_ta_pulse</span><span class="p">(</span><span class="n">t_aom_off</span><span class="p">,</span> <span class="n">close_all_shutters</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_killing_pulse</span><span class="p">:</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kill_F4</span><span class="p">(</span><span class="n">t_aom_off</span><span class="p">,</span> <span class="n">shutter_config</span> <span class="o">=</span> <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">OPTICAL_PUMPING_FULL</span><span class="p">)</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kill_F4</span><span class="p">(</span><span class="n">t_aom_off</span><span class="p">)</span>
         <span class="n">t_depump</span> <span class="o">=</span> <span class="n">t</span>
 
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_bias_field</span><span class="p">(</span>
@@ -649,7 +657,7 @@
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Microwave_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_time</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_killing_pulse</span><span class="p">:</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kill_F4</span><span class="p">(</span><span class="n">t_aom_off</span><span class="p">,</span> <span class="n">shutter_config</span> <span class="o">=</span> <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">OPTICAL_PUMPING_FULL</span><span class="p">)</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kill_F4</span><span class="p">(</span><span class="n">t_aom_off</span><span class="p">)</span>
 
         <span class="c1"># postpone next sequence until shutter off time reached</span>
         <span class="n">t</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">t_depump</span> <span class="o">+</span> <span class="n">D2Lasers</span><span class="o">.</span><span class="n">CONST_MIN_SHUTTER_OFF_TIME</span><span class="p">)</span>
@@ -703,7 +711,7 @@
         <span class="c1"># t = self.Microwave_obj.do_pulse(t_aom_off + BField.CONST_COIL_RAMP_TIME, shot_globals.mw_time)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Microwave_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_time</span><span class="p">)</span>
 
-        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kill_F4</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shutter_config</span> <span class="o">=</span> <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">OPTICAL_PUMPING_FULL</span><span class="p">,</span> <span class="n">close_all_shutters</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kill_F4</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">close_all_shutters</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
         <span class="c1"># This is the only place required for the special value of imaging</span>
         <span class="n">t</span> <span class="o">+=</span> <span class="mf">1e-3</span> <span class="c1"># TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others</span>
         <span class="c1"># that&#39;s why we add extra time here before imaging to prevent light leakage from optical pump beam</span>
@@ -901,7 +909,7 @@
 
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_killing_pulse</span><span class="p">:</span>
             <span class="c1">#Labscript screws up the ramp if close_all_shutters is false...</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kill_F4</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shutter_config</span> <span class="o">=</span> <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">OPTICAL_PUMPING_FULL</span><span class="p">,</span> <span class="n">close_all_shutters</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kill_F4</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">close_all_shutters</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
 
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">ramp_power</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_dur</span><span class="p">,</span> <span class="mi">1</span><span class="o">-</span><span class="mf">1e-10</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">+=</span> <span class="mf">1e-3</span> <span class="c1"># TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others</span>
