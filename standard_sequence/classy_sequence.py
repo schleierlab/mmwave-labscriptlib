@@ -388,6 +388,11 @@ class OpticalPumpingSequence(MOTSequence):
 
         t = self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_TA_PUMPING_DETUNING)
         #t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
+
+        # The shutter configuration needs to be optical_pumping_full
+        # to make sure no shutter switch from the depump_to_F3/pump_to_F4
+        # sequence, this allow the two pulse sequence purely switched
+        # with aom so that they are next to each other
         t, _ = self.D2Lasers_obj.do_pulse(
                 t,
                 shot_globals.op_depump_pulse_time,
