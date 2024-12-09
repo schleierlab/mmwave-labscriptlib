@@ -494,7 +494,7 @@ class OpticalPumpingSequence(MOTSequence):
         return t
 
     def kill_F3(self, t):
-        pass
+        raise NotImplementedError
 
     def _optical_pump_molasses_sequence(self, t, reset_mot=False):
         # MOT loading time 500 ms
@@ -588,7 +588,7 @@ class OpticalPumpingSequence(MOTSequence):
         t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
 
         t = self.BField_obj.ramp_bias_field(
-            t_aom_off,
+            t_aom_off + 100e-6,
             bias_field_vector=(
                 shot_globals.mw_biasx_field,
                 shot_globals.mw_biasy_field,
