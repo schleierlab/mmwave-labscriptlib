@@ -1,20 +1,23 @@
-from labscript import ClockLine, DigitalOut, AnalogOut, Shutter
-import labscript
+root_path = r"X:\userlib\labscriptlib"
+import sys
 
-from labscript_devices.PulseBlasterUSB import PulseBlasterUSB
-from user_devices.NI_PXIe_6363 import NI_PXIe_6363
-from user_devices.NI_PXIe_6739 import NI_PXIe_6739
-from user_devices.manta419b.manta419b import Manta419B
-from user_devices.spcm.Spectrum_bk import Spectrum
-# from user_devices.spcm.Spectrum import Spectrum
-from user_devices.DDS.AD_DDS import AD_DDS
-from user_devices.DDS.AD9914 import AD9914
-from user_devices.kinetix.Kinetix import Kinetix
+if root_path not in sys.path:
+    sys.path.append(root_path)
+
+import labscript
 import labscript_devices as labscript_devices
 import labscript_devices.FunctionRunner
 import labscript_devices.FunctionRunner.labscript_devices
+from labscript import AnalogOut, ClockLine, DigitalOut, Shutter
+from labscript_devices.PulseBlasterUSB import PulseBlasterUSB
+from user_devices.manta419b.manta419b import Manta419B
 
-
+# from user_devices.spcm.Spectrum import Spectrum
+# from user_devices.DDS.AD_DDS import AD_DDS
+# from user_devices.DDS.AD9914 import AD9914
+from user_devices.NI_PXIe_6363 import NI_PXIe_6363
+from user_devices.NI_PXIe_6739 import NI_PXIe_6739
+from user_devices.spcm.Spectrum_bk import Spectrum
 
 # please name devices with lower_case_with_underscores (uwave_absorp_switch)
 # NOT Capitalized_Words_With_Underscores
@@ -79,7 +82,7 @@ class LabDevices():
         self.z_coil_feedback_off = DigitalOut(
             name='z_coil_feedback_off',
             parent_device=ni_6363_0,
-            connection='port0/line12',
+            connection='port0/line14',
         )
 
         # port 2 is camera
@@ -269,11 +272,11 @@ class LabDevices():
             open_state=1,
         )
 
-        # self.digital_out_ch26 = DigitalOut(
-        #     name='digital_out_ch26',
-        #     parent_device=ni_6363_0,
-        #     connection='port0/line26',
-        # )
+        self.digital_out_ch26 = DigitalOut(
+            name='digital_out_ch26',
+            parent_device=ni_6363_0,
+            connection='port0/line26',
+        )
 
 
 
