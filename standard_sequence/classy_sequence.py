@@ -526,12 +526,16 @@ class OpticalPumpingSequence(MOTSequence):
 
 
         if shot_globals.do_dp:
+            # do optical depumping to F=3
             t, t_aom_off= self.depump_to_F3(t, shot_globals.op_label)
         if shot_globals.do_op:
+            # do optical pumping to F=4
             t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
         if shot_globals.do_depump_pulse_after_pumping:
+            # do depump pulse to meausre the dark state lifetime
             t = self.depump_ta_pulse(t_aom_off, close_all_shutters = True)
         if shot_globals.do_killing_pulse:
+            # do kill pulse to remove all atom in F=4
             t = self.kill_F4(t_aom_off)
         t_depump = t
 
@@ -545,9 +549,11 @@ class OpticalPumpingSequence(MOTSequence):
         )
 
         if shot_globals.do_mw_pulse:
+            # do microwave in molasses
             t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
 
         if shot_globals.do_killing_pulse:
+            # do kill pulse after microwave to remove F=4 atom
             t = self.kill_F4(t_aom_off)
 
         # postpone next sequence until shutter off time reached
