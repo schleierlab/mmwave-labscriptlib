@@ -588,6 +588,8 @@ class OpticalPumpingSequence(MOTSequence):
         return t
 
     def _do_F4_microwave_spec_molasses(self, t, reset_mot=False):
+        """ measuring the microwave transition with atom initially pumping to F=4
+        OP + microwave + killing + imaging atom with repump"""
         mot_load_dur = 0.5
         t = self.do_mot(t, mot_load_dur)
         t = self.do_molasses(t, shot_globals.bm_time)
@@ -707,7 +709,7 @@ class TweezerSequence(OpticalPumpingSequence):
     def image_tweezers(self, t, shot_number):
         t = self.ramp_to_imaging_parameters(t)
         if shot_number == 1:
-            t = self.do_kinetix_imaging(
+            t = self.do_tweezer_imaging(
                 t, close_all_shutters=shot_globals.do_shutter_close_after_first_shot
             )
         if shot_number == 2:
@@ -717,10 +719,10 @@ class TweezerSequence(OpticalPumpingSequence):
             # need extra 7 ms for shutter to close on the second shot
             # TODO: is shot_globals.kinetix_extra_readout_time always zero? Delete if so.
             t += kinetix_readout_time + shot_globals.kinetix_extra_readout_time
-            t = self.do_kinetix_imaging(t, close_all_shutters=True)
+            t = self.do_tweezer_imaging(t, close_all_shutters=True)
         return t
 
-    def do_kinetix_imaging(self, t, close_all_shutters=False):
+    def do_tweezer_imaging(self, t, close_all_shutters=False):
         shutter_config = ShutterConfig.select_imaging_shutters(do_repump=True)
         t_pulse_end, t_aom_start = self.D2Lasers_obj.do_pulse(
             t,
@@ -819,10 +821,7 @@ class ScienceSequence(RydSequence):
         super(ScienceSequence, self).__init__()
 
 
-# Should we separate this from ScienceSequence?
-class DiagnosticSequence(RydSequence):
-    def __init__(self):
-        super(DiagnosticSequence, self).__init__()
+
 
 
 if __name__ == "__main__":
