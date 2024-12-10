@@ -621,7 +621,7 @@ class OpticalPumpingSequence(MOTSequence):
         print("killing time = ", t)
         t = self.kill_F4(t, close_all_shutters = True)
         # This is the only place required for the special value of imaging
-        t += 1e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
+        # t += 1e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
         # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
         t = self.do_molasses_dipole_trap_imaging(
             t,
