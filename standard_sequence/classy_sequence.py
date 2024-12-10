@@ -539,6 +539,8 @@ class OpticalPumpingSequence(MOTSequence):
         if shot_globals.do_op:
             # do optical pumping to F=4
             t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
+            t_aom_off+=50e-6
+
         if shot_globals.do_depump_pulse_after_pumping:
             # do depump pulse to meausre the dark state lifetime
             t = self.depump_ta_pulse(t_aom_off, close_all_shutters = True)
@@ -619,6 +621,17 @@ class OpticalPumpingSequence(MOTSequence):
         if shot_globals.do_mw_pulse:
             t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
         print("killing time = ", t)
+
+        t = self.BField_obj.ramp_bias_field(
+            t + 200e-6,
+            bias_field_vector=(
+                750,
+                0,
+                0,
+            ),
+        )
+
+        t+=200e-6
         t = self.kill_F4(t, close_all_shutters = True)
         # This is the only place required for the special value of imaging
         # t += 1e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others

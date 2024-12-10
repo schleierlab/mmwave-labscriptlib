@@ -679,7 +679,7 @@ class BField:
         self.bias_voltages[component] = final_voltage
         return t
 
-    def ramp_bias_field(self, t, bias_field_vector=None, voltage_vector=None):
+    def ramp_bias_field(self, t, dur = 100e-6,  bias_field_vector=None, voltage_vector=None):
         # bias_field_vector should be a tuple of the form (x,y,z)
         # Need to start the ramp earlier if the voltage changes sign
         if bias_field_vector is not None:
@@ -713,7 +713,7 @@ class BField:
             else:
                 self.current_outputs[i].ramp(
                     coil_ramp_start_times[i],
-                    duration=self.CONST_COIL_RAMP_TIME,
+                    duration= np.max(self.CONST_COIL_RAMP_TIME, dur),
                     initial=self.bias_voltages[i],
                     final=voltage_vector[i],
                     samplerate=1e5,
