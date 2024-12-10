@@ -88,8 +88,9 @@ class D2Lasers:
     shutter_config: ShutterConfig
 
     CONST_TA_VCO_RAMP_TIME: ClassVar[float] = (
-        1.2e-4  # minimal ta vco ramp time to stay in beatnote lock
+        1.2e-4
     )
+    """minimal ta vco ramp time to stay in beatnote lock"""
     CONST_SHUTTER_TURN_OFF_TIME: ClassVar[float] = (
         2e-3  # for shutter take from start to open to fully close
     )
@@ -104,18 +105,41 @@ class D2Lasers:
         3.6e-3  # minimum time for shutter to be on
     )
 
+
+    # Can we put this somewhere nicer?
+    basic_shutters: ClassVar[list[ShutterConfig]] = [
+            ShutterConfig.TA,
+            ShutterConfig.REPUMP,
+            ShutterConfig.MOT_XY,
+            ShutterConfig.MOT_Z,
+            ShutterConfig.IMG_XY,
+            ShutterConfig.IMG_Z,
+            ShutterConfig.OPTICAL_PUMPING,
+        ]
+
+    shutter_dict: ClassVar[dict[ShutterConfig, labscript.Shutter]] = {
+            ShutterConfig.TA: devices.ta_shutter,
+            ShutterConfig.REPUMP: devices.repump_shutter,
+            ShutterConfig.MOT_XY: devices.mot_xy_shutter,
+            ShutterConfig.MOT_Z: devices.mot_z_shutter,
+            ShutterConfig.IMG_XY: devices.img_xy_shutter,
+            ShutterConfig.IMG_Z: devices.img_z_shutter,
+            ShutterConfig.OPTICAL_PUMPING: devices.optical_pump_shutter,
+        }
+
     def __init__(self, t):
         # Tune to MOT frequency, full power
         self.ta_freq = shot_globals.mot_ta_detuning
         self.repump_freq = 0  # shot_globals.mot_repump_detuning
         self.ta_power = shot_globals.mot_ta_power
         self.repump_power = shot_globals.mot_repump_power
-        self.last_shutter_change_t = 0
         # update_shutters compares with self.shutter_config to decide what
         # changes to make. Do not call self.update_shutters(self.shutter_config),
         # nothing will happen.
         self.shutter_config = ShutterConfig.NONE
-        self.update_shutters(t, ShutterConfig.MOT_FULL)
+        _ = self.update_shutters(t, ShutterConfig.MOT_FULL)
+        self.last_shutter_open_t = np.zeros(len(self.basic_shutters))
+        self.last_shutter_close_t = np.zeros(len(self.basic_shutters))
 
         # If do_mot is the first thing that is called, these initializations
         # produce a warning in the runmanager output because the MOT powers
@@ -210,57 +234,23 @@ class D2Lasers:
         shutters_to_open = changed_shutters & new_shutter_config
         shutters_to_close = changed_shutters & self.shutter_config
 
-        # Can we put this somewhere nicer?
-        basic_shutters = [
-            ShutterConfig.TA,
-            ShutterConfig.REPUMP,
-            ShutterConfig.MOT_XY,
-            ShutterConfig.MOT_Z,
-            ShutterConfig.IMG_XY,
-            ShutterConfig.IMG_Z,
-            ShutterConfig.OPTICAL_PUMPING,
-        ]
+        if any(t - self.last_shutter_close_t * int(shutters_to_open) < self.CONST_MIN_SHUTTER_OFF_TIME):
+            t = max(self.last_shutter_close_t * int(shutters_to_open)) + self.CONST_MIN_SHUTTER_OFF_TIME
+        elif any (t - self.last_shutter_open_t * int(shutters_to_close) < self.CONST_MIN_SHUTTER_ON_TIME):
+            t = max(self.last_shutter_open_t * int(shutters_to_close)) + self.CONST_MIN_SHUTTER_ON_TIME
 
-        shutter_dict: dict[ShutterConfig, labscript.Shutter] = {
-            ShutterConfig.TA: devices.ta_shutter,
-            ShutterConfig.REPUMP: devices.repump_shutter,
-            ShutterConfig.MOT_XY: devices.mot_xy_shutter,
-            ShutterConfig.MOT_Z: devices.mot_z_shutter,
-            ShutterConfig.IMG_XY: devices.img_xy_shutter,
-            ShutterConfig.IMG_Z: devices.img_z_shutter,
-            ShutterConfig.OPTICAL_PUMPING: devices.optical_pump_shutter,
-        }
-
-        for shutter in basic_shutters:
+        for shutter in self.basic_shutters:
             if shutter in shutters_to_open:
-                shutter_dict[shutter].open(t)
+                self.shutter_dict[shutter].open(t)
+                self.last_shutter_open_t[self.basic_shutters.index(shutter)] = t
             if shutter in shutters_to_close:
-                shutter_dict[shutter].close(t - self.CONST_SHUTTER_TURN_OFF_TIME)
+                self.shutter_dict[shutter].close(t - self.CONST_SHUTTER_TURN_OFF_TIME)
+                self.last_shutter_close_t[self.basic_shutters.index(shutter)] = t
 
         self.last_shutter_change_t = t
         self.shutter_config = new_shutter_config
-        # return t?
+        return t
 
-    # NOTE: This version makes it so that the previous shutters are fully closed before opening the new shutters
-    # def update_shutters(self, t, new_shutter_config: ShutterConfig):
-    #     changed_shutters = self.shutter_config ^ new_shutter_config
-
-    #     shutters_to_open = changed_shutters & new_shutter_config
-    #     shutters_to_close = changed_shutters & self.shutter_config
-
-    #     for shutter in shutters_to_close:
-    #         self.shutter_config.shutter_dict[shutter].close(t)
-
-    #     t += 2*self.CONST_SHUTTER_TURN_OFF_TIME
-    #     for shutter in shutters_to_open:
-    #         self.shutter_config.shutter_dict[shutter].open(t)
-
-    #     self.shutter_config = new_shutter_config
-    #     return t
-
-    # NOTE: If the shutter configuration is changed from the previous pulse, this will cut the previous pulse short
-    # with the AOM by self.CONST_SHUTTER_TURN_ON_TIME in order to switch the shutters, and start the next pulse exactly at the t specified.
-    # NOTE: The above note should be taken in context with the one below.
     def do_pulse(
         self, t, dur, shutter_config, ta_power, repump_power, close_all_shutters=False
     ):
@@ -268,17 +258,13 @@ class D2Lasers:
         change_shutters = self.shutter_config != shutter_config
 
         if change_shutters:
-            if t - self.last_shutter_change_t < self.CONST_MIN_SHUTTER_OFF_TIME:
-                t = self.last_shutter_change_t + self.CONST_SHUTTER_TURN_ON_TIME + self.CONST_MIN_SHUTTER_OFF_TIME
-            else:
-                t += self.CONST_SHUTTER_TURN_ON_TIME
-
             # NOTE:Adding this to t makes it so it doesn't cut the previous pulse short, but shifts the time of the next.
-
+            t += self.CONST_SHUTTER_TURN_ON_TIME
             print("shutter config changed, adding time to account for switching")
+            t = self.update_shutters(t, shutter_config)
+
             self.ta_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
             self.repump_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
-            self.update_shutters(t, shutter_config)
 
         if ta_power != 0:
             self.ta_aom_on(t, ta_power)
@@ -296,15 +282,13 @@ class D2Lasers:
         # times between pulses accidentally.
 
         #TODO: Do we still need this given the self.last_shutter_change_t variable...?
-        if (dur < self.CONST_MIN_SHUTTER_ON_TIME) and change_shutters:
-            t += self.CONST_MIN_SHUTTER_ON_TIME - dur
 
         # If doing close_all_shutters, have to make sure that we aren't opening any of the ones we just closed in the next pulse.
         # Otherwise they won't be able to open in time unless there's enough delay between pulses.
         if close_all_shutters:
             print("closing all shutters")
             t += self.CONST_SHUTTER_TURN_OFF_TIME
-            self.update_shutters(t, ShutterConfig.NONE)
+            t = self.update_shutters(t, ShutterConfig.NONE)
             self.ta_aom_on(t, 1)
             self.repump_aom_on(t, 1)
 
@@ -321,7 +305,7 @@ class D2Lasers:
     def reset_to_mot_on(self, t):
         self.ta_aom_on(t, shot_globals.mot_ta_power)
         self.repump_aom_on(t, shot_globals.mot_repump_power)
-        self.update_shutters(t, ShutterConfig.MOT_FULL)
+        t = self.update_shutters(t, ShutterConfig.MOT_FULL)
         t += self.CONST_SHUTTER_TURN_ON_TIME
 
         return t
