@@ -110,6 +110,7 @@ class D2Lasers:
         self.repump_freq = 0  # shot_globals.mot_repump_detuning
         self.ta_power = shot_globals.mot_ta_power
         self.repump_power = shot_globals.mot_repump_power
+        self.last_shutter_change_t = 0
         # update_shutters compares with self.shutter_config to decide what
         # changes to make. Do not call self.update_shutters(self.shutter_config),
         # nothing will happen.
@@ -236,6 +237,7 @@ class D2Lasers:
             if shutter in shutters_to_close:
                 shutter_dict[shutter].close(t - self.CONST_SHUTTER_TURN_OFF_TIME)
 
+        self.last_shutter_change_t = t
         self.shutter_config = new_shutter_config
         # return t?
 
@@ -262,11 +264,17 @@ class D2Lasers:
     def do_pulse(
         self, t, dur, shutter_config, ta_power, repump_power, close_all_shutters=False
     ):
+
         change_shutters = self.shutter_config != shutter_config
 
         if change_shutters:
+            if t - self.last_shutter_change_t < self.CONST_MIN_SHUTTER_OFF_TIME:
+                t = self.last_shutter_change_t + self.CONST_SHUTTER_TURN_ON_TIME + self.CONST_MIN_SHUTTER_OFF_TIME
+            else:
+                t += self.CONST_SHUTTER_TURN_ON_TIME
+
             # NOTE:Adding this to t makes it so it doesn't cut the previous pulse short, but shifts the time of the next.
-            t += self.CONST_SHUTTER_TURN_ON_TIME
+
             print("shutter config changed, adding time to account for switching")
             self.ta_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
             self.repump_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
@@ -287,6 +295,7 @@ class D2Lasers:
         # at the end of the pulse duration. Plan accordingly and don't leave long wait
         # times between pulses accidentally.
 
+        #TODO: Do we still need this given the self.last_shutter_change_t variable...?
         if (dur < self.CONST_MIN_SHUTTER_ON_TIME) and change_shutters:
             t += self.CONST_MIN_SHUTTER_ON_TIME - dur
 
@@ -458,11 +467,11 @@ class Microwave:
     def do_pulse(self, t, dur):
         """do microwave pulse"""
 
-        t += CONST_SPECTRUM_CARD_OFFSET
+        t += self.CONST_SPECTRUM_CARD_OFFSET
         devices.uwave_absorp_switch.go_high(t)
         self.uwave_absorp_switch_on = True
         devices.spectrum_uwave.single_freq(
-            t - CONST_SPECTRUM_CARD_OFFSET,
+            t - self.CONST_SPECTRUM_CARD_OFFSET,
             duration=dur,
             freq=spec_freq_calib(self.mw_detuning),
             amplitude=0.99,  # the amplitude can not be 1 due to the bug in spectrum card server

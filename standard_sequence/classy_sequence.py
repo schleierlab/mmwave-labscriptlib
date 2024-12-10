@@ -326,6 +326,14 @@ class OpticalPumpingSequence(MOTSequence):
             # Use the MOT beams for optical pumping
             # Do a repump pulse
             print("I'm using mot beams for optical pumping")
+
+            op_biasx_field, op_biasy_field, op_biasz_field = (
+                self.BField_obj.get_op_bias_fields()
+            )
+            t = self.BField_obj.ramp_bias_field(
+                t, bias_field_vector=(op_biasx_field, op_biasy_field, op_biasz_field)
+            )
+
             t, t_aom_start = self.D2Lasers_obj.do_pulse(
                 t,
                 shot_globals.op_MOT_op_time,
@@ -596,7 +604,7 @@ class OpticalPumpingSequence(MOTSequence):
         t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
 
         t = self.BField_obj.ramp_bias_field(
-            t_aom_off + 100e-6,
+            t_aom_off + 200e-6,
             bias_field_vector=(
                 shot_globals.mw_biasx_field,
                 shot_globals.mw_biasy_field,
@@ -608,8 +616,9 @@ class OpticalPumpingSequence(MOTSequence):
         t += self.BField_obj.CONST_COIL_OFF_TIME
 
         # t = self.Microwave_obj.do_pulse(t_aom_off + BField.CONST_COIL_RAMP_TIME, shot_globals.mw_time)
-        t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
-
+        if shot_globals.do_mw_pulse:
+            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+        print("killing time = ", t)
         t = self.kill_F4(t, close_all_shutters = True)
         # This is the only place required for the special value of imaging
         t += 1e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
@@ -829,6 +838,16 @@ if __name__ == "__main__":
     t = 0
 
     # Insert "stay on" statements for alignment here...
+    devices.blue_456_shutter.open(t)
+    devices.moglabs_456_aom_analog.constant(t,1)
+    devices.moglabs_456_aom_digital.go_high(t)
+    devices.octagon_456_aom_analog.constant(t,1)
+    devices.octagon_456_aom_digital.go_high(t)
+    devices.ipg_1064_aom_analog.constant(t,1)
+    devices.ipg_1064_aom_digital.go_high(t)
+    devices.pulse_1064_analog.constant(t,1)
+    devices.pulse_1064_digital.go_high(t)
+
 
     if shot_globals.do_mot_in_situ_check:
         MOTSeq_obj = MOTSequence(t)
