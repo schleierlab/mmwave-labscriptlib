@@ -10,7 +10,7 @@ import labscript_devices.FunctionRunner
 import labscript_devices.FunctionRunner.labscript_devices
 from labscript import AnalogOut, ClockLine, DigitalOut, Shutter
 from labscript_devices.PulseBlasterUSB import PulseBlasterUSB
-from user_devices.manta419b.manta419b import Manta419B
+from user_devices.kinetix.Kinetix import Kinetix
 
 # from user_devices.spcm.Spectrum import Spectrum
 # from user_devices.DDS.AD_DDS import AD_DDS
@@ -359,12 +359,12 @@ class LabDevices():
         # Cameras
         #==============================================================================
 
-        self.manta419b_mot = Manta419B(
-            'manta419b_mot',
-            parent_device=ni_6363_0,
-            connection="port0/line2",
-            BIAS_port=54321,
-        )
+        # self.manta419b_mot = Manta419B(
+        #     'manta419b_mot',
+        #     parent_device=ni_6363_0,
+        #     connection="port0/line2",
+        #     BIAS_port=54321,
+        # )
 
         # self.manta419b_tweezer = Manta419B(
         #     'manta419b_tweezer',
@@ -387,12 +387,12 @@ class LabDevices():
         #     BIAS_port=54323,
         # )
 
-        # self.kinetix = Kinetix(
-        #     name='kinetix',
-        #     parent_device=ni_6363_0,
-        #     connection='port0/line15',
-        #     BIAS_port=27171,
-        # )
+        self.kinetix = Kinetix(
+            name='kinetix',
+            parent_device=ni_6363_0,
+            connection='port0/line15',
+            BIAS_port=27171,
+        )
 
         #================================================================================
         # Spectrum Instrumentation Cards for microwaves

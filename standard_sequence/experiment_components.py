@@ -682,6 +682,7 @@ class BField:
     def ramp_bias_field(self, t, dur = 100e-6,  bias_field_vector=None, voltage_vector=None):
         # bias_field_vector should be a tuple of the form (x,y,z)
         # Need to start the ramp earlier if the voltage changes sign
+        dur = np.max([dur, self.CONST_COIL_RAMP_TIME])
         if bias_field_vector is not None:
             voltage_vector = np.array(
                 [
@@ -713,7 +714,7 @@ class BField:
             else:
                 self.current_outputs[i].ramp(
                     coil_ramp_start_times[i],
-                    duration= np.max(self.CONST_COIL_RAMP_TIME, dur),
+                    duration= dur,
                     initial=self.bias_voltages[i],
                     final=voltage_vector[i],
                     samplerate=1e5,
@@ -721,7 +722,7 @@ class BField:
         print(coil_ramp_start_times)
         end_time = (
             np.min(coil_ramp_start_times)
-            + self.CONST_COIL_RAMP_TIME
+            + dur
             + self.CONST_BIPOLAR_COIL_FLIP_TIME
         )
         self.t_last_change = end_time
@@ -733,7 +734,7 @@ class BField:
 
         self.bias_voltages = voltage_vector
 
-        return t + self.CONST_COIL_RAMP_TIME
+        return t + dur
 
     def switch_mot_coils(self, t):
         if self.mot_coils_on:
