@@ -854,6 +854,9 @@ class TweezerSequence(OpticalPumpingSequence):
             t_start_ramp = t_aom_off - shot_globals.tw_ramp_dur - shot_globals.op_repump_time
             _ = self.TweezerLaser_obj.ramp_power(t_start_ramp, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power)
 
+            if shot_globals.do_depump_pulse_after_pumping:
+                t = self.depump_ta_pulse(t)
+
             t = self.BField_obj.ramp_bias_field(
                 t_aom_off,
                 bias_field_vector=(
