@@ -476,6 +476,31 @@ class OpticalPumpingSequence(MOTSequence):
                 "This optical depumping method is not implemented"
             )
 
+    # def kill_F4(self, t, close_all_shutters = True):
+    #     """Push away atoms in F = 4"""
+    #     # The shutter configuration can be optical_pumping_full or optical_pump_TA
+    #     # optical_pumping_full allow the two pulse sequence purely switched with aom after
+    #     # pump_to_F4 / depump_to_F3
+    #     if self.D2Lasers_obj.shutter_config == ShutterConfig.OPTICAL_PUMPING_FULL:
+    #         shutter_config = ShutterConfig.OPTICAL_PUMPING_FULL
+    #     else:
+    #         shutter_config = ShutterConfig.OPTICAL_PUMPING_TA
+
+    #     # tune to resonance
+    #     self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.killing_pulse_detuning)
+    #     t += D2Lasers.CONST_TA_VCO_RAMP_TIME
+    #     # do a ta pulse via optical pumping path
+    #     t, _ = self.D2Lasers_obj.do_pulse(
+    #         t,
+    #         shot_globals.op_killing_pulse_time,
+    #         shutter_config,
+    #         shot_globals.op_killing_ta_power,
+    #         0,
+    #         close_all_shutters=close_all_shutters,
+    #     )
+
+    #     return t
+
     def kill_F4(self, t, close_all_shutters = True):
         """Push away atoms in F = 4"""
         # The shutter configuration can be optical_pumping_full or optical_pump_TA
@@ -487,10 +512,9 @@ class OpticalPumpingSequence(MOTSequence):
             shutter_config = ShutterConfig.OPTICAL_PUMPING_TA
 
         # tune to resonance
-        self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.killing_pulse_detuning)
-        t += D2Lasers.CONST_TA_VCO_RAMP_TIME
+        self.D2Lasers_obj.ramp_ta_freq(t-D2Lasers.CONST_TA_VCO_RAMP_TIME, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.killing_pulse_detuning)
         # do a ta pulse via optical pumping path
-        t, _ = self.D2Lasers_obj.do_pulse(
+        t, t_aom_start = self.D2Lasers_obj.do_pulse(
             t,
             shot_globals.op_killing_pulse_time,
             shutter_config,
@@ -499,7 +523,9 @@ class OpticalPumpingSequence(MOTSequence):
             close_all_shutters=close_all_shutters,
         )
 
-        return t
+        t_aom_off = t_aom_start + shot_globals.op_killing_pulse_time
+
+        return t, t_aom_off
 
     def kill_F3(self, t):
         raise NotImplementedError
@@ -546,7 +572,7 @@ class OpticalPumpingSequence(MOTSequence):
             t = self.depump_ta_pulse(t_aom_off, close_all_shutters = True)
         if shot_globals.do_killing_pulse:
             # do kill pulse to remove all atom in F=4
-            t = self.kill_F4(t_aom_off)
+            t, _ = self.kill_F4(t_aom_off)
         t_depump = t
 
         t = self.BField_obj.ramp_bias_field(
@@ -564,7 +590,7 @@ class OpticalPumpingSequence(MOTSequence):
 
         if shot_globals.do_killing_pulse:
             # do kill pulse after microwave to remove F=4 atom
-            t = self.kill_F4(t_aom_off)
+            t, _ = self.kill_F4(t_aom_off)
 
         # postpone next sequence until shutter off time reached
         t = max(t, t_depump + D2Lasers.CONST_MIN_SHUTTER_OFF_TIME)
@@ -634,7 +660,7 @@ class OpticalPumpingSequence(MOTSequence):
         # )
 
         # t+=200e-6
-        t = self.kill_F4(t, close_all_shutters = True)
+        t, _ = self.kill_F4(t, close_all_shutters = True)
         # This is the only place required for the special value of imaging
         # t += 1e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
         # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
@@ -789,33 +815,64 @@ class TweezerSequence(OpticalPumpingSequence):
     def _do_optical_pump_in_tweezer_check(self, t):
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
-        t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
 
-        t = self.BField_obj.ramp_bias_field(
-            t_aom_off + 200e-6,
-            bias_field_vector=(
-                shot_globals.mw_biasx_field,
-                shot_globals.mw_biasy_field,
-                shot_globals.mw_biasz_field,
-            ),
-        )
+        t+=3e-3
 
-        # t += 5e-3
+        if shot_globals.op_label =="mot":
+            t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
 
-        # ramp down power before microwave
-        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power)
-        if shot_globals.do_mw_pulse:
-            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
-                # ramp up to full power before imaging
+            t = self.BField_obj.ramp_bias_field(
+                t_aom_off,
+                bias_field_vector=(
+                    shot_globals.mw_biasx_field,
+                    shot_globals.mw_biasy_field,
+                    shot_globals.mw_biasz_field,
+                ),
+            )
 
+            #Making sure there is enough time between the MOT pumping pulse and the killing pulse to switch shutters
+            t= t + max(D2Lasers.CONST_MIN_SHUTTER_ON_TIME + D2Lasers.CONST_SHUTTER_TURN_ON_TIME - shot_globals.tw_ramp_dur, 0)
+            t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power)
 
-        if shot_globals.do_killing_pulse:
+            if shot_globals.do_mw_pulse:
+                t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+
+            if shot_globals.do_killing_pulse:
             #If we use the MOT beams for pumping we have to switch shutters
             #Our pulse function is set so that switching the shutters adds time before the pulse
             #Here though we want the shutter switching to overlap with the tweezer ramp rather than start after it
-            if shot_globals.op_label =="mot":
                 t  = t - D2Lasers.CONST_SHUTTER_TURN_ON_TIME
-            t = self.kill_F4(t, close_all_shutters = False)
+                t, _ = self.kill_F4(t, close_all_shutters = False)
+            else:
+                t+= shot_globals.op_killing_pulse_time
+
+
+        if shot_globals.op_label =="sigma":
+            t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
+
+            #Making sure the ramp ends right as the pumping is starting
+            t_start_ramp = t_aom_off - shot_globals.tw_ramp_dur - shot_globals.op_repump_time
+            _ = self.TweezerLaser_obj.ramp_power(t_start_ramp, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power)
+
+            t = self.BField_obj.ramp_bias_field(
+                t_aom_off,
+                bias_field_vector=(
+                    shot_globals.mw_biasx_field,
+                    shot_globals.mw_biasy_field,
+                    shot_globals.mw_biasz_field,
+                ),
+            )
+
+            t+=100e-6
+
+            if shot_globals.do_mw_pulse:
+                t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+
+            if shot_globals.do_killing_pulse:
+                t, _ = self.kill_F4(t, close_all_shutters = False)
+            else:
+                t+= shot_globals.op_killing_pulse_time
+
 
         t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
         t += 2e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
