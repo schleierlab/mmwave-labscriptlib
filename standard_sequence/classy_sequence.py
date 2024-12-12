@@ -362,6 +362,7 @@ class OpticalPumpingSequence(MOTSequence):
             # Do a sigma+ pulse
             # TODO: is shot_globals.op_ramp_delay just extra fudge time? can it be eliminated?
             t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
+
             t, t_aom_start = self.D2Lasers_obj.do_pulse(
                 t,
                 shot_globals.op_repump_time,
@@ -814,6 +815,9 @@ class TweezerSequence(OpticalPumpingSequence):
 
         t+=3e-3
 
+        if shot_globals.do_depump_pulse_before_pumping:
+            t = self.depump_ta_pulse(t)
+
         if shot_globals.do_op:
             t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
         elif shot_globals.do_dp:
@@ -838,7 +842,9 @@ class TweezerSequence(OpticalPumpingSequence):
             t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power)
 
             if shot_globals.do_mw_pulse:
+                self.TweezerLaser_obj.aom_off(t)
                 t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+                self.TweezerLaser_obj.aom_on(t, shot_globals.tw_ramp_power)
             elif shot_globals.do_mw_sweep:
                 mw_sweep_start = shot_globals.mw_detuning + shot_globals.mw_sweep_range/2
                 mw_sweep_end = shot_globals.mw_detuning - shot_globals.mw_sweep_range/2
@@ -895,6 +901,7 @@ class TweezerSequence(OpticalPumpingSequence):
         t = self.image_tweezers(t, shot_number=2)
         t = self.reset_mot(t)
         t = self.TweezerLaser_obj.stop_tweezers(t)
+        t = self.Microwave_obj.reset_spectrum(t)
 
         return t
 

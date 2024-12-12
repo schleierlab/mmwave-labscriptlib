@@ -448,6 +448,10 @@ class Microwave:
             ext_clock_freq=10,
         )
 
+        # devices.spectrum_uwave.single_freq(
+        #     t, duration=100e-6, freq=10**6, amplitude=0.99, phase=0, ch=0, loops=1
+        # )
+
     def do_pulse(self, t, dur):
         """do microwave pulse"""
 
