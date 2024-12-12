@@ -458,6 +458,7 @@
             <span class="c1"># Do a sigma+ pulse</span>
             <span class="c1"># TODO: is shot_globals.op_ramp_delay just extra fudge time? can it be eliminated?</span>
             <span class="n">t</span> <span class="o">+=</span> <span class="nb">max</span><span class="p">(</span><span class="n">D2Lasers</span><span class="o">.</span><span class="n">CONST_TA_VCO_RAMP_TIME</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_ramp_delay</span><span class="p">)</span>
+
             <span class="n">t</span><span class="p">,</span> <span class="n">t_aom_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span>
                 <span class="n">t</span><span class="p">,</span>
                 <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_repump_time</span><span class="p">,</span>
@@ -944,6 +945,9 @@
 
         <span class="n">t</span><span class="o">+=</span><span class="mf">3e-3</span>
 
+        <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_depump_pulse_before_pumping</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">depump_ta_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_op</span><span class="p">:</span>
             <span class="n">t</span><span class="p">,</span> <span class="n">t_aom_off</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pump_to_F4</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_label</span><span class="p">,</span> <span class="n">close_all_shutters</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_dp</span><span class="p">:</span>
@@ -968,7 +972,9 @@
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">ramp_power</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_dur</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_power</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_mw_pulse</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">aom_off</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
                 <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Microwave_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_time</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">aom_on</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_power</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_mw_sweep</span><span class="p">:</span>
                 <span class="n">mw_sweep_start</span> <span class="o">=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_detuning</span> <span class="o">+</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_sweep_range</span><span class="o">/</span><span class="mi">2</span>
                 <span class="n">mw_sweep_end</span> <span class="o">=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_detuning</span> <span class="o">-</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_sweep_range</span><span class="o">/</span><span class="mi">2</span>
@@ -1025,6 +1031,7 @@
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_number</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reset_mot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">stop_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Microwave_obj</span><span class="o">.</span><span class="n">reset_spectrum</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">t</span></div>
 
