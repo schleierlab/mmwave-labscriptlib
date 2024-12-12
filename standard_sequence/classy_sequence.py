@@ -681,12 +681,40 @@ class OpticalPumpingSequence(MOTSequence):
             close_all_shutters=True,
         )
         t += 1e-2
-        t = self.Microwave_obj.reset_spectrum(t)
         if reset_mot:
             t = self.reset_mot(t)
 
         return t
 
+
+# ExperimentalSequence > F4MicrowaveSpectrumMolasses: at the end of a seq, merge lists of cleanupabbles from Helpers, call cleanupabble.cleanup() for each
+# MOTHelper, OPHelper: [TweezerLAser, Microwave, ...]
+# TweezerLaser, Microwave,: cleanup()
+# Spectrum (Jacob): stop()
+
+
+# class ExperimentalSequence(ABC):
+#     helpers: list
+
+#     @abstractmethod
+#     def sequence(self): ...
+
+#     def run(self):
+#         self.sequence()
+#         cleanupabbles = set(
+#             helper.cleanupabbles
+#             for helper in self.helpers
+#         )
+#         for cleanupabble in cleanupabbles:
+#             cleanupabble.cleanup()
+
+# class F4MicrowaveSpectrumMolasses(ExperimentalSequence):
+#     def __init__(self, spectrum_mgr):
+#         self.spectrum_mgr = spectrum_mgr
+#         self.helpers = []
+
+#     def sequence(self):
+#         ...
 
 class TweezerSequence(OpticalPumpingSequence):
     def __init__(self, t):
@@ -799,7 +827,7 @@ class TweezerSequence(OpticalPumpingSequence):
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
         t = self.reset_mot(t)
-        t = self.TweezerLaser_obj.stop_tweezers(t)
+        # t = self.TweezerLaser_obj.stop_tweezers(t)
 
         return t
 
@@ -900,8 +928,7 @@ class TweezerSequence(OpticalPumpingSequence):
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
         t = self.reset_mot(t)
-        t = self.TweezerLaser_obj.stop_tweezers(t)
-        t = self.Microwave_obj.reset_spectrum(t)
+
 
         return t
 
@@ -940,23 +967,23 @@ if __name__ == "__main__":
         MOTSeq_obj = MOTSequence(t)
         t = MOTSeq_obj._do_mot_in_situ_sequence(t, reset_mot=True)
 
-    if shot_globals.do_mot_tof_check:
+    elif shot_globals.do_mot_tof_check:
         MOTSeq_obj = MOTSequence(t)
         t = MOTSeq_obj._do_mot_tof_sequence(t, reset_mot=True)
 
-    if shot_globals.do_molasses_in_situ_check:
+    elif shot_globals.do_molasses_in_situ_check:
         MOTSeq_obj = MOTSequence(t)
         t = MOTSeq_obj._do_molasses_in_situ_sequence(t, reset_mot=True)
 
-    if shot_globals.do_molasses_tof_check:
+    elif shot_globals.do_molasses_tof_check:
         MOTSeq_obj = MOTSequence(t)
         t = MOTSeq_obj._do_molasses_tof_sequence(t, reset_mot=True)
 
-    if shot_globals.do_pump_debug_in_molasses:
+    elif shot_globals.do_pump_debug_in_molasses:
         OPSeq_obj = OpticalPumpingSequence(t)
         t = OPSeq_obj._do_pump_debug_in_molasses(t, reset_mot=True)
 
-    if shot_globals.do_F4_microwave_spec_molasses:
+    elif shot_globals.do_F4_microwave_spec_molasses:
         OPSeq_obj = OpticalPumpingSequence(t)
         t = OPSeq_obj._do_F4_microwave_spec_molasses(t, reset_mot=True)
 
@@ -969,18 +996,31 @@ if __name__ == "__main__":
     # if shot_globals.do_tweezer_position_check:
     #     t = do_tweezer_position_check(t)
 
-    if shot_globals.do_tweezer_check:
+    elif shot_globals.do_tweezer_check:
         TweezerSequence_obj = TweezerSequence(t)
         t = TweezerSequence_obj._do_tweezer_check_sequence(t)
 
     # if shot_globals.do_tweezer_check_fifo:
     #     t = do_tweezer_check_fifo(t)
 
-    if shot_globals.do_optical_pump_in_tweezer_check:
+    elif shot_globals.do_optical_pump_in_tweezer_check:
         TweezerSequence_obj = TweezerSequence(t)
         t = TweezerSequence_obj._do_optical_pump_in_tweezer_check(t)
 
     # if shot_globals.do_optical_pump_in_microtrap_check:
     #     t = do_optical_pump_in_microtrap_check(t)
+    try:
+        current_obj = MOTSeq_obj
+    except:
+        try:
+            current_obj = OPSeq_obj
+        except:
+            try:
+                current_obj = TweezerSequence_obj
+                t = current_obj.TweezerLaser_obj.stop_tweezers(t)
+            except:
+                raise NotImplementedError
+
+    t = current_obj.Microwave_obj.reset_spectrum(t)
 
     labscript.stop(t + 1e-2)
