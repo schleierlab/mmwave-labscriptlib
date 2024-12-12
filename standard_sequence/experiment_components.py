@@ -470,6 +470,30 @@ class Microwave:
 
         return t
 
+    def do_sweep(self, t, start_freq, end_freq, dur):
+        """do microwave sweep"""
+        print("I'm doing microwave sweep")
+        t += self.CONST_SPECTRUM_CARD_OFFSET
+        devices.uwave_absorp_switch.go_high(t)
+        self.uwave_absorp_switch_on = True
+        devices.spectrum_uwave.sweep(
+            t - self.CONST_SPECTRUM_CARD_OFFSET,
+            duration=dur,
+            start_freq=spec_freq_calib(start_freq),
+            end_freq=spec_freq_calib(end_freq),
+            amplitude=0.99,  # the amplitude can not be 1 due to the bug in spectrum card server
+            phase=0,  # initial phase = 0
+            ch=0,  # using channel 0
+            loops=1,  # doing 1 loop
+            freq_ramp_type = "linear",
+        )
+
+        t += dur
+        devices.uwave_absorp_switch.go_low(t)
+        self.uwave_absorp_switch_on = False
+
+        return t
+
     def reset_spectrum(self, t):
         """stop microwave using dummy segment because of spectrum card, you have to send two pulses to make it work"""
         # dummy segment ####

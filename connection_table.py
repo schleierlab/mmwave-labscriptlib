@@ -190,17 +190,11 @@ class LabDevices():
             parent_device=ni_6363_0,
             connection='port0/line13',
         )
-        self.ipg_1064_aom_digital = DigitalOut(
-            name='ipg_1064_aom_digital',
+        self.servo_1064_aom_digital = DigitalOut(
+            name='servo_1064_aom_digital',
             parent_device = pb.direct_outputs,
             connection='flag 13',
         )
-
-        # self.ipg_1064_aom_digital = DigitalOut(
-        #     name='ipg_1064_aom_digital',
-        #     parent_device = ni_6363_0,
-        #     connection='port0/line14',
-        # )
 
         self.kinetix_camera_trigger = DigitalOut( #use this when not using kinetix server
             name='kinetix_camera_trigger',
@@ -208,26 +202,21 @@ class LabDevices():
             connection='port0/line15',
         )
 
-        self.moglabs_456_aom_digital = DigitalOut(
-            name='moglabs_456_aom_digital',
+        self.servo_456_aom_digital = DigitalOut(
+            name='servo_456_aom_digital',
             parent_device = pb.direct_outputs,
             connection='flag 14',
         )
 
-        # self.moglabs_456_aom_digital = DigitalOut(
-        #     name='moglabs_456_aom_digital',
-        #     parent_device = ni_6363_0,
-        #     connection='port0/line16',
-        # )
 
-        self.octagon_456_aom_digital = DigitalOut(
-            name='octagon_456_aom_digital',
+        self.pulse_456_aom_digital = DigitalOut(
+            name='pulse_456_aom_digital',
             parent_device = pb.direct_outputs,
             connection='flag 15',
         )
 
-        self.pulse_1064_digital = DigitalOut(
-            name='pulse_1064_digital',
+        self.pulse_1064_aom_digital = DigitalOut(
+            name='pulse_1064_aom_digital',
             parent_device = pb.direct_outputs,
             connection='flag 10',
         )
@@ -310,42 +299,71 @@ class LabDevices():
         self.y_coil_current = AnalogOut(name='y_coil_current', parent_device=ni_6739_0, connection='ao6')
         self.z_coil_current = AnalogOut(name='z_coil_current', parent_device=ni_6739_0, connection='ao7')
         self.tweezer_aom_analog = AnalogOut(name='tweezer_aom_analog', parent_device=ni_6739_0, connection='ao8', limits=(0, 1))
-        self.ipg_1064_aom_analog = AnalogOut(name='notconnected_ipg_1064_aom_analog', parent_device=ni_6739_0, connection='ao9', limits=(0, 1))
-        self.moglabs_456_aom_analog = AnalogOut(name='notconnected_moglabs_456_aom_analog', parent_device=ni_6739_0, connection='ao10', limits=(0, 1))
-
-        self.mirror_1_vertical = AnalogOut(
-            name='mirror_1_vertical',
+        self.servo_1064_aom_analog = AnalogOut(name='notconnected_servo_1064_aom_analog', parent_device=ni_6739_0, connection='ao9', limits=(0, 1))
+        self.servo_456_aom_analog = AnalogOut(name='notconnected_servo_456_aom_analog', parent_device=ni_6739_0, connection='ao10', limits=(0, 1))
+#mirror_1064_1_v
+        #Mirror 1 is upstream mirror 2 is downstream
+        self.mirror_456_1_v = AnalogOut(
+            name='mirror_456_1_v',
             parent_device=ni_6739_0,
             connection='ao11',
             limits=(0, 10),
         )
 
-        self.mirror_1_horizontal = AnalogOut(
-            name='mirror_1_horizontal',
+        self.mirror_456_1_h = AnalogOut(
+            name='mirror_456_1_h',
             parent_device=ni_6739_0,
             connection='ao12',
             limits=(0, 10),
         )
 
-        self.mirror_2_vertical = AnalogOut(
-            name='mirror_2_vertical',
+        self.mirror_456_2_v = AnalogOut(
+            name='mirror_456_2_v',
             parent_device=ni_6739_0,
             connection='ao13',
             limits=(0, 10),
         )
 
-        self.mirror_2_horizontal = AnalogOut(
-            name='mirror_2_horizontal',
+        self.mirror_456_2_h = AnalogOut(
+            name='mirror_456_2_h',
             parent_device=ni_6739_0,
             connection='ao14',
             limits=(0, 10),
         )
 
-        self.octagon_456_aom_analog = AnalogOut(name='octagon_456_aom_analog', parent_device=ni_6739_0, connection='ao15', limits=(0, 1))
+        self.mirror_1064_1_v = AnalogOut(
+            name='mirror_1064_1_v',
+            parent_device=ni_6739_0,
+            connection='ao19',
+            limits=(0, 10),
+        )
+
+        self.mirror_1064_1_h = AnalogOut(
+            name='mirror_1064_1_h',
+            parent_device=ni_6739_0,
+            connection='ao18',
+            limits=(0, 10),
+        )
+
+        self.mirror_1064_2_v = AnalogOut(
+            name='mirror_1064_2_v',
+            parent_device=ni_6739_0,
+            connection='ao21',
+            limits=(0, 10),
+        )
+
+        self.mirror_1064_2_h = AnalogOut(
+            name='mirror_1064_2_h',
+            parent_device=ni_6739_0,
+            connection='ao20',
+            limits=(0, 10),
+        )
+
+        self.pulse_456_aom_analog = AnalogOut(name='pulse_456_aom_analog', parent_device=ni_6739_0, connection='ao15', limits=(0, 1))
 
         self.local_addr_1064_aom_analog = AnalogOut(name='local_addr_1064_aom_analog', parent_device=ni_6739_0, connection='ao16', limits=(0, 1))
 
-        self.pulse_1064_analog = AnalogOut(name='pulse_1064_analog', parent_device=ni_6739_0, connection='ao17', limits=(0, 1))
+        self.pulse_1064_aom_analog = AnalogOut(name='pulse_1064_aom_analog', parent_device=ni_6739_0, connection='ao17', limits=(0, 1))
 
         # self.dummy = AnalogOut(name='dummy', parent_device=ni_6739_0, connection='ao17', limits=(0, 1))
 

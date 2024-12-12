@@ -421,10 +421,11 @@ class OpticalPumpingSequence(MOTSequence):
         if label == "mot":
             # Use the MOT beams for optical depumping
             # ramp detuning to 4 -> 4 for TA
+            print("I'm using mot beams for depumping")
             self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_TA_PUMPING_DETUNING)
             t += D2Lasers.CONST_TA_VCO_RAMP_TIME
             # Do a TA pulse
-            t, _ = self.D2Lasers_obj.do_pulse(
+            t, t_aom_start= self.D2Lasers_obj.do_pulse(
                 t,
                 shot_globals.op_MOT_odp_time,
                 ShutterConfig.MOT_TA,
@@ -432,7 +433,9 @@ class OpticalPumpingSequence(MOTSequence):
                 0,
                 close_all_shutters = close_all_shutters,
             )
-            return t
+
+            t_aom_off = t_aom_start + shot_globals.op_MOT_op_time
+            return t, t_aom_off
 
         elif label == "sigma":
             # Use the sigma+ beam for optical pumping
@@ -442,10 +445,11 @@ class OpticalPumpingSequence(MOTSequence):
             _ = self.BField_obj.ramp_bias_field(
                 t, bias_field_vector=(op_biasx_field, op_biasy_field, op_biasz_field)
             )
-            # ramp detuning to 4 -> 4, 3 -> 3
-            self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_TA_PUMPING_DETUNING)
-            # self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
-            self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_REPUMP_DEPUMPING_DETUNING)
+            # ramp detuning to 4 -> 4, 3 -> 4
+            self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ta_pumping_detuning)
+            self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
+            # 3-> 3
+            # self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_REPUMP_DEPUMPING_DETUNING)
             # Do a sigma+ pulse
             # TODO: is shot_globals.op_ramp_delay just extra fudge time? can it be eliminated?
             t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
@@ -644,22 +648,14 @@ class OpticalPumpingSequence(MOTSequence):
 
         t += self.BField_obj.CONST_COIL_OFF_TIME
 
-        # t = self.Microwave_obj.do_pulse(t_aom_off + BField.CONST_COIL_RAMP_TIME, shot_globals.mw_time)
         if shot_globals.do_mw_pulse:
             t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
-        print("killing time = ", t)
+        elif shot_globals.do_mw_sweep:
+                mw_sweep_start = shot_globals.mw_detuning + shot_globals.mw_sweep_range/2
+                mw_sweep_end = shot_globals.mw_detuning - shot_globals.mw_sweep_range/2
+                t = self.Microwave_obj.do_sweep(t, mw_sweep_start, mw_sweep_end, shot_globals.mw_sweep_duration)
 
-        # t = self.BField_obj.ramp_bias_field(
-        #     t + 200e-6,
-        #     bias_field_vector=(
-        #         750,
-        #         0,
-        #         0,
-        #     ),
-        #     # dur = 2e-3,
-        # )
 
-        # t+=200e-6
         t, _ = self.kill_F4(t, close_all_shutters = True)
         # This is the only place required for the special value of imaging
         # t += 1e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
@@ -818,8 +814,12 @@ class TweezerSequence(OpticalPumpingSequence):
 
         t+=3e-3
 
-        if shot_globals.op_label =="mot":
+        if shot_globals.do_op:
             t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
+        elif shot_globals.do_dp:
+            t, t_aom_off = self.depump_to_F3(t, shot_globals.op_label, close_all_shutters = False)
+
+        if shot_globals.op_label =="mot":
 
             t = self.BField_obj.ramp_bias_field(
                 t_aom_off,
@@ -836,6 +836,10 @@ class TweezerSequence(OpticalPumpingSequence):
 
             if shot_globals.do_mw_pulse:
                 t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+            elif shot_globals.do_mw_sweep:
+                mw_sweep_start = shot_globals.mw_detuning + shot_globals.mw_sweep_range/2
+                mw_sweep_end = shot_globals.mw_detuning - shot_globals.mw_sweep_range/2
+                t = self.Microwave_obj.do_sweep(t, mw_sweep_start, mw_sweep_end, shot_globals.mw_sweep_duration)
 
             if shot_globals.do_killing_pulse:
             #If we use the MOT beams for pumping we have to switch shutters
@@ -848,8 +852,6 @@ class TweezerSequence(OpticalPumpingSequence):
 
 
         if shot_globals.op_label =="sigma":
-            t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
-
             #Making sure the ramp ends right as the pumping is starting
             t_start_ramp = t_aom_off - shot_globals.tw_ramp_dur - shot_globals.op_repump_time
             _ = self.TweezerLaser_obj.ramp_power(t_start_ramp, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power)
@@ -866,10 +868,14 @@ class TweezerSequence(OpticalPumpingSequence):
                 ),
             )
 
-            t+=100e-6
+            t+=400e-6
 
             if shot_globals.do_mw_pulse:
                 t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+            elif shot_globals.do_mw_sweep:
+                mw_sweep_start = shot_globals.mw_detuning + shot_globals.mw_sweep_range/2
+                mw_sweep_end = shot_globals.mw_detuning - shot_globals.mw_sweep_range/2
+                t = self.Microwave_obj.do_sweep(t, mw_sweep_start, mw_sweep_end, shot_globals.mw_sweep_duration)
 
             if shot_globals.do_killing_pulse:
                 t, _ = self.kill_F4(t, close_all_shutters = False)
@@ -916,15 +922,6 @@ if __name__ == "__main__":
     t = 0
 
     # Insert "stay on" statements for alignment here...
-    devices.blue_456_shutter.open(t)
-    devices.moglabs_456_aom_analog.constant(t,1)
-    devices.moglabs_456_aom_digital.go_high(t)
-    devices.octagon_456_aom_analog.constant(t,1)
-    devices.octagon_456_aom_digital.go_high(t)
-    devices.ipg_1064_aom_analog.constant(t,1)
-    devices.ipg_1064_aom_digital.go_high(t)
-    devices.pulse_1064_analog.constant(t,1)
-    devices.pulse_1064_digital.go_high(t)
 
 
     if shot_globals.do_mot_in_situ_check:
