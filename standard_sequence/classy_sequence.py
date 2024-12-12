@@ -821,6 +821,9 @@ class TweezerSequence(OpticalPumpingSequence):
 
         if shot_globals.op_label =="mot":
 
+            if shot_globals.do_depump_pulse_after_pumping:
+                t_aom_off = self.depump_ta_pulse(t_aom_off)
+
             t = self.BField_obj.ramp_bias_field(
                 t_aom_off,
                 bias_field_vector=(
@@ -871,7 +874,9 @@ class TweezerSequence(OpticalPumpingSequence):
             t+=400e-6
 
             if shot_globals.do_mw_pulse:
+                self.TweezerLaser_obj.aom_off(t)
                 t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+                self.TweezerLaser_obj.aom_on(t, shot_globals.tw_ramp_power)
             elif shot_globals.do_mw_sweep:
                 mw_sweep_start = shot_globals.mw_detuning + shot_globals.mw_sweep_range/2
                 mw_sweep_end = shot_globals.mw_detuning - shot_globals.mw_sweep_range/2

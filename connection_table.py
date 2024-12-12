@@ -10,6 +10,8 @@ import labscript_devices.FunctionRunner
 import labscript_devices.FunctionRunner.labscript_devices
 from labscript import AnalogOut, ClockLine, DigitalOut, Shutter
 from labscript_devices.PulseBlasterUSB import PulseBlasterUSB
+
+# from user_devices.manta419b.manta419b import Manta419B
 from user_devices.kinetix.Kinetix import Kinetix
 
 # from user_devices.spcm.Spectrum import Spectrum
