@@ -623,7 +623,7 @@ class BField:
             shot_globals.mot_y_coil_voltage,
             shot_globals.mot_z_coil_voltage,
         ]
-        self.mot_coils_on = shot_globals.do_mot_coil
+        self.mot_coils_on = shot_globals.mot_do_coil
         self.mot_coils_on_current = 10 / 6
 
         # Same question as for Dline_lasers, should we automatically initialize the hardware here or in a separate function we can call?

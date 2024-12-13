@@ -59,14 +59,14 @@ class MOTSequence:
         self.Camera_obj = Camera(t)
 
     def do_mot(self, t, dur, close_all_shutters=False):
-        if shot_globals.do_uv:
-            t = self.UVLamps_obj.uv_pulse(t, dur=shot_globals.uv_duration)
+        if shot_globals.mot_do_uv:
+            t = self.UVLamps_obj.uv_pulse(t, dur=shot_globals.mot_uv_duration)
             # the uv duration should be determined for each dispenser current
             # generally, get superior loading in the 10s of milliseconds
 
         # if using a long UV duration, want to make sure that the MOT doesn't finish
         # loading leaving the UV is still on for imaging.
-        dur = max(dur, shot_globals.uv_duration)
+        dur = max(dur, shot_globals.mot_uv_duration)
         t, _ = self.D2Lasers_obj.do_pulse(
             t,
             dur,
@@ -863,16 +863,18 @@ class TweezerSequence(OpticalPumpingSequence):
                     shot_globals.mw_biasy_field,
                     shot_globals.mw_biasz_field,
                 ),
+                dur = shot_globals.mw_bias_ramp_dur
             )
 
             #Making sure there is enough time between the MOT pumping pulse and the killing pulse to switch shutters
             t= t + max(D2Lasers.CONST_MIN_SHUTTER_ON_TIME + D2Lasers.CONST_SHUTTER_TURN_ON_TIME - shot_globals.tw_ramp_dur, 0)
+            t += shot_globals.mw_field_wait_dur
             t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power)
 
             if shot_globals.do_mw_pulse:
-                self.TweezerLaser_obj.aom_off(t)
+                # self.TweezerLaser_obj.aom_off(t)
                 t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
-                self.TweezerLaser_obj.aom_on(t, shot_globals.tw_ramp_power)
+                # self.TweezerLaser_obj.aom_on(t, shot_globals.tw_ramp_power)
             elif shot_globals.do_mw_sweep:
                 mw_sweep_start = shot_globals.mw_detuning + shot_globals.mw_sweep_range/2
                 mw_sweep_end = shot_globals.mw_detuning - shot_globals.mw_sweep_range/2
@@ -888,7 +890,7 @@ class TweezerSequence(OpticalPumpingSequence):
                 t+= shot_globals.op_killing_pulse_time
 
 
-        if shot_globals.op_label =="sigma":
+        if shot_globals.op_label == "sigma":
             #Making sure the ramp ends right as the pumping is starting
             t_start_ramp = t_aom_off - shot_globals.tw_ramp_dur - shot_globals.op_repump_time
             _ = self.TweezerLaser_obj.ramp_power(t_start_ramp, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power)
@@ -897,7 +899,7 @@ class TweezerSequence(OpticalPumpingSequence):
                 t = self.depump_ta_pulse(t)
 
             t = self.BField_obj.ramp_bias_field(
-                t_aom_off,
+                t_aom_off + shot_globals.op_extra_fudge_time,
                 bias_field_vector=(
                     shot_globals.mw_biasx_field,
                     shot_globals.mw_biasy_field,
@@ -905,12 +907,11 @@ class TweezerSequence(OpticalPumpingSequence):
                 ),
             )
 
-            t+=400e-6
-
+            t += shot_globals.mw_field_wait_dur #400e-6
             if shot_globals.do_mw_pulse:
-                self.TweezerLaser_obj.aom_off(t)
+                # self.TweezerLaser_obj.aom_off(t)
                 t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
-                self.TweezerLaser_obj.aom_on(t, shot_globals.tw_ramp_power)
+                # self.TweezerLaser_obj.aom_on(t, shot_globals.tw_ramp_power)
             elif shot_globals.do_mw_sweep:
                 mw_sweep_start = shot_globals.mw_detuning + shot_globals.mw_sweep_range/2
                 mw_sweep_end = shot_globals.mw_detuning - shot_globals.mw_sweep_range/2
@@ -920,7 +921,6 @@ class TweezerSequence(OpticalPumpingSequence):
                 t, _ = self.kill_F4(t, close_all_shutters = False)
             else:
                 t+= shot_globals.op_killing_pulse_time
-
 
         t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
         t += 2e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
@@ -1009,6 +1009,9 @@ if __name__ == "__main__":
 
     # if shot_globals.do_optical_pump_in_microtrap_check:
     #     t = do_optical_pump_in_microtrap_check(t)
+
+
+    """ Here doing all the finish up quirk for spectrum cards """
     try:
         current_obj = MOTSeq_obj
     except:
@@ -1017,9 +1020,9 @@ if __name__ == "__main__":
         except:
             try:
                 current_obj = TweezerSequence_obj
-                t = current_obj.TweezerLaser_obj.stop_tweezers(t)
             except:
                 raise NotImplementedError
+            t = current_obj.TweezerLaser_obj.stop_tweezers(t)
 
     t = current_obj.Microwave_obj.reset_spectrum(t)
 
