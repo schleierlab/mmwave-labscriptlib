@@ -374,6 +374,7 @@ class OpticalPumpingSequence(MOTSequence):
 
             t_aom_off = t_aom_start + shot_globals.op_repump_time
 
+
             assert (
                 shot_globals.op_ta_time < shot_globals.op_repump_time
             ), "TA time should be shorter than repump for pumping to F=4"
@@ -381,7 +382,9 @@ class OpticalPumpingSequence(MOTSequence):
             self.D2Lasers_obj.ta_aom_off(
                 t_aom_start + shot_globals.op_ta_time
             )
+            self.D2Lasers_obj.ramp_ta_freq(t_aom_start + shot_globals.op_ta_time, D2Lasers.CONST_TA_VCO_RAMP_TIME, 50)
             # Close the shutters
+            t += 1e-3
             return t, t_aom_off
         else:
             raise NotImplementedError("This optical pumping method is not implemented")
@@ -517,7 +520,7 @@ class OpticalPumpingSequence(MOTSequence):
             shutter_config = ShutterConfig.OPTICAL_PUMPING_TA
 
         # tune to resonance
-        self.D2Lasers_obj.ramp_ta_freq(t-D2Lasers.CONST_TA_VCO_RAMP_TIME, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.killing_pulse_detuning)
+        t = self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.killing_pulse_detuning)
         # do a ta pulse via optical pumping path
         t, t_aom_start = self.D2Lasers_obj.do_pulse(
             t,
