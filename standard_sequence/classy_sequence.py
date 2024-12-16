@@ -319,18 +319,18 @@ class OpticalPumpingSequence(MOTSequence):
     def pump_to_F4(self, t, label, close_all_shutters=True):
         if self.BField_obj.mot_coils_on:
             _ = self.BField_obj.switch_mot_coils(t)
-        if label == "mot":
-            # Use the MOT beams for optical pumping
-            # Do a repump pulse
-            print("I'm using mot beams for optical pumping")
 
-            op_biasx_field, op_biasy_field, op_biasz_field = (
+        op_biasx_field, op_biasy_field, op_biasz_field = (
                 self.BField_obj.convert_bias_fields_sph_to_cart(
                     shot_globals.op_bias_amp,
                     shot_globals.op_bias_phi,
                     shot_globals.op_bias_theta,
                 )
             )
+        if label == "mot":
+            # Use the MOT beams for optical pumping
+            # Do a repump pulse
+            print("I'm using mot beams for optical pumping")
             t = self.BField_obj.ramp_bias_field(
                 t, bias_field_vector=(op_biasx_field, op_biasy_field, op_biasz_field)
             )
@@ -349,13 +349,7 @@ class OpticalPumpingSequence(MOTSequence):
 
         elif label == "sigma":
             # Use the sigma+ beam for optical pumping
-            op_biasx_field, op_biasy_field, op_biasz_field = (
-                self.BField_obj.convert_bias_fields_sph_to_cart(
-                    shot_globals.op_bias_amp,
-                    shot_globals.op_bias_phi,
-                    shot_globals.op_bias_theta,
-                )
-            )
+
             _ = self.BField_obj.ramp_bias_field(
                 t, bias_field_vector=(op_biasx_field, op_biasy_field, op_biasz_field)
             )
@@ -391,7 +385,7 @@ class OpticalPumpingSequence(MOTSequence):
             self.D2Lasers_obj.ramp_ta_freq(
                 t_aom_start + shot_globals.op_ta_time,
                 D2Lasers.CONST_TA_VCO_RAMP_TIME,
-                50,
+                50, # move the detuning to +50MHz relative to 4->5 transtion to avoid the leakage light on 4->4 transition doing depump
             )
             # Close the shutters
             t += 1e-3
@@ -587,7 +581,7 @@ class OpticalPumpingSequence(MOTSequence):
             )
             t_aom_off += 50e-6
 
-        if shot_globals.do_depump_pulse_after_pumping:
+        if shot_globals.do_depump_ta_pulse_after_pump:
             # do depump pulse to meausre the dark state lifetime
             t = self.depump_ta_pulse(t_aom_off, close_all_shutters=True)
         if shot_globals.do_killing_pulse:
@@ -668,7 +662,7 @@ class OpticalPumpingSequence(MOTSequence):
             # ]
 
         t = self.BField_obj.ramp_bias_field(
-                t_aom_off + 200e-6,
+                t_aom_off + 200e-6, #TODO: wait for 200e-6s extra time in optical pumping field, can be changed
                 bias_field_vector=(mw_biasx_field, mw_biasy_field, mw_biasz_field),
             )
 
@@ -683,7 +677,8 @@ class OpticalPumpingSequence(MOTSequence):
                 t, mw_sweep_start, mw_sweep_end, shot_globals.mw_sweep_duration
             )
 
-        t += 3e-6
+        t += 3e-6 #TODO: wait for extra time before killing, can be changed
+
         t, _ = self.kill_F4(t, close_all_shutters=True)
         # This is the only place required for the special value of imaging
         # t += 1e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
@@ -872,7 +867,7 @@ class TweezerSequence(OpticalPumpingSequence):
 
         t += 3e-3
 
-        if shot_globals.do_depump_pulse_before_pumping:
+        if shot_globals.do_depump_ta_pulse_before_pump:
             t = self.depump_ta_pulse(t)
 
         if shot_globals.do_op:
@@ -885,7 +880,7 @@ class TweezerSequence(OpticalPumpingSequence):
             )
 
         if shot_globals.op_label == "mot":
-            if shot_globals.do_depump_pulse_after_pumping:
+            if shot_globals.do_depump_ta_pulse_after_pump:
                 t_aom_off = self.depump_ta_pulse(t_aom_off)
 
             mw_biasx_field, mw_biasy_field, mw_biasz_field = (
@@ -909,13 +904,16 @@ class TweezerSequence(OpticalPumpingSequence):
                 )
 
 
-            # Making sure there is enough time between the MOT pumping pulse and the killing pulse to switch shutters
+            # This is trying to make sure when the ramp of tweezer end (it reaches the minimum power), the shutter config is already switched to optical pumping
+            # if the tweezer ramp is too quick, it will wait extra time at high power before the shutter switching finishes
             t = t + max(
                 D2Lasers.CONST_MIN_SHUTTER_ON_TIME
                 + D2Lasers.CONST_SHUTTER_TURN_ON_TIME
                 - shot_globals.tw_ramp_dur,
                 0,
             )
+
+
             t += shot_globals.mw_field_wait_dur
             t = self.TweezerLaser_obj.ramp_power(
                 t, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power
@@ -950,14 +948,18 @@ class TweezerSequence(OpticalPumpingSequence):
             t_start_ramp = (
                 t_aom_off - shot_globals.tw_ramp_dur - shot_globals.op_repump_time
             )
+
+            # ramp down the tweezer power before optical pumping
             _ = self.TweezerLaser_obj.ramp_power(
                 t_start_ramp, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power
             )
+
+            # ramp up the tweezer power after optical pumping
             _ = self.TweezerLaser_obj.ramp_power(
                 t_aom_off, shot_globals.tw_ramp_dur, 0.99
             )
 
-            if shot_globals.do_depump_pulse_after_pumping:
+            if shot_globals.do_depump_ta_pulse_after_pump:
                 t = self.depump_ta_pulse(t)
 
             mw_biasx_field, mw_biasy_field, mw_biasz_field = (
@@ -975,7 +977,7 @@ class TweezerSequence(OpticalPumpingSequence):
             # ]
 
             t = self.BField_obj.ramp_bias_field(
-                t_aom_off + 5e-3,
+                t_aom_off + 5e-3, # extra time to wait for 5e-3s extra time in optical pumping field
                 bias_field_vector=(mw_biasx_field, mw_biasy_field, mw_biasz_field),
                 dur=shot_globals.mw_bias_ramp_dur,
             )

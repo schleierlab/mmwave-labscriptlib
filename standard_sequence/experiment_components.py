@@ -238,17 +238,17 @@ class D2Lasers:
         close_bool_list = [(shutter in shutters_to_close) for shutter in basic_shutters]
 
         if any(t - self.last_shutter_close_t * open_bool_list < self.CONST_MIN_SHUTTER_OFF_TIME):
-            t = max(self.last_shutter_close_t * open_bool_list) + self.CONST_MIN_SHUTTER_OFF_TIME
+            t = max(self.last_shutter_close_t * open_bool_list) + self.CONST_MIN_SHUTTER_OFF_TIME # if the last shutter is closed and now needs to be opened, open it after CONST_MIN_SHUTTER_OFF_TIME
         elif any (t - self.last_shutter_open_t * close_bool_list < self.CONST_MIN_SHUTTER_ON_TIME):
-            t = max(self.last_shutter_open_t * close_bool_list) + self.CONST_MIN_SHUTTER_ON_TIME + self.CONST_SHUTTER_TURN_OFF_TIME
+            t = max(self.last_shutter_open_t * close_bool_list) + self.CONST_MIN_SHUTTER_ON_TIME + self.CONST_SHUTTER_TURN_OFF_TIME # if the last shutter is opened and now needs to be closed, close it after CONST_MIN_SHUTTER_ON_TIME
 
         for shutter in basic_shutters:
             if shutter in shutters_to_open:
                 shutter_dict[shutter].open(t)
-                self.last_shutter_open_t[basic_shutters.index(shutter)] = t
+                self.last_shutter_open_t[basic_shutters.index(shutter)] = t # record the last time the shutter was opened
             if shutter in shutters_to_close:
                 shutter_dict[shutter].close(t - self.CONST_SHUTTER_TURN_OFF_TIME)
-                self.last_shutter_close_t[basic_shutters.index(shutter)] = t - self.CONST_SHUTTER_TURN_OFF_TIME
+                self.last_shutter_close_t[basic_shutters.index(shutter)] = t - self.CONST_SHUTTER_TURN_OFF_TIME # record the last time the shutter was closed
 
         self.shutter_config = new_shutter_config
         return t
