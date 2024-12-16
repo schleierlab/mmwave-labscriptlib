@@ -415,18 +415,18 @@
     <span class="k">def</span> <span class="nf">pump_to_F4</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">mot_coils_on</span><span class="p">:</span>
             <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">switch_mot_coils</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;mot&quot;</span><span class="p">:</span>
-            <span class="c1"># Use the MOT beams for optical pumping</span>
-            <span class="c1"># Do a repump pulse</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;I&#39;m using mot beams for optical pumping&quot;</span><span class="p">)</span>
 
-            <span class="n">op_biasx_field</span><span class="p">,</span> <span class="n">op_biasy_field</span><span class="p">,</span> <span class="n">op_biasz_field</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">op_biasx_field</span><span class="p">,</span> <span class="n">op_biasy_field</span><span class="p">,</span> <span class="n">op_biasz_field</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">convert_bias_fields_sph_to_cart</span><span class="p">(</span>
                     <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_bias_amp</span><span class="p">,</span>
                     <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_bias_phi</span><span class="p">,</span>
                     <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_bias_theta</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="p">)</span>
+        <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;mot&quot;</span><span class="p">:</span>
+            <span class="c1"># Use the MOT beams for optical pumping</span>
+            <span class="c1"># Do a repump pulse</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;I&#39;m using mot beams for optical pumping&quot;</span><span class="p">)</span>
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_bias_field</span><span class="p">(</span>
                 <span class="n">t</span><span class="p">,</span> <span class="n">bias_field_vector</span><span class="o">=</span><span class="p">(</span><span class="n">op_biasx_field</span><span class="p">,</span> <span class="n">op_biasy_field</span><span class="p">,</span> <span class="n">op_biasz_field</span><span class="p">)</span>
             <span class="p">)</span>
@@ -445,13 +445,7 @@
 
         <span class="k">elif</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;sigma&quot;</span><span class="p">:</span>
             <span class="c1"># Use the sigma+ beam for optical pumping</span>
-            <span class="n">op_biasx_field</span><span class="p">,</span> <span class="n">op_biasy_field</span><span class="p">,</span> <span class="n">op_biasz_field</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">convert_bias_fields_sph_to_cart</span><span class="p">(</span>
-                    <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_bias_amp</span><span class="p">,</span>
-                    <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_bias_phi</span><span class="p">,</span>
-                    <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_bias_theta</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
+
             <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_bias_field</span><span class="p">(</span>
                 <span class="n">t</span><span class="p">,</span> <span class="n">bias_field_vector</span><span class="o">=</span><span class="p">(</span><span class="n">op_biasx_field</span><span class="p">,</span> <span class="n">op_biasy_field</span><span class="p">,</span> <span class="n">op_biasz_field</span><span class="p">)</span>
             <span class="p">)</span>
@@ -487,7 +481,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_ta_freq</span><span class="p">(</span>
                 <span class="n">t_aom_start</span> <span class="o">+</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_ta_time</span><span class="p">,</span>
                 <span class="n">D2Lasers</span><span class="o">.</span><span class="n">CONST_TA_VCO_RAMP_TIME</span><span class="p">,</span>
-                <span class="mi">50</span><span class="p">,</span>
+                <span class="mi">50</span><span class="p">,</span> <span class="c1"># move the detuning to +50MHz relative to 4-&gt;5 transtion to avoid the leakage light on 4-&gt;4 transition doing depump</span>
             <span class="p">)</span>
             <span class="c1"># Close the shutters</span>
             <span class="n">t</span> <span class="o">+=</span> <span class="mf">1e-3</span>
@@ -696,7 +690,7 @@
             <span class="p">)</span>
             <span class="n">t_aom_off</span> <span class="o">+=</span> <span class="mf">50e-6</span>
 
-        <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_depump_pulse_after_pumping</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_depump_ta_pulse_after_pump</span><span class="p">:</span>
             <span class="c1"># do depump pulse to meausre the dark state lifetime</span>
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">depump_ta_pulse</span><span class="p">(</span><span class="n">t_aom_off</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_killing_pulse</span><span class="p">:</span>
@@ -777,7 +771,7 @@
             <span class="c1"># ]</span>
 
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_bias_field</span><span class="p">(</span>
-                <span class="n">t_aom_off</span> <span class="o">+</span> <span class="mf">200e-6</span><span class="p">,</span>
+                <span class="n">t_aom_off</span> <span class="o">+</span> <span class="mf">200e-6</span><span class="p">,</span> <span class="c1">#TODO: wait for 200e-6s extra time in optical pumping field, can be changed</span>
                 <span class="n">bias_field_vector</span><span class="o">=</span><span class="p">(</span><span class="n">mw_biasx_field</span><span class="p">,</span> <span class="n">mw_biasy_field</span><span class="p">,</span> <span class="n">mw_biasz_field</span><span class="p">),</span>
             <span class="p">)</span>
 
@@ -792,7 +786,8 @@
                 <span class="n">t</span><span class="p">,</span> <span class="n">mw_sweep_start</span><span class="p">,</span> <span class="n">mw_sweep_end</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_sweep_duration</span>
             <span class="p">)</span>
 
-        <span class="n">t</span> <span class="o">+=</span> <span class="mf">3e-6</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="mf">3e-6</span> <span class="c1">#TODO: wait for extra time before killing, can be changed</span>
+
         <span class="n">t</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kill_F4</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="c1"># This is the only place required for the special value of imaging</span>
         <span class="c1"># t += 1e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others</span>
@@ -1002,7 +997,7 @@
 
         <span class="n">t</span> <span class="o">+=</span> <span class="mf">3e-3</span>
 
-        <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_depump_pulse_before_pumping</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_depump_ta_pulse_before_pump</span><span class="p">:</span>
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">depump_ta_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_op</span><span class="p">:</span>
@@ -1015,7 +1010,7 @@
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_label</span> <span class="o">==</span> <span class="s2">&quot;mot&quot;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_depump_pulse_after_pumping</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_depump_ta_pulse_after_pump</span><span class="p">:</span>
                 <span class="n">t_aom_off</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">depump_ta_pulse</span><span class="p">(</span><span class="n">t_aom_off</span><span class="p">)</span>
 
             <span class="n">mw_biasx_field</span><span class="p">,</span> <span class="n">mw_biasy_field</span><span class="p">,</span> <span class="n">mw_biasz_field</span> <span class="o">=</span> <span class="p">(</span>
@@ -1039,13 +1034,16 @@
                 <span class="p">)</span>
 
 
-            <span class="c1"># Making sure there is enough time between the MOT pumping pulse and the killing pulse to switch shutters</span>
+            <span class="c1"># This is trying to make sure when the ramp of tweezer end (it reaches the minimum power), the shutter config is already switched to optical pumping</span>
+            <span class="c1"># if the tweezer ramp is too quick, it will wait extra time at high power before the shutter switching finishes</span>
             <span class="n">t</span> <span class="o">=</span> <span class="n">t</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span>
                 <span class="n">D2Lasers</span><span class="o">.</span><span class="n">CONST_MIN_SHUTTER_ON_TIME</span>
                 <span class="o">+</span> <span class="n">D2Lasers</span><span class="o">.</span><span class="n">CONST_SHUTTER_TURN_ON_TIME</span>
                 <span class="o">-</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_dur</span><span class="p">,</span>
                 <span class="mi">0</span><span class="p">,</span>
             <span class="p">)</span>
+
+
             <span class="n">t</span> <span class="o">+=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_field_wait_dur</span>
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">ramp_power</span><span class="p">(</span>
                 <span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_dur</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_power</span>
@@ -1080,14 +1078,18 @@
             <span class="n">t_start_ramp</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="n">t_aom_off</span> <span class="o">-</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_dur</span> <span class="o">-</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_repump_time</span>
             <span class="p">)</span>
+
+            <span class="c1"># ramp down the tweezer power before optical pumping</span>
             <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">ramp_power</span><span class="p">(</span>
                 <span class="n">t_start_ramp</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_dur</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_power</span>
             <span class="p">)</span>
+
+            <span class="c1"># ramp up the tweezer power after optical pumping</span>
             <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">ramp_power</span><span class="p">(</span>
                 <span class="n">t_aom_off</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_dur</span><span class="p">,</span> <span class="mf">0.99</span>
             <span class="p">)</span>
 
-            <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_depump_pulse_after_pumping</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_depump_ta_pulse_after_pump</span><span class="p">:</span>
                 <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">depump_ta_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
             <span class="n">mw_biasx_field</span><span class="p">,</span> <span class="n">mw_biasy_field</span><span class="p">,</span> <span class="n">mw_biasz_field</span> <span class="o">=</span> <span class="p">(</span>
@@ -1105,7 +1107,7 @@
             <span class="c1"># ]</span>
 
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_bias_field</span><span class="p">(</span>
-                <span class="n">t_aom_off</span> <span class="o">+</span> <span class="mf">5e-3</span><span class="p">,</span>
+                <span class="n">t_aom_off</span> <span class="o">+</span> <span class="mf">5e-3</span><span class="p">,</span> <span class="c1"># extra time to wait for 5e-3s extra time in optical pumping field</span>
                 <span class="n">bias_field_vector</span><span class="o">=</span><span class="p">(</span><span class="n">mw_biasx_field</span><span class="p">,</span> <span class="n">mw_biasy_field</span><span class="p">,</span> <span class="n">mw_biasz_field</span><span class="p">),</span>
                 <span class="n">dur</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_bias_ramp_dur</span><span class="p">,</span>
             <span class="p">)</span>
