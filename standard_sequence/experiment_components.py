@@ -784,23 +784,23 @@ class BField:
         endtime = t + self.CONST_COIL_RAMP_TIME + self.CONST_COIL_OFF_TIME
         return endtime
 
-    def get_op_bias_fields(self):
+    def convert_bias_fields_sph_to_cart(self, bias_amp, bias_phi, bias_theta):
         """Compute the proper bias fields for a given quantization angle from shot globals"""
-        op_biasx_field = (
-            shot_globals.op_bias_amp
-            * np.cos(np.deg2rad(shot_globals.op_bias_phi))
-            * np.sin(np.deg2rad(shot_globals.op_bias_theta))
+        biasx_field = (
+            bias_amp
+            * np.cos(np.deg2rad(bias_phi))
+            * np.sin(np.deg2rad(bias_theta))
         )
-        op_biasy_field = (
-            shot_globals.op_bias_amp
-            * np.sin(np.deg2rad(shot_globals.op_bias_phi))
-            * np.sin(np.deg2rad(shot_globals.op_bias_theta))
+        biasy_field = (
+            bias_amp
+            * np.sin(np.deg2rad(bias_phi))
+            * np.sin(np.deg2rad(bias_theta))
         )
-        op_biasz_field = shot_globals.op_bias_amp * np.cos(
-            np.deg2rad(shot_globals.op_bias_theta),
+        biasz_field = bias_amp * np.cos(
+            np.deg2rad(bias_theta),
         )
 
-        return op_biasx_field, op_biasy_field, op_biasz_field
+        return biasx_field, biasy_field, biasz_field
 
 
 class Camera:
