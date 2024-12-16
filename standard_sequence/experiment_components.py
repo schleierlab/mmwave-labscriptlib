@@ -88,8 +88,9 @@ class D2Lasers:
     shutter_config: ShutterConfig
 
     CONST_TA_VCO_RAMP_TIME: ClassVar[float] = (
-        1.2e-4  # minimal ta vco ramp time to stay in beatnote lock
+        1.2e-4
     )
+    """minimal ta vco ramp time to stay in beatnote lock"""
     CONST_SHUTTER_TURN_OFF_TIME: ClassVar[float] = (
         2e-3  # for shutter take from start to open to fully close
     )
@@ -104,6 +105,9 @@ class D2Lasers:
         3.6e-3  # minimum time for shutter to be on
     )
 
+
+    # Can we put this somewhere nicer?
+
     def __init__(self, t):
         # Tune to MOT frequency, full power
         self.ta_freq = shot_globals.mot_ta_detuning
@@ -114,7 +118,9 @@ class D2Lasers:
         # changes to make. Do not call self.update_shutters(self.shutter_config),
         # nothing will happen.
         self.shutter_config = ShutterConfig.NONE
-        self.update_shutters(t, ShutterConfig.MOT_FULL)
+        self.last_shutter_open_t = np.zeros(7)
+        self.last_shutter_close_t = np.zeros(7)
+        _ = self.update_shutters(t + D2Lasers.CONST_SHUTTER_TURN_ON_TIME, ShutterConfig.MOT_FULL)
 
         # If do_mot is the first thing that is called, these initializations
         # produce a warning in the runmanager output because the MOT powers
@@ -204,13 +210,7 @@ class D2Lasers:
         )
 
     def update_shutters(self, t, new_shutter_config: ShutterConfig):
-        changed_shutters = self.shutter_config ^ new_shutter_config
-
-        shutters_to_open = changed_shutters & new_shutter_config
-        shutters_to_close = changed_shutters & self.shutter_config
-
-        # Can we put this somewhere nicer?
-        basic_shutters = [
+        basic_shutters: list[ShutterConfig] = [
             ShutterConfig.TA,
             ShutterConfig.REPUMP,
             ShutterConfig.MOT_XY,
@@ -230,47 +230,43 @@ class D2Lasers:
             ShutterConfig.OPTICAL_PUMPING: devices.optical_pump_shutter,
         }
 
+        changed_shutters = self.shutter_config ^ new_shutter_config
+
+        shutters_to_open = changed_shutters & new_shutter_config
+        open_bool_list = [(shutter in shutters_to_open) for shutter in basic_shutters]
+        shutters_to_close = changed_shutters & self.shutter_config
+        close_bool_list = [(shutter in shutters_to_close) for shutter in basic_shutters]
+
+        if any(t - self.last_shutter_close_t * open_bool_list < self.CONST_MIN_SHUTTER_OFF_TIME):
+            t = max(self.last_shutter_close_t * open_bool_list) + self.CONST_MIN_SHUTTER_OFF_TIME # if the last shutter is closed and now needs to be opened, open it after CONST_MIN_SHUTTER_OFF_TIME
+        elif any (t - self.last_shutter_open_t * close_bool_list < self.CONST_MIN_SHUTTER_ON_TIME):
+            t = max(self.last_shutter_open_t * close_bool_list) + self.CONST_MIN_SHUTTER_ON_TIME + self.CONST_SHUTTER_TURN_OFF_TIME # if the last shutter is opened and now needs to be closed, close it after CONST_MIN_SHUTTER_ON_TIME
+
         for shutter in basic_shutters:
             if shutter in shutters_to_open:
                 shutter_dict[shutter].open(t)
+                self.last_shutter_open_t[basic_shutters.index(shutter)] = t # record the last time the shutter was opened
             if shutter in shutters_to_close:
                 shutter_dict[shutter].close(t - self.CONST_SHUTTER_TURN_OFF_TIME)
+                self.last_shutter_close_t[basic_shutters.index(shutter)] = t - self.CONST_SHUTTER_TURN_OFF_TIME # record the last time the shutter was closed
 
         self.shutter_config = new_shutter_config
-        # return t?
+        return t
 
-    # NOTE: This version makes it so that the previous shutters are fully closed before opening the new shutters
-    # def update_shutters(self, t, new_shutter_config: ShutterConfig):
-    #     changed_shutters = self.shutter_config ^ new_shutter_config
-
-    #     shutters_to_open = changed_shutters & new_shutter_config
-    #     shutters_to_close = changed_shutters & self.shutter_config
-
-    #     for shutter in shutters_to_close:
-    #         self.shutter_config.shutter_dict[shutter].close(t)
-
-    #     t += 2*self.CONST_SHUTTER_TURN_OFF_TIME
-    #     for shutter in shutters_to_open:
-    #         self.shutter_config.shutter_dict[shutter].open(t)
-
-    #     self.shutter_config = new_shutter_config
-    #     return t
-
-    # NOTE: If the shutter configuration is changed from the previous pulse, this will cut the previous pulse short
-    # with the AOM by self.CONST_SHUTTER_TURN_ON_TIME in order to switch the shutters, and start the next pulse exactly at the t specified.
-    # NOTE: The above note should be taken in context with the one below.
     def do_pulse(
         self, t, dur, shutter_config, ta_power, repump_power, close_all_shutters=False
     ):
+
         change_shutters = self.shutter_config != shutter_config
 
         if change_shutters:
             # NOTE:Adding this to t makes it so it doesn't cut the previous pulse short, but shifts the time of the next.
             t += self.CONST_SHUTTER_TURN_ON_TIME
             print("shutter config changed, adding time to account for switching")
+            t = self.update_shutters(t, shutter_config)
+
             self.ta_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
             self.repump_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
-            self.update_shutters(t, shutter_config)
 
         if ta_power != 0:
             self.ta_aom_on(t, ta_power)
@@ -287,15 +283,12 @@ class D2Lasers:
         # at the end of the pulse duration. Plan accordingly and don't leave long wait
         # times between pulses accidentally.
 
-        if (dur < self.CONST_MIN_SHUTTER_ON_TIME) and change_shutters:
-            t += self.CONST_MIN_SHUTTER_ON_TIME - dur
-
         # If doing close_all_shutters, have to make sure that we aren't opening any of the ones we just closed in the next pulse.
         # Otherwise they won't be able to open in time unless there's enough delay between pulses.
         if close_all_shutters:
             print("closing all shutters")
             t += self.CONST_SHUTTER_TURN_OFF_TIME
-            self.update_shutters(t, ShutterConfig.NONE)
+            t = self.update_shutters(t, ShutterConfig.NONE)
             self.ta_aom_on(t, 1)
             self.repump_aom_on(t, 1)
 
@@ -312,7 +305,7 @@ class D2Lasers:
     def reset_to_mot_on(self, t):
         self.ta_aom_on(t, shot_globals.mot_ta_power)
         self.repump_aom_on(t, shot_globals.mot_repump_power)
-        self.update_shutters(t, ShutterConfig.MOT_FULL)
+        t = self.update_shutters(t, ShutterConfig.MOT_FULL)
         t += self.CONST_SHUTTER_TURN_ON_TIME
 
         return t
@@ -458,17 +451,41 @@ class Microwave:
     def do_pulse(self, t, dur):
         """do microwave pulse"""
 
-        t += CONST_SPECTRUM_CARD_OFFSET
+        t += self.CONST_SPECTRUM_CARD_OFFSET
         devices.uwave_absorp_switch.go_high(t)
         self.uwave_absorp_switch_on = True
         devices.spectrum_uwave.single_freq(
-            t - CONST_SPECTRUM_CARD_OFFSET,
+            t - self.CONST_SPECTRUM_CARD_OFFSET,
             duration=dur,
             freq=spec_freq_calib(self.mw_detuning),
             amplitude=0.99,  # the amplitude can not be 1 due to the bug in spectrum card server
             phase=0,  # initial phase = 0
             ch=0,  # using channel 0
             loops=1,  # doing 1 loop
+        )
+
+        t += dur
+        devices.uwave_absorp_switch.go_low(t)
+        self.uwave_absorp_switch_on = False
+
+        return t
+
+    def do_sweep(self, t, start_freq, end_freq, dur):
+        """do microwave sweep"""
+        print("I'm doing microwave sweep")
+        t += self.CONST_SPECTRUM_CARD_OFFSET
+        devices.uwave_absorp_switch.go_high(t)
+        self.uwave_absorp_switch_on = True
+        devices.spectrum_uwave.sweep(
+            t - self.CONST_SPECTRUM_CARD_OFFSET,
+            duration=dur,
+            start_freq=spec_freq_calib(start_freq),
+            end_freq=spec_freq_calib(end_freq),
+            amplitude=0.99,  # the amplitude can not be 1 due to the bug in spectrum card server
+            phase=0,  # initial phase = 0
+            ch=0,  # using channel 0
+            loops=1,  # doing 1 loop
+            freq_ramp_type = "linear",
         )
 
         t += dur
@@ -485,7 +502,8 @@ class Microwave:
         )  # dummy segment
         devices.spectrum_uwave.stop()
 
-        return t + 100e-6
+        return t
+
 
 
 class RydLasers:
@@ -605,7 +623,7 @@ class BField:
             shot_globals.mot_y_coil_voltage,
             shot_globals.mot_z_coil_voltage,
         ]
-        self.mot_coils_on = shot_globals.do_mot_coil
+        self.mot_coils_on = shot_globals.mot_do_coil
         self.mot_coils_on_current = 10 / 6
 
         # Same question as for Dline_lasers, should we automatically initialize the hardware here or in a separate function we can call?
@@ -686,9 +704,10 @@ class BField:
         self.bias_voltages[component] = final_voltage
         return t
 
-    def ramp_bias_field(self, t, bias_field_vector=None, voltage_vector=None):
+    def ramp_bias_field(self, t, dur = 100e-6,  bias_field_vector=None, voltage_vector=None):
         # bias_field_vector should be a tuple of the form (x,y,z)
         # Need to start the ramp earlier if the voltage changes sign
+        dur = np.max([dur, self.CONST_COIL_RAMP_TIME])
         if bias_field_vector is not None:
             voltage_vector = np.array(
                 [
@@ -720,7 +739,7 @@ class BField:
             else:
                 self.current_outputs[i].ramp(
                     coil_ramp_start_times[i],
-                    duration=self.CONST_COIL_RAMP_TIME,
+                    duration= dur,
                     initial=self.bias_voltages[i],
                     final=voltage_vector[i],
                     samplerate=1e5,
@@ -728,7 +747,7 @@ class BField:
         print(coil_ramp_start_times)
         end_time = (
             np.min(coil_ramp_start_times)
-            + self.CONST_COIL_RAMP_TIME
+            + dur
             + self.CONST_BIPOLAR_COIL_FLIP_TIME
         )
         self.t_last_change = end_time
@@ -740,7 +759,7 @@ class BField:
 
         self.bias_voltages = voltage_vector
 
-        return t + self.CONST_COIL_RAMP_TIME
+        return t + dur
 
     def switch_mot_coils(self, t):
         if self.mot_coils_on:
@@ -765,23 +784,23 @@ class BField:
         endtime = t + self.CONST_COIL_RAMP_TIME + self.CONST_COIL_OFF_TIME
         return endtime
 
-    def get_op_bias_fields(self):
+    def convert_bias_fields_sph_to_cart(self, bias_amp, bias_phi, bias_theta):
         """Compute the proper bias fields for a given quantization angle from shot globals"""
-        op_biasx_field = (
-            shot_globals.op_bias_amp
-            * np.cos(np.deg2rad(shot_globals.op_bias_phi))
-            * np.sin(np.deg2rad(shot_globals.op_bias_theta))
+        biasx_field = (
+            bias_amp
+            * np.cos(np.deg2rad(bias_phi))
+            * np.sin(np.deg2rad(bias_theta))
         )
-        op_biasy_field = (
-            shot_globals.op_bias_amp
-            * np.sin(np.deg2rad(shot_globals.op_bias_phi))
-            * np.sin(np.deg2rad(shot_globals.op_bias_theta))
+        biasy_field = (
+            bias_amp
+            * np.sin(np.deg2rad(bias_phi))
+            * np.sin(np.deg2rad(bias_theta))
         )
-        op_biasz_field = shot_globals.op_bias_amp * np.cos(
-            np.deg2rad(shot_globals.op_bias_theta),
+        biasz_field = bias_amp * np.cos(
+            np.deg2rad(bias_theta),
         )
 
-        return op_biasx_field, op_biasy_field, op_biasz_field
+        return biasx_field, biasy_field, biasz_field
 
 
 class Camera:

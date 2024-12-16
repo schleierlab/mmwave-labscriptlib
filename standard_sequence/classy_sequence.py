@@ -27,7 +27,6 @@ if __name__ == "__main__":
     devices.initialize()
 
 
-
 # fixed parameters in the script
 CONST_TA_PUMPING_DETUNING = -251  # MHz 4->4 tansition
 CONST_REPUMP_DEPUMPING_DETUNING = -201.24  # MHz 3->3 transition
@@ -41,7 +40,6 @@ CONST_REPUMP_DEPUMPING_DETUNING = -201.24  # MHz 3->3 transition
 
 # MOTconfig = {shutter1: True, shutter2: False, shutter3: True}
 # imagconfig = {shutter1: False, shutter2: True, }
-
 
 
 # Sequence Classes
@@ -59,14 +57,14 @@ class MOTSequence:
         self.Camera_obj = Camera(t)
 
     def do_mot(self, t, dur, close_all_shutters=False):
-        if shot_globals.do_uv:
-            t = self.UVLamps_obj.uv_pulse(t, dur=shot_globals.uv_duration)
+        if shot_globals.mot_do_uv:
+            t = self.UVLamps_obj.uv_pulse(t, dur=shot_globals.mot_uv_duration)
             # the uv duration should be determined for each dispenser current
             # generally, get superior loading in the 10s of milliseconds
 
         # if using a long UV duration, want to make sure that the MOT doesn't finish
         # loading leaving the UV is still on for imaging.
-        dur = max(dur, shot_globals.uv_duration)
+        dur = max(dur, shot_globals.mot_uv_duration)
         t, _ = self.D2Lasers_obj.do_pulse(
             t,
             dur,
@@ -244,7 +242,6 @@ class MOTSequence:
 
         shutter_config = ShutterConfig.select_imaging_shutters(do_repump=do_repump)
 
-
         # full power ta and repump pulse
         t_pulse_end, t_aom_start = self.D2Lasers_obj.do_pulse(
             t,
@@ -319,19 +316,130 @@ class OpticalPumpingSequence(MOTSequence):
     def __init__(self, t):
         super(OpticalPumpingSequence, self).__init__(t)
 
-    def pump_to_F4(self, t, label, close_all_shutters = True):
+    def pump_to_F4(self, t, label, close_all_shutters=True):
         if self.BField_obj.mot_coils_on:
             _ = self.BField_obj.switch_mot_coils(t)
+
+        op_biasx_field, op_biasy_field, op_biasz_field = (
+                self.BField_obj.convert_bias_fields_sph_to_cart(
+                    shot_globals.op_bias_amp,
+                    shot_globals.op_bias_phi,
+                    shot_globals.op_bias_theta,
+                )
+            )
         if label == "mot":
             # Use the MOT beams for optical pumping
             # Do a repump pulse
             print("I'm using mot beams for optical pumping")
+            t = self.BField_obj.ramp_bias_field(
+                t, bias_field_vector=(op_biasx_field, op_biasy_field, op_biasz_field)
+            )
+
             t, t_aom_start = self.D2Lasers_obj.do_pulse(
                 t,
                 shot_globals.op_MOT_op_time,
                 ShutterConfig.MOT_REPUMP,
                 0,
                 1,
+                close_all_shutters=close_all_shutters,
+            )
+
+            t_aom_off = t_aom_start + shot_globals.op_MOT_op_time
+            return t, t_aom_off
+
+        elif label == "sigma":
+            # Use the sigma+ beam for optical pumping
+
+            _ = self.BField_obj.ramp_bias_field(
+                t, bias_field_vector=(op_biasx_field, op_biasy_field, op_biasz_field)
+            )
+            # ramp detuning to 4 -> 4, 3 -> 4
+            self.D2Lasers_obj.ramp_ta_freq(
+                t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ta_pumping_detuning
+            )
+            self.D2Lasers_obj.ramp_repump_freq(
+                t,
+                D2Lasers.CONST_TA_VCO_RAMP_TIME,
+                shot_globals.op_repump_pumping_detuning,
+            )
+            # Do a sigma+ pulse
+            # TODO: is shot_globals.op_ramp_delay just extra fudge time? can it be eliminated?
+            t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
+
+            t, t_aom_start = self.D2Lasers_obj.do_pulse(
+                t,
+                shot_globals.op_repump_time,
+                ShutterConfig.OPTICAL_PUMPING_FULL,
+                shot_globals.op_ta_power,
+                shot_globals.op_repump_power,
+                close_all_shutters=close_all_shutters,
+            )
+
+            t_aom_off = t_aom_start + shot_globals.op_repump_time
+
+            assert (
+                shot_globals.op_ta_time < shot_globals.op_repump_time
+            ), "TA time should be shorter than repump for pumping to F=4"
+            # TODO: test this timing
+            self.D2Lasers_obj.ta_aom_off(t_aom_start + shot_globals.op_ta_time)
+            self.D2Lasers_obj.ramp_ta_freq(
+                t_aom_start + shot_globals.op_ta_time,
+                D2Lasers.CONST_TA_VCO_RAMP_TIME,
+                50, # move the detuning to +50MHz relative to 4->5 transtion to avoid the leakage light on 4->4 transition doing depump
+            )
+            # Close the shutters
+            t += 1e-3
+            return t, t_aom_off
+        else:
+            raise NotImplementedError("This optical pumping method is not implemented")
+
+    def depump_ta_pulse(self, t, close_all_shutters=True):
+        # This method is only depump pulse with ta alone to pump atom from F=4 -> F=3
+        # This will determine the minimum time offset between repump and ta when doing depump_to_F3
+        # This will also be used in dark state measurement
+        if self.BField_obj.mot_coils_on:
+            _ = self.BField_obj.switch_mot_coils(t)
+
+        t = self.D2Lasers_obj.ramp_ta_freq(
+            t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_TA_PUMPING_DETUNING
+        )
+        # t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
+
+        # The shutter configuration needs to be optical_pumping_full
+        # to make sure no shutter switch from the depump_to_F3/pump_to_F4
+        # sequence, this allow the two pulse sequence purely switched
+        # with aom so that they are next to each other
+        t, _ = self.D2Lasers_obj.do_pulse(
+            t,
+            shot_globals.op_depump_pulse_time,
+            ShutterConfig.OPTICAL_PUMPING_FULL,
+            shot_globals.op_depump_power,
+            0,
+            close_all_shutters=close_all_shutters,
+        )
+
+        return t
+
+    def depump_to_F3(self, t, label, close_all_shutters=True):
+        # This method should be quite similar to pump_to_F4, but trying to call pump_to_F4 with
+        # different parameters would produce a very long argument list
+        if self.BField_obj.mot_coils_on:
+            _ = self.BField_obj.switch_mot_coils(t)
+        if label == "mot":
+            # Use the MOT beams for optical depumping
+            # ramp detuning to 4 -> 4 for TA
+            print("I'm using mot beams for depumping")
+            self.D2Lasers_obj.ramp_ta_freq(
+                t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_TA_PUMPING_DETUNING
+            )
+            t += D2Lasers.CONST_TA_VCO_RAMP_TIME
+            # Do a TA pulse
+            t, t_aom_start = self.D2Lasers_obj.do_pulse(
+                t,
+                shot_globals.op_MOT_odp_time,
+                ShutterConfig.MOT_TA,
+                1,
+                0,
                 close_all_shutters=close_all_shutters,
             )
 
@@ -347,97 +455,12 @@ class OpticalPumpingSequence(MOTSequence):
                 t, bias_field_vector=(op_biasx_field, op_biasy_field, op_biasz_field)
             )
             # ramp detuning to 4 -> 4, 3 -> 4
-            self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ta_pumping_detuning)
-            self.D2Lasers_obj.ramp_repump_freq(
-                t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_repump_pumping_detuning
+            self.D2Lasers_obj.ramp_ta_freq(
+                t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ta_pumping_detuning
             )
-            # Do a sigma+ pulse
-            # TODO: is shot_globals.op_ramp_delay just extra fudge time? can it be eliminated?
-            t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
-            t, t_aom_start = self.D2Lasers_obj.do_pulse(
-                t,
-                shot_globals.op_repump_time,
-                ShutterConfig.OPTICAL_PUMPING_FULL,
-                shot_globals.op_ta_power,
-                shot_globals.op_repump_power,
-                close_all_shutters=close_all_shutters
-            )
-
-            t_aom_off = t_aom_start + shot_globals.op_repump_time
-
-            assert (
-                shot_globals.op_ta_time < shot_globals.op_repump_time
-            ), "TA time should be shorter than repump for pumping to F=4"
-            # TODO: test this timing
-            self.D2Lasers_obj.ta_aom_off(
-                t_aom_start + shot_globals.op_ta_time
-            )
-            # Close the shutters
-            return t, t_aom_off
-        else:
-            raise NotImplementedError("This optical pumping method is not implemented")
-
-
-
-    def depump_ta_pulse(self, t, close_all_shutters = True):
-        # This method is only depump pulse with ta alone to pump atom from F=4 -> F=3
-        # This will determine the minimum time offset between repump and ta when doing depump_to_F3
-        # This will also be used in dark state measurement
-        if self.BField_obj.mot_coils_on:
-            _ = self.BField_obj.switch_mot_coils(t)
-
-        t = self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_TA_PUMPING_DETUNING)
-        #t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
-
-        # The shutter configuration needs to be optical_pumping_full
-        # to make sure no shutter switch from the depump_to_F3/pump_to_F4
-        # sequence, this allow the two pulse sequence purely switched
-        # with aom so that they are next to each other
-        t, _ = self.D2Lasers_obj.do_pulse(
-                t,
-                shot_globals.op_depump_pulse_time,
-                ShutterConfig.OPTICAL_PUMPING_FULL,
-                shot_globals.op_depump_power,
-                0,
-                close_all_shutters = close_all_shutters
-            )
-
-
-        return t
-
-    def depump_to_F3(self, t, label, close_all_shutters = True):
-        # This method should be quite similar to pump_to_F4, but trying to call pump_to_F4 with
-        # different parameters would produce a very long argument list
-        if self.BField_obj.mot_coils_on:
-            _ = self.BField_obj.switch_mot_coils(t)
-        if label == "mot":
-            # Use the MOT beams for optical depumping
-            # ramp detuning to 4 -> 4 for TA
-            self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_TA_PUMPING_DETUNING)
-            t += D2Lasers.CONST_TA_VCO_RAMP_TIME
-            # Do a TA pulse
-            t, _ = self.D2Lasers_obj.do_pulse(
-                t,
-                shot_globals.op_MOT_odp_time,
-                ShutterConfig.MOT_TA,
-                1,
-                0,
-                close_all_shutters = close_all_shutters,
-            )
-            return t
-
-        elif label == "sigma":
-            # Use the sigma+ beam for optical pumping
-            op_biasx_field, op_biasy_field, op_biasz_field = (
-                self.BField_obj.get_op_bias_fields()
-            )
-            _ = self.BField_obj.ramp_bias_field(
-                t, bias_field_vector=(op_biasx_field, op_biasy_field, op_biasz_field)
-            )
-            # ramp detuning to 4 -> 4, 3 -> 3
-            self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_TA_PUMPING_DETUNING)
-            # self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
-            self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_REPUMP_DEPUMPING_DETUNING)
+            self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
+            # 3-> 3
+            # self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_REPUMP_DEPUMPING_DETUNING)
             # Do a sigma+ pulse
             # TODO: is shot_globals.op_ramp_delay just extra fudge time? can it be eliminated?
             t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
@@ -447,7 +470,7 @@ class OpticalPumpingSequence(MOTSequence):
                 ShutterConfig.OPTICAL_PUMPING_FULL,
                 shot_globals.odp_ta_power,
                 shot_globals.odp_repump_power,
-                close_all_shutters = close_all_shutters
+                close_all_shutters=close_all_shutters,
             )
 
             t_aom_off = t_aom_start + shot_globals.odp_ta_time
@@ -456,10 +479,7 @@ class OpticalPumpingSequence(MOTSequence):
                 shot_globals.odp_ta_time > shot_globals.odp_repump_time
             ), "TA time should be longer than repump for depumping to F = 3"
             # TODO: test this timing
-            self.D2Lasers_obj.repump_aom_off(
-                t_aom_start + shot_globals.odp_repump_time
-            )
-
+            self.D2Lasers_obj.repump_aom_off(t_aom_start + shot_globals.odp_repump_time)
 
             return t, t_aom_off
 
@@ -468,7 +488,32 @@ class OpticalPumpingSequence(MOTSequence):
                 "This optical depumping method is not implemented"
             )
 
-    def kill_F4(self, t, close_all_shutters = True):
+    # def kill_F4(self, t, close_all_shutters = True):
+    #     """Push away atoms in F = 4"""
+    #     # The shutter configuration can be optical_pumping_full or optical_pump_TA
+    #     # optical_pumping_full allow the two pulse sequence purely switched with aom after
+    #     # pump_to_F4 / depump_to_F3
+    #     if self.D2Lasers_obj.shutter_config == ShutterConfig.OPTICAL_PUMPING_FULL:
+    #         shutter_config = ShutterConfig.OPTICAL_PUMPING_FULL
+    #     else:
+    #         shutter_config = ShutterConfig.OPTICAL_PUMPING_TA
+
+    #     # tune to resonance
+    #     self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.killing_pulse_detuning)
+    #     t += D2Lasers.CONST_TA_VCO_RAMP_TIME
+    #     # do a ta pulse via optical pumping path
+    #     t, _ = self.D2Lasers_obj.do_pulse(
+    #         t,
+    #         shot_globals.op_killing_pulse_time,
+    #         shutter_config,
+    #         shot_globals.op_killing_ta_power,
+    #         0,
+    #         close_all_shutters=close_all_shutters,
+    #     )
+
+    #     return t
+
+    def kill_F4(self, t, close_all_shutters=True):
         """Push away atoms in F = 4"""
         # The shutter configuration can be optical_pumping_full or optical_pump_TA
         # optical_pumping_full allow the two pulse sequence purely switched with aom after
@@ -479,10 +524,11 @@ class OpticalPumpingSequence(MOTSequence):
             shutter_config = ShutterConfig.OPTICAL_PUMPING_TA
 
         # tune to resonance
-        self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.killing_pulse_detuning)
-        t += D2Lasers.CONST_TA_VCO_RAMP_TIME
+        t = self.D2Lasers_obj.ramp_ta_freq(
+            t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.killing_pulse_detuning
+        )
         # do a ta pulse via optical pumping path
-        t, _ = self.D2Lasers_obj.do_pulse(
+        t, t_aom_start = self.D2Lasers_obj.do_pulse(
             t,
             shot_globals.op_killing_pulse_time,
             shutter_config,
@@ -491,7 +537,9 @@ class OpticalPumpingSequence(MOTSequence):
             close_all_shutters=close_all_shutters,
         )
 
-        return t
+        t_aom_off = t_aom_start + shot_globals.op_killing_pulse_time
+
+        return t, t_aom_off
 
     def kill_F3(self, t):
         raise NotImplementedError
@@ -499,7 +547,6 @@ class OpticalPumpingSequence(MOTSequence):
     def _optical_pump_molasses_sequence(self, t, reset_mot=False):
         # MOT loading time 500 ms
         mot_load_dur = 0.5
-
 
         t = self.do_mot(t, mot_load_dur)
         t = self.do_molasses(t, shot_globals.bm_time)
@@ -524,19 +571,22 @@ class OpticalPumpingSequence(MOTSequence):
         t = self.do_mot(t, mot_load_dur)
         t = self.do_molasses(t, shot_globals.bm_time)
 
-
         if shot_globals.do_dp:
             # do optical depumping to F=3
-            t, t_aom_off= self.depump_to_F3(t, shot_globals.op_label)
+            t, t_aom_off = self.depump_to_F3(t, shot_globals.op_label)
         if shot_globals.do_op:
             # do optical pumping to F=4
-            t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
-        if shot_globals.do_depump_pulse_after_pumping:
+            t, t_aom_off = self.pump_to_F4(
+                t, shot_globals.op_label, close_all_shutters=False
+            )
+            t_aom_off += 50e-6
+
+        if shot_globals.do_depump_ta_pulse_after_pump:
             # do depump pulse to meausre the dark state lifetime
-            t = self.depump_ta_pulse(t_aom_off, close_all_shutters = True)
+            t = self.depump_ta_pulse(t_aom_off, close_all_shutters=True)
         if shot_globals.do_killing_pulse:
             # do kill pulse to remove all atom in F=4
-            t = self.kill_F4(t_aom_off)
+            t, _ = self.kill_F4(t_aom_off)
         t_depump = t
 
         t = self.BField_obj.ramp_bias_field(
@@ -554,7 +604,7 @@ class OpticalPumpingSequence(MOTSequence):
 
         if shot_globals.do_killing_pulse:
             # do kill pulse after microwave to remove F=4 atom
-            t = self.kill_F4(t_aom_off)
+            t, _ = self.kill_F4(t_aom_off)
 
         # postpone next sequence until shutter off time reached
         t = max(t, t_depump + D2Lasers.CONST_MIN_SHUTTER_OFF_TIME)
@@ -588,31 +638,50 @@ class OpticalPumpingSequence(MOTSequence):
         return t
 
     def _do_F4_microwave_spec_molasses(self, t, reset_mot=False):
-        """ measuring the microwave transition with atom initially pumping to F=4
+        """measuring the microwave transition with atom initially pumping to F=4
         OP + microwave + killing + imaging atom with repump"""
         mot_load_dur = 0.5
         t = self.do_mot(t, mot_load_dur)
         t = self.do_molasses(t, shot_globals.bm_time)
-        t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
-
-        t = self.BField_obj.ramp_bias_field(
-            t_aom_off + 100e-6,
-            bias_field_vector=(
-                shot_globals.mw_biasx_field,
-                shot_globals.mw_biasy_field,
-                shot_globals.mw_biasz_field,
-            ),
+        t, t_aom_off = self.pump_to_F4(
+            t, shot_globals.op_label, close_all_shutters=False
         )
 
+        mw_biasx_field, mw_biasy_field, mw_biasz_field = (
+            self.BField_obj.convert_bias_fields_sph_to_cart(
+                shot_globals.mw_bias_amp,
+                shot_globals.mw_bias_phi,
+                shot_globals.mw_bias_theta,
+            )
+        )
+
+        # [mw_biasx_field, mw_biasy_field, mw_biasz_field] = [
+            #     shot_globals.mw_biasx_field,
+            #     shot_globals.mw_biasy_field,
+            #     shot_globals.mw_biasz_field,
+            # ]
+
+        t = self.BField_obj.ramp_bias_field(
+                t_aom_off + 200e-6, #TODO: wait for 200e-6s extra time in optical pumping field, can be changed
+                bias_field_vector=(mw_biasx_field, mw_biasy_field, mw_biasz_field),
+            )
 
         t += self.BField_obj.CONST_COIL_OFF_TIME
 
-        # t = self.Microwave_obj.do_pulse(t_aom_off + BField.CONST_COIL_RAMP_TIME, shot_globals.mw_time)
-        t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+        if shot_globals.do_mw_pulse:
+            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+        elif shot_globals.do_mw_sweep:
+            mw_sweep_start = shot_globals.mw_detuning + shot_globals.mw_sweep_range / 2
+            mw_sweep_end = shot_globals.mw_detuning - shot_globals.mw_sweep_range / 2
+            t = self.Microwave_obj.do_sweep(
+                t, mw_sweep_start, mw_sweep_end, shot_globals.mw_sweep_duration
+            )
 
-        t = self.kill_F4(t, close_all_shutters = True)
+        t += 3e-6 #TODO: wait for extra time before killing, can be changed
+
+        t, _ = self.kill_F4(t, close_all_shutters=True)
         # This is the only place required for the special value of imaging
-        t += 1e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
+        # t += 1e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
         # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
         t = self.do_molasses_dipole_trap_imaging(
             t,
@@ -634,11 +703,40 @@ class OpticalPumpingSequence(MOTSequence):
             close_all_shutters=True,
         )
         t += 1e-2
-        t = self.Microwave_obj.reset_spectrum(t)
         if reset_mot:
             t = self.reset_mot(t)
 
         return t
+
+
+# ExperimentalSequence > F4MicrowaveSpectrumMolasses: at the end of a seq, merge lists of cleanupabbles from Helpers, call cleanupabble.cleanup() for each
+# MOTHelper, OPHelper: [TweezerLAser, Microwave, ...]
+# TweezerLaser, Microwave,: cleanup()
+# Spectrum (Jacob): stop()
+
+
+# class ExperimentalSequence(ABC):
+#     helpers: list
+
+#     @abstractmethod
+#     def sequence(self): ...
+
+#     def run(self):
+#         self.sequence()
+#         cleanupabbles = set(
+#             helper.cleanupabbles
+#             for helper in self.helpers
+#         )
+#         for cleanupabble in cleanupabbles:
+#             cleanupabble.cleanup()
+
+# class F4MicrowaveSpectrumMolasses(ExperimentalSequence):
+#     def __init__(self, spectrum_mgr):
+#         self.spectrum_mgr = spectrum_mgr
+#         self.helpers = []
+
+#     def sequence(self):
+#         ...
 
 
 class TweezerSequence(OpticalPumpingSequence):
@@ -650,13 +748,14 @@ class TweezerSequence(OpticalPumpingSequence):
         # ramping to imaging detuning and power, previously referred to as "pre_imaging"
         # also used for additional cooling
         t = self.BField_obj.ramp_bias_field(t, bias_field_vector=(0, 0, 0))
-        t = self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.img_ta_detuning)
+        t = self.D2Lasers_obj.ramp_ta_freq(
+            t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.img_ta_detuning
+        )
         self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
         assert shot_globals.img_ta_power != 0, "img_ta_power should not be zero"
         assert shot_globals.img_repump_power != 0, "img_repump_power should not be zero"
 
         return t
-
 
     def load_tweezers(self, t):
         t = self.do_mot(t, dur=0.5)
@@ -752,7 +851,7 @@ class TweezerSequence(OpticalPumpingSequence):
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
         t = self.reset_mot(t)
-        t = self.TweezerLaser_obj.stop_tweezers(t)
+        # t = self.TweezerLaser_obj.stop_tweezers(t)
 
         return t
 
@@ -765,38 +864,156 @@ class TweezerSequence(OpticalPumpingSequence):
     def _do_optical_pump_in_tweezer_check(self, t):
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
-        t, t_aom_off = self.pump_to_F4(t, shot_globals.op_label, close_all_shutters = False)
 
-        t = self.BField_obj.ramp_bias_field(
-            t_aom_off,
-            bias_field_vector=(
-                shot_globals.mw_biasx_field,
-                shot_globals.mw_biasy_field,
-                shot_globals.mw_biasz_field,
-            ),
-        )
+        t += 3e-3
 
-        t += self.BField_obj.CONST_COIL_OFF_TIME
+        if shot_globals.do_depump_ta_pulse_before_pump:
+            t = self.depump_ta_pulse(t)
 
-        # ramp down power before microwave
-        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power)
-        if shot_globals.do_mw_pulse:
-            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
-                # ramp up to full power before imaging
+        if shot_globals.do_op:
+            t, t_aom_off = self.pump_to_F4(
+                t, shot_globals.op_label, close_all_shutters=True
+            )
+        elif shot_globals.do_dp:
+            t, t_aom_off = self.depump_to_F3(
+                t, shot_globals.op_label, close_all_shutters=False
+            )
+
+        if shot_globals.op_label == "mot":
+            if shot_globals.do_depump_ta_pulse_after_pump:
+                t_aom_off = self.depump_ta_pulse(t_aom_off)
+
+            mw_biasx_field, mw_biasy_field, mw_biasz_field = (
+                self.BField_obj.convert_bias_fields_sph_to_cart(
+                    shot_globals.mw_bias_amp,
+                    shot_globals.mw_bias_phi,
+                    shot_globals.mw_bias_theta,
+                )
+            )
+
+            # [mw_biasx_field, mw_biasy_field, mw_biasz_field] = [
+                #     shot_globals.mw_biasx_field,
+                #     shot_globals.mw_biasy_field,
+                #     shot_globals.mw_biasz_field,
+                # ]
+
+            t = self.BField_obj.ramp_bias_field(
+                    t_aom_off,
+                    bias_field_vector=(mw_biasx_field, mw_biasy_field, mw_biasz_field),
+                    dur=shot_globals.mw_bias_ramp_dur,
+                )
 
 
-        if shot_globals.do_killing_pulse:
-            #Labscript screws up the ramp if close_all_shutters is false...
-            t = self.kill_F4(t, close_all_shutters = True)
+            # This is trying to make sure when the ramp of tweezer end (it reaches the minimum power), the shutter config is already switched to optical pumping
+            # if the tweezer ramp is too quick, it will wait extra time at high power before the shutter switching finishes
+            t = t + max(
+                D2Lasers.CONST_MIN_SHUTTER_ON_TIME
+                + D2Lasers.CONST_SHUTTER_TURN_ON_TIME
+                - shot_globals.tw_ramp_dur,
+                0,
+            )
 
-        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 1-1e-10)
-        t += 1e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
-            # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
 
+            t += shot_globals.mw_field_wait_dur
+            t = self.TweezerLaser_obj.ramp_power(
+                t, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power
+            )
+
+            if shot_globals.do_mw_pulse:
+                # self.TweezerLaser_obj.aom_off(t)
+                t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+                # self.TweezerLaser_obj.aom_on(t, shot_globals.tw_ramp_power)
+            elif shot_globals.do_mw_sweep:
+                mw_sweep_start = (
+                    shot_globals.mw_detuning + shot_globals.mw_sweep_range / 2
+                )
+                mw_sweep_end = (
+                    shot_globals.mw_detuning - shot_globals.mw_sweep_range / 2
+                )
+                t = self.Microwave_obj.do_sweep(
+                    t, mw_sweep_start, mw_sweep_end, shot_globals.mw_sweep_duration
+                )
+
+            if shot_globals.do_killing_pulse:
+                # If we use the MOT beams for pumping we have to switch shutters
+                # Our pulse function is set so that switching the shutters adds time before the pulse
+                # Here though we want the shutter switching to overlap with the tweezer ramp rather than start after it
+                t = t - D2Lasers.CONST_SHUTTER_TURN_ON_TIME
+                t, _ = self.kill_F4(t, close_all_shutters=False)
+            else:
+                t += shot_globals.op_killing_pulse_time
+
+        if shot_globals.op_label == "sigma":
+            # Making sure the ramp ends right as the pumping is starting
+            t_start_ramp = (
+                t_aom_off - shot_globals.tw_ramp_dur - shot_globals.op_repump_time
+            )
+
+            # ramp down the tweezer power before optical pumping
+            _ = self.TweezerLaser_obj.ramp_power(
+                t_start_ramp, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power
+            )
+
+            # ramp up the tweezer power after optical pumping
+            _ = self.TweezerLaser_obj.ramp_power(
+                t_aom_off, shot_globals.tw_ramp_dur, 0.99
+            )
+
+            if shot_globals.do_depump_ta_pulse_after_pump:
+                t = self.depump_ta_pulse(t)
+
+            mw_biasx_field, mw_biasy_field, mw_biasz_field = (
+                self.BField_obj.convert_bias_fields_sph_to_cart(
+                    shot_globals.mw_bias_amp,
+                    shot_globals.mw_bias_phi,
+                    shot_globals.mw_bias_theta,
+                )
+            )
+
+            # [mw_biasx_field, mw_biasy_field, mw_biasz_field] = [
+            #     shot_globals.mw_biasx_field,
+            #     shot_globals.mw_biasy_field,
+            #     shot_globals.mw_biasz_field,
+            # ]
+
+            t = self.BField_obj.ramp_bias_field(
+                t_aom_off + 5e-3, # extra time to wait for 5e-3s extra time in optical pumping field
+                bias_field_vector=(mw_biasx_field, mw_biasy_field, mw_biasz_field),
+                dur=shot_globals.mw_bias_ramp_dur,
+            )
+
+            t += shot_globals.mw_field_wait_dur  # 400e-6
+            t = self.TweezerLaser_obj.ramp_power(
+                t, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power
+            )
+            if shot_globals.do_mw_pulse:
+                # self.TweezerLaser_obj.aom_off(t)
+                t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+                # self.TweezerLaser_obj.aom_on(t, shot_globals.tw_ramp_power)
+            elif shot_globals.do_mw_sweep:
+                mw_sweep_start = (
+                    shot_globals.mw_detuning + shot_globals.mw_sweep_range / 2
+                )
+                mw_sweep_end = (
+                    shot_globals.mw_detuning - shot_globals.mw_sweep_range / 2
+                )
+                t = self.Microwave_obj.do_sweep(
+                    t, mw_sweep_start, mw_sweep_end, shot_globals.mw_sweep_duration
+                )
+
+            if shot_globals.do_killing_pulse:
+                t, _ = self.kill_F4(
+                    t - D2Lasers.CONST_SHUTTER_TURN_ON_TIME, close_all_shutters=False
+                )
+            else:
+                t += shot_globals.op_killing_pulse_time
+
+        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
+        t += 2e-3  # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
+        # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
         t = self.reset_mot(t)
-        t = self.TweezerLaser_obj.stop_tweezers(t)
 
         return t
 
@@ -821,9 +1038,6 @@ class ScienceSequence(RydSequence):
         super(ScienceSequence, self).__init__()
 
 
-
-
-
 if __name__ == "__main__":
     labscript.start()
     t = 0
@@ -834,23 +1048,23 @@ if __name__ == "__main__":
         MOTSeq_obj = MOTSequence(t)
         t = MOTSeq_obj._do_mot_in_situ_sequence(t, reset_mot=True)
 
-    if shot_globals.do_mot_tof_check:
+    elif shot_globals.do_mot_tof_check:
         MOTSeq_obj = MOTSequence(t)
         t = MOTSeq_obj._do_mot_tof_sequence(t, reset_mot=True)
 
-    if shot_globals.do_molasses_in_situ_check:
+    elif shot_globals.do_molasses_in_situ_check:
         MOTSeq_obj = MOTSequence(t)
         t = MOTSeq_obj._do_molasses_in_situ_sequence(t, reset_mot=True)
 
-    if shot_globals.do_molasses_tof_check:
+    elif shot_globals.do_molasses_tof_check:
         MOTSeq_obj = MOTSequence(t)
         t = MOTSeq_obj._do_molasses_tof_sequence(t, reset_mot=True)
 
-    if shot_globals.do_pump_debug_in_molasses:
+    elif shot_globals.do_pump_debug_in_molasses:
         OPSeq_obj = OpticalPumpingSequence(t)
         t = OPSeq_obj._do_pump_debug_in_molasses(t, reset_mot=True)
 
-    if shot_globals.do_F4_microwave_spec_molasses:
+    elif shot_globals.do_F4_microwave_spec_molasses:
         OPSeq_obj = OpticalPumpingSequence(t)
         t = OPSeq_obj._do_F4_microwave_spec_molasses(t, reset_mot=True)
 
@@ -863,18 +1077,33 @@ if __name__ == "__main__":
     # if shot_globals.do_tweezer_position_check:
     #     t = do_tweezer_position_check(t)
 
-    if shot_globals.do_tweezer_check:
+    elif shot_globals.do_tweezer_check:
         TweezerSequence_obj = TweezerSequence(t)
         t = TweezerSequence_obj._do_tweezer_check_sequence(t)
 
     # if shot_globals.do_tweezer_check_fifo:
     #     t = do_tweezer_check_fifo(t)
 
-    if shot_globals.do_optical_pump_in_tweezer_check:
+    elif shot_globals.do_optical_pump_in_tweezer_check:
         TweezerSequence_obj = TweezerSequence(t)
         t = TweezerSequence_obj._do_optical_pump_in_tweezer_check(t)
 
     # if shot_globals.do_optical_pump_in_microtrap_check:
     #     t = do_optical_pump_in_microtrap_check(t)
+
+    """ Here doing all the finish up quirk for spectrum cards """
+    try:
+        current_obj = MOTSeq_obj
+    except:
+        try:
+            current_obj = OPSeq_obj
+        except:
+            try:
+                current_obj = TweezerSequence_obj
+            except:
+                raise NotImplementedError
+            t = current_obj.TweezerLaser_obj.stop_tweezers(t)
+
+    t = current_obj.Microwave_obj.reset_spectrum(t)
 
     labscript.stop(t + 1e-2)

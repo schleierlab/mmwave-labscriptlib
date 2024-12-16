@@ -1,6 +1,7 @@
 ## Labscript gitignores
 
 *.h5
+!/standard_sequence/standard_sequence.h5
 
 # runmanager config files
 *.ini
