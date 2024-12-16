@@ -47,6 +47,13 @@ CONST_REPUMP_DEPUMPING_DETUNING = -201.24  # MHz 3->3 transition
 
 
 class MOTSequence:
+    """Sequence for Magneto-Optical Trap (MOT) operations.
+    
+    This class manages the sequence of operations related to MOT loading, imaging,
+    and manipulation. It coordinates multiple hardware components including D2 lasers,
+    magnetic fields, microwave systems, UV lamps, and cameras.
+    """
+    
     def __init__(self, t):
         # Standard initialization for hardware objects puts everything in
         # correct state/tuning to start loading the MOT
@@ -57,6 +64,19 @@ class MOTSequence:
         self.Camera_obj = Camera(t)
 
     def do_mot(self, t, dur, close_all_shutters=False):
+        """Execute MOT loading sequence.
+        
+        Performs a complete MOT loading sequence, including optional UV enhancement
+        and proper timing coordination between different components.
+        
+        Args:
+            t (float): Start time for MOT sequence
+            dur (float): Duration of MOT loading
+            close_all_shutters (bool, optional): Whether to close all shutters after sequence
+            
+        Returns:
+            float: End time of the MOT sequence
+        """
         if shot_globals.mot_do_uv:
             t = self.UVLamps_obj.uv_pulse(t, dur=shot_globals.mot_uv_duration)
             # the uv duration should be determined for each dispenser current
@@ -77,6 +97,17 @@ class MOTSequence:
         return t
 
     def reset_mot(self, t):
+        """Reset MOT parameters to default values.
+        
+        Resets magnetic fields, laser frequencies, and other MOT parameters to their
+        default values for MOT operation.
+        
+        Args:
+            t (float): Time to begin reset
+            
+        Returns:
+            float: End time of the reset sequence
+        """
         # B fields
         if not self.BField_obj.mot_coils_on:
             t = self.BField_obj.switch_mot_coils(t)
@@ -98,6 +129,18 @@ class MOTSequence:
         return t
 
     def image_mot(self, t, close_all_shutters=False):
+        """Capture an image of the MOT.
+        
+        Configures imaging parameters and captures an image of the MOT using the
+        camera system.
+        
+        Args:
+            t (float): Time to begin imaging
+            close_all_shutters (bool, optional): Whether to close all shutters after imaging
+            
+        Returns:
+            float: End time of the imaging sequence
+        """
         # Move to on resonance, make sure AOM is off
         self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
         t += D2Lasers.CONST_TA_VCO_RAMP_TIME
@@ -121,9 +164,17 @@ class MOTSequence:
         return t
 
     def _do_mot_in_situ_sequence(self, t, reset_mot=False):
-        """
-        <describe what this does>
-        This is a standalone sequence not intended to be called as a part of a large sequence.
+        """Perform in-situ MOT loading and imaging sequence.
+        
+        This standalone sequence loads a MOT and images it in-situ, optionally
+        including a background image and MOT reset.
+        
+        Args:
+            t (float): Start time for sequence
+            reset_mot (bool, optional): Whether to reset MOT parameters after sequence
+            
+        Returns:
+            float: End time of the sequence
         """
         print("Running _do_mot_in_situ_sequence")
 
@@ -150,6 +201,18 @@ class MOTSequence:
 
     # TODO: Needs more experimental debugging. When should the shutter close? What timescales should we expect the MOT to disperse in?
     def _do_mot_tof_sequence(self, t, reset_mot=False):
+        """Perform time-of-flight MOT imaging sequence.
+        
+        This sequence loads a MOT, releases it, and images after a time-of-flight
+        period to measure temperature or expansion.
+        
+        Args:
+            t (float): Start time for sequence
+            reset_mot (bool, optional): Whether to reset MOT parameters after sequence
+            
+        Returns:
+            float: End time of the sequence
+        """
         print("Running _do_mot_tof_sequence")
 
         print("MOT coils = ", self.BField_obj.mot_coils_on)
@@ -176,8 +239,18 @@ class MOTSequence:
 
         return t
 
-    # Molasses sequences
     def ramp_to_molasses(self, t):
+        """Configure system for optical molasses.
+        
+        Ramps laser detunings and turns off magnetic fields to transition from
+        MOT to optical molasses configuration.
+        
+        Args:
+            t (float): Time to begin transition
+            
+        Returns:
+            float: End time of the transition
+        """
         # detuning is ramped slowly here (duration = 1e-3) because atoms
         # see the light during the frequency ramp.
         self.D2Lasers_obj.ramp_ta_freq(t, 1e-3, shot_globals.bm_ta_detuning)
@@ -189,6 +262,19 @@ class MOTSequence:
         return t
 
     def do_molasses(self, t, dur, close_all_shutters=False):
+        """Execute optical molasses cooling sequence.
+        
+        Performs optical molasses cooling with specified parameters and beam
+        configurations.
+        
+        Args:
+            t (float): Start time for molasses
+            dur (float): Duration of molasses cooling
+            close_all_shutters (bool, optional): Whether to close shutters after sequence
+            
+        Returns:
+            float: End time of the molasses sequence
+        """
         assert (
             shot_globals.do_molasses_img_beam or shot_globals.do_molasses_mot_beam
         ), "either do_molasses_img_beam or do_molasses_mot_beam has to be on"
@@ -232,6 +318,22 @@ class MOTSequence:
         exposure=shot_globals.bm_exposure_time,
         close_all_shutters=False,
     ):
+        """Capture an image of the molasses or the dipole trap.
+        
+        Configures imaging parameters and captures an image of the molasses or the
+        dipole trap using the camera system.
+        
+        Args:
+            t (float): Time to begin imaging
+            ta_power (float, optional): Power of the TA beam
+            repump_power (float, optional): Power of the repump beam
+            exposure (float, optional): Exposure time of the camera
+            do_repump (bool, optional): Whether to use the repump beam
+            close_all_shutters (bool, optional): Whether to close all shutters after imaging
+            
+        Returns:
+            float: End time of the imaging sequence
+        """
         # zero the field
         _ = self.BField_obj.ramp_bias_field(t, bias_field_vector=(0, 0, 0))
 
@@ -254,21 +356,34 @@ class MOTSequence:
 
         # TODO: ask Lin and Michelle and max() logic and if we always want it there
         self.Camera_obj.set_type(shot_globals.camera_type)
+        exposure_time = max(exposure, 50e-6)
         if self.Camera_obj.type == "MOT_manta" or "tweezer_manta":
-            exposure = max(exposure, 50e-6)
+            exposure_time = max(exposure_time, 50e-6)
         if self.Camera_obj.type == "kinetix":
-            exposure = max(exposure, 1e-3)
+            exposure_time = max(exposure_time, 1e-3)
 
         # expose the camera
-        self.Camera_obj.expose(t_aom_start, exposure)
+        self.Camera_obj.expose(t_aom_start, exposure_time)
 
         # Closes the aom and the specified shutters
-        t += exposure
+        t += exposure_time
         t = max(t, t_pulse_end)
 
         return t
 
     def _do_molasses_in_situ_sequence(self, t, reset_mot=False):
+        """Perform in-situ molasses loading and imaging sequence.
+        
+        This standalone sequence loads a molasses and images it in-situ, optionally
+        including a background image and MOT reset.
+        
+        Args:
+            t (float): Start time for sequence
+            reset_mot (bool, optional): Whether to reset MOT parameters after sequence
+            
+        Returns:
+            float: End time of the sequence
+        """
         # MOT loading time 500 ms
         mot_load_dur = 0.5
 
@@ -288,6 +403,18 @@ class MOTSequence:
         return t
 
     def _do_molasses_tof_sequence(self, t, reset_mot=False):
+        """Perform time-of-flight molasses imaging sequence.
+        
+        This sequence loads a molasses, releases it, and images after a time-of-flight
+        period to measure temperature or expansion.
+        
+        Args:
+            t (float): Start time for sequence
+            reset_mot (bool, optional): Whether to reset MOT parameters after sequence
+            
+        Returns:
+            float: End time of the sequence
+        """
         mot_load_dur = 0.5
 
         t = self.do_mot(t, mot_load_dur)
