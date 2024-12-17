@@ -1360,11 +1360,7 @@ class RydSequence(TweezerSequence):
         super(RydSequence, self).__init__()
         self.RydLasers_obj = RydLasers()
 
-    def pulse_blue(self, t, dur):
-        pass
-
-    def pulse_1064(self, t, dur):
-        pass
+    
 
 
 # Full Sequences, we'll see if we really want all these in a class or just separate sequence files?

@@ -820,6 +820,11 @@ class RydLasers:
         # Keep the intensity servo on, regardless of BLACs settings
         self.servo_456_intensity_keep_on(t)
         self.servo_1064_intensity_keep_on(t)
+        # Initialize shutter state
+        self.shutter_open = False
+        # Constants for shutter timing
+        self.CONST_SHUTTER_TURN_ON_TIME = 3e-3  # 3ms for shutter to open
+        self.CONST_SHUTTER_TURN_OFF_TIME = 3e-3  # 3ms for shutter to close
 
     def servo_456_intensity_keep_on(self, t):
         """Maintain the 456nm laser intensity servo in active state.
@@ -966,6 +971,51 @@ class RydLasers:
             t, shot_globals.ryd_1064_mirror_2_h_position
         )
         devices.mirror_1064_2_vertical.constant(t, shot_globals.ryd_1064_mirror_2_v_position)
+
+    def do_rydberg_pulse(self, t, dur, power_456, power_1064, close_shutter=False):
+        """Perform a Rydberg excitation pulse with specified parameters.
+
+        Executes a laser pulse by configuring the shutter and AOM powers for both 456nm and 1064nm lasers.
+        The servo AOMs remain unchanged during the pulse.
+
+        Args:
+            t (float): Start time for the pulse
+            dur (float): Duration of the pulse
+            power_456 (float): Power level for the 456nm beam (0 to 1)
+            power_1064 (float): Power level for the 1064nm beam (0 to 1)
+            close_shutter (bool, optional): Whether to close shutter after pulse. Defaults to False.
+
+        Returns:
+            tuple[float, float]: (End time after pulse and shutter operations, AOM start time)
+        """
+        if not self.shutter_open:
+            # Add time for shutter to open if it's currently closed
+            t += self.CONST_SHUTTER_TURN_ON_TIME
+            devices.blue_456_shutter.open(t - self.CONST_SHUTTER_TURN_ON_TIME)
+            self.shutter_open = True
+            # Turn off AOMs while waiting for shutter
+            self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
+            self.pulse_1064_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
+
+        # Turn on AOMs with specified powers
+        if power_456 != 0:
+            self.pulse_456_aom_on(t, power_456)
+        if power_1064 != 0:
+            self.pulse_1064_aom_on(t, power_1064)
+
+        t_aom_start = t
+        t += dur
+
+        # Turn off AOMs at the end of the pulse
+        self.pulse_456_aom_off(t)
+        self.pulse_1064_aom_off(t)
+
+        if close_shutter:
+            t += self.CONST_SHUTTER_TURN_OFF_TIME
+            devices.blue_456_shutter.close(t - self.CONST_SHUTTER_TURN_OFF_TIME)
+            self.shutter_open = False
+
+        return t, t_aom_start
 
 
 class UVLamps:
