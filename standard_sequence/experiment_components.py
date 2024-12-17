@@ -572,6 +572,7 @@ class TweezerLaser:
         t2 = spectrum_manager.stop_tweezers(t)
         print("tweezer stop time:", t2)
         spectrum_manager.stop_card(t)
+        print("tweezers have been stopped... for good...")
         return t
 
     def intensity_servo_keep_on(self, t):
@@ -817,9 +818,13 @@ class RydLasers:
         Args:
             t (float): Time to start the Rydberg lasers
         """
+        # Can't do any output from NI card until 12e-6
+        t += 12e-6 if t < 12e-6 else 0
         # Keep the intensity servo on, regardless of BLACs settings
         self.servo_456_intensity_keep_on(t)
         self.servo_1064_intensity_keep_on(t)
+        # Initialize 456nm laser detuning
+        devices.dds1.synthesize(t, freq = shot_globals.blue_456_detuning, amp = 0.5, ph = 0)
         # Initialize shutter state
         self.shutter_open = False
         # Constants for shutter timing

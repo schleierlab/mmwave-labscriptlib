@@ -1356,9 +1356,9 @@ class TweezerSequence(OpticalPumpingSequence):
 # I think we should leave both 456 and 1064 stuff here because really the only debugging
 # we would need to do is checking their overlap or looking for a Rydberg loss signal in the dipole trap
 class RydSequence(TweezerSequence):
-    def __init__(self):
-        super(RydSequence, self).__init__()
-        self.RydLasers_obj = RydLasers()
+    def __init__(self, t):
+        super(RydSequence, self).__init__(t)
+        self.RydLasers_obj = RydLasers(t)
 
     
 
@@ -1372,31 +1372,37 @@ class ScienceSequence(RydSequence):
 if __name__ == "__main__":
     labscript.start()
     t = 0
-
+    sequence_objects = []
     # Insert "stay on" statements for alignment here...
 
     if shot_globals.do_mot_in_situ_check:
         MOTSeq_obj = MOTSequence(t)
+        sequence_objects.append(MOTSeq_obj)
         t = MOTSeq_obj._do_mot_in_situ_sequence(t, reset_mot=True)
 
     elif shot_globals.do_mot_tof_check:
         MOTSeq_obj = MOTSequence(t)
+        sequence_objects.append(MOTSeq_obj)
         t = MOTSeq_obj._do_mot_tof_sequence(t, reset_mot=True)
 
     elif shot_globals.do_molasses_in_situ_check:
         MOTSeq_obj = MOTSequence(t)
+        sequence_objects.append(MOTSeq_obj)
         t = MOTSeq_obj._do_molasses_in_situ_sequence(t, reset_mot=True)
 
     elif shot_globals.do_molasses_tof_check:
         MOTSeq_obj = MOTSequence(t)
+        sequence_objects.append(MOTSeq_obj)
         t = MOTSeq_obj._do_molasses_tof_sequence(t, reset_mot=True)
 
     elif shot_globals.do_pump_debug_in_molasses:
         OPSeq_obj = OpticalPumpingSequence(t)
+        sequence_objects.append(OPSeq_obj)
         t = OPSeq_obj._do_pump_debug_in_molasses(t, reset_mot=True)
 
     elif shot_globals.do_F4_microwave_spec_molasses:
         OPSeq_obj = OpticalPumpingSequence(t)
+        sequence_objects.append(OPSeq_obj)
         t = OPSeq_obj._do_F4_microwave_spec_molasses(t, reset_mot=True)
 
     # if shot_globals.do_dipole_trap_tof_check:
@@ -1410,31 +1416,41 @@ if __name__ == "__main__":
 
     elif shot_globals.do_tweezer_check:
         TweezerSequence_obj = TweezerSequence(t)
+        sequence_objects.append(TweezerSequence_obj)
         t = TweezerSequence_obj._do_tweezer_check_sequence(t)
+
+    elif shot_globals.do_rydberg_check:
+        RydSequence_obj = RydSequence(t)
+        sequence_objects.append(RydSequence_obj)
+        t+=10e-3
+        #t = RydSequence_obj._do_rydberg_check_sequence(t)
 
     # if shot_globals.do_tweezer_check_fifo:
     #     t = do_tweezer_check_fifo(t)
 
     elif shot_globals.do_optical_pump_in_tweezer_check:
-        TweezerSequence_obj = TweezerSequence(t)
+        TweezerSequence_obj = TweezerSequence(t)        
+        sequence_objects.append(TweezerSequence_obj)
         t = TweezerSequence_obj._do_optical_pump_in_tweezer_check(t)
 
     # if shot_globals.do_optical_pump_in_microtrap_check:
     #     t = do_optical_pump_in_microtrap_check(t)
 
     """ Here doing all the finish up quirk for spectrum cards """
-    try:
-        current_obj = MOTSeq_obj
-    except:
-        try:
-            current_obj = OPSeq_obj
-        except:
-            try:
-                current_obj = TweezerSequence_obj
-            except:
-                raise NotImplementedError
-            t = current_obj.TweezerLaser_obj.stop_tweezers(t)
+    # Find the first non-None sequence object
+    current_obj = next((obj for obj in sequence_objects if obj is not None), None)
 
-    t = current_obj.Microwave_obj.reset_spectrum(t)
+    if current_obj is None:
+        raise NotImplementedError("No valid sequence object found")
+
+    # Stop tweezers if the object has a TweezerLaser_obj
+    if hasattr(current_obj, 'TweezerLaser_obj'):
+        print("current_obj has TweezerLaser_obj")
+        t = current_obj.TweezerLaser_obj.stop_tweezers(t)
+
+    # Reset spectrum for all objects with a Microwave_obj
+    for obj in sequence_objects:
+        if obj is not None and hasattr(obj, 'Microwave_obj'):
+            t = obj.Microwave_obj.reset_spectrum(t)
 
     labscript.stop(t + 1e-2)
