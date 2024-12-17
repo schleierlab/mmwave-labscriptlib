@@ -25,11 +25,11 @@ from spectrum_manager import spectrum_manager
 
 class ShutterConfig(Flag):
     """Configuration flags for controlling various shutters in the experimental setup.
-    
-    This class uses Flag enumeration to represent different shutter configurations that can be 
-    combined using bitwise operations. Each configuration represents a specific combination of 
+
+    This class uses Flag enumeration to represent different shutter configurations that can be
+    combined using bitwise operations. Each configuration represents a specific combination of
     shutters for different experimental phases like MOT operation, imaging, and optical pumping.
-    
+
     Attributes:
         NONE (Flag): No shutters active
         TA (Flag): Tapered Amplifier shutter
@@ -39,7 +39,7 @@ class ShutterConfig(Flag):
         IMG_XY (Flag): Imaging beams in XY plane shutter
         IMG_Z (Flag): Imaging beam in Z direction shutter
         OPTICAL_PUMPING (Flag): Optical pumping beam shutter
-        
+
         Combinations:
         UPSTREAM: Combined TA and REPUMP shutters
         MOT_FULL: All MOT-related shutters (UPSTREAM | MOT_XY | MOT_Z)
@@ -114,11 +114,11 @@ class ShutterConfig(Flag):
 # -------------------------------------------------------------------------------
 class D2Lasers:
     """Controls for D2 transition lasers including Tapered Amplifier (TA) and repump lasers.
-    
+
     This class manages the frequency, power, and shutter configurations for D2 transition lasers
     used in the experiment. It provides methods for ramping frequencies, controlling AOMs, and
     managing shutter configurations.
-    
+
     Attributes:
         CONST_TA_VCO_RAMP_TIME (float): Minimal TA VCO ramp time to maintain beatnote lock (1.2e-4 s)
         CONST_SHUTTER_TURN_OFF_TIME (float): Time for shutter to fully close (2e-3 s)
@@ -150,10 +150,10 @@ class D2Lasers:
 
     def __init__(self, t):
         """Initialize the D2 laser system.
-        
+
         Sets up initial frequencies and powers for MOT operation, initializes shutter
         configuration, and configures hardware devices.
-        
+
         Args:
             t (float): Time to start the D2 laser system
         """
@@ -177,19 +177,19 @@ class D2Lasers:
         devices.repump_vco.constant(t, repump_freq_calib(self.repump_freq))
         devices.ta_aom_analog.constant(t, self.ta_power)
         devices.repump_aom_analog.constant(t, self.repump_power)
-    
+
     def ramp_ta_freq(self, t, duration, final):
         """Ramp the TA laser frequency from current to final value.
-        
+
         The ramp duration will be at least CONST_TA_VCO_RAMP_TIME to maintain
         beatnote lock. If current and final frequencies are the same, no ramp
         is performed.
-        
+
         Args:
             t (float): Start time for the frequency ramp
             duration (float): Desired duration of the ramp
             final (float): Target frequency detuning in MHz
-            
+
         Returns:
             float: End time of the ramp
         """
@@ -211,16 +211,16 @@ class D2Lasers:
 
     def ramp_repump_freq(self, t, duration, final):
         """Ramp the repump laser frequency from current to final value.
-        
+
         The ramp duration will be at least CONST_TA_VCO_RAMP_TIME to maintain
         beatnote lock. If current and final frequencies are the same, no ramp
         is performed.
-        
+
         Args:
             t (float): Start time for the frequency ramp
             duration (float): Desired duration of the ramp
             final (float): Target frequency detuning in MHz
-            
+
         Returns:
             float: End time of the ramp
         """
@@ -242,10 +242,10 @@ class D2Lasers:
 
     def ta_aom_off(self, t):
         """Turn off the TA beam using AOM.
-        
+
         Disables both digital and analog controls of the TA AOM to ensure
         complete beam extinction.
-        
+
         Args:
             t (float): Time to turn off the AOM
         """
@@ -255,10 +255,10 @@ class D2Lasers:
 
     def ta_aom_on(self, t, const):
         """Turn on the TA beam using AOM.
-        
+
         Enables both digital and analog controls of the TA AOM to activate
         the beam at specified power.
-        
+
         Args:
             t (float): Time to turn on the AOM
             const (float): Power level for the AOM (0 to 1)
@@ -269,10 +269,10 @@ class D2Lasers:
 
     def repump_aom_off(self, t):
         """Turn off the repump beam using AOM.
-        
+
         Disables both digital and analog controls of the repump AOM to ensure
         complete beam extinction.
-        
+
         Args:
             t (float): Time to turn off the AOM
         """
@@ -282,10 +282,10 @@ class D2Lasers:
 
     def repump_aom_on(self, t, const):
         """Turn on the repump beam using AOM.
-        
+
         Enables both digital and analog controls of the repump AOM to activate
         the beam at specified power.
-        
+
         Args:
             t (float): Time to turn on the AOM
             const (float): Power level for the AOM (0 to 1)
@@ -296,14 +296,14 @@ class D2Lasers:
 
     def ramp_ta_aom(self, t, dur, final_power):
         """Ramp the TA AOM power from current to final value.
-        
+
         Performs a smooth power ramp of the TA beam using the AOM.
-        
+
         Args:
             t (float): Start time for the power ramp
             dur (float): Duration of the ramp
             final_power (float): Target power level (0 to 1)
-            
+
         Returns:
             float: End time of the ramp
         """
@@ -317,14 +317,14 @@ class D2Lasers:
 
     def ramp_repump_aom(self, t, dur, final_power):
         """Ramp the repump AOM power from current to final value.
-        
+
         Performs a smooth power ramp of the repump beam using the AOM.
-        
+
         Args:
             t (float): Start time for the power ramp
             dur (float): Duration of the ramp
             final_power (float): Target power level (0 to 1)
-            
+
         Returns:
             float: End time of the ramp
         """
@@ -338,14 +338,14 @@ class D2Lasers:
 
     def update_shutters(self, t, new_shutter_config: ShutterConfig):
         """Update the shutter configuration of the laser system.
-        
+
         Manages the opening and closing of various shutters based on the new configuration.
         Ensures proper timing between shutter operations to maintain system stability.
-        
+
         Args:
             t (float): Time to update the shutter configuration
             new_shutter_config (ShutterConfig): New shutter configuration to apply
-            
+
         Returns:
             float: Updated time after all shutter operations are complete
         """
@@ -378,7 +378,7 @@ class D2Lasers:
 
         # if the last shutter is closed and now needs to be opened, open it after CONST_MIN_SHUTTER_OFF_TIME
         if any(t - self.last_shutter_close_t * open_bool_list < self.CONST_MIN_SHUTTER_OFF_TIME):
-            t = max(self.last_shutter_close_t * open_bool_list) + self.CONST_MIN_SHUTTER_OFF_TIME 
+            t = max(self.last_shutter_close_t * open_bool_list) + self.CONST_MIN_SHUTTER_OFF_TIME
         # if the last shutter is opened and now needs to be closed, close it after CONST_MIN_SHUTTER_ON_TIME
         elif any (t - self.last_shutter_open_t * close_bool_list < self.CONST_MIN_SHUTTER_ON_TIME):
             t = max(self.last_shutter_open_t * close_bool_list) + self.CONST_MIN_SHUTTER_ON_TIME + self.CONST_SHUTTER_TURN_OFF_TIME
@@ -400,10 +400,10 @@ class D2Lasers:
         self, t, dur, shutter_config, ta_power, repump_power, close_all_shutters=False
     ):
         """Perform a laser pulse with specified parameters.
-        
+
         Executes a laser pulse by configuring shutters and AOM powers. Can optionally
         close all shutters after the pulse.
-        
+
         Args:
             t (float): Start time for the pulse
             dur (float): Duration of the pulse
@@ -411,14 +411,14 @@ class D2Lasers:
             ta_power (float): Power level for the TA beam (0 to 1)
             repump_power (float): Power level for the repump beam (0 to 1)
             close_all_shutters (bool, optional): Whether to close all shutters after pulse. Defaults to False.
-            
+
         Returns:
             tuple[float, float]: (End time after pulse and shutter operations, AOM start time)
         """
         change_shutters = self.shutter_config != shutter_config
 
         if change_shutters:
-            # NOTE: Adding this to t makes it so it doesn't cut the previous pulse 
+            # NOTE: Adding this to t makes it so it doesn't cut the previous pulse
             # short, but rather shifts the time of the next pulse.
             t += self.CONST_SHUTTER_TURN_ON_TIME
             print("shutter config changed, adding time to account for switching")
@@ -455,12 +455,12 @@ class D2Lasers:
 
     def reset_to_mot_freq(self, t):
         """Reset laser frequencies to MOT operation values.
-        
+
         Ramps both TA and repump laser frequencies back to their MOT operation values.
-        
+
         Args:
             t (float): Start time for the frequency reset
-            
+
         Returns:
             float: End time after frequency ramps are complete
         """
@@ -473,12 +473,12 @@ class D2Lasers:
 
     def reset_to_mot_on(self, t):
         """Reset the laser system to MOT operation state.
-        
+
         Configures shutters and powers for MOT operation and ensures proper timing.
-        
+
         Args:
             t (float): Start time for the MOT reset
-            
+
         Returns:
             float: End time after reset operations are complete
         """
@@ -491,15 +491,15 @@ class D2Lasers:
 
     def parity_projection_pulse(self, t, dur, close_all_shutters=False):
         """Execute a parity projection pulse sequence.
-        
+
         Performs a specialized pulse sequence for parity projection measurements,
         using specific shutter configurations and power levels.
-        
+
         Args:
             t (float): Start time for the parity projection pulse
             dur (float): Duration of the pulse
             close_all_shutters (bool, optional): Whether to close all shutters after pulse. Defaults to False.
-            
+
         Returns:
             tuple[float, float]: (End time after pulse sequence, AOM start time)
         """
@@ -522,19 +522,19 @@ class D2Lasers:
 
 class TweezerLaser:
     """Controls for the optical tweezer laser system.
-    
+
     This class manages the optical tweezer laser system, including power control,
     intensity servo operation, and modulation capabilities.
-    
+
     Attributes:
         CONST_TWEEZER_RAMPING_TIME (float): Standard ramping time for tweezer power changes (10e-3 s)
     """
 
     CONST_TWEEZER_RAMPING_TIME: ClassVar[float] = 10e-3
-    
+
     def __init__(self, t):
         """Initialize the tweezer laser system.
-        
+
         Args:
             t (float): Time to start the tweezers
         """
@@ -545,7 +545,7 @@ class TweezerLaser:
 
     def start_tweezers(self, t):
         """Initialize and start the optical tweezer system.
-        
+
         Args:
             t (float): Time to start the tweezers
         """
@@ -557,7 +557,7 @@ class TweezerLaser:
 
     def stop_tweezers(self, t):
         """Safely stop and power down the optical tweezer system.
-        
+
         Args:
             t (float): Time to stop the tweezers
         """
@@ -576,7 +576,7 @@ class TweezerLaser:
 
     def intensity_servo_keep_on(self, t):
         """Maintain the intensity servo in active state.
-        
+
         Args:
             t (float): Time to ensure servo remains active
         """
@@ -585,7 +585,7 @@ class TweezerLaser:
 
     def aom_on(self, t, const):
         """Turn on the tweezer beam using AOM.
-        
+
         Args:
             t (float): Time to turn on the AOM
             const (float): Power level for the AOM
@@ -597,7 +597,7 @@ class TweezerLaser:
 
     def aom_off(self, t):
         """Turn off the tweezer beam using AOM.
-        
+
         Args:
             t (float): Time to turn off the AOM
         """
@@ -608,12 +608,12 @@ class TweezerLaser:
 
     def ramp_power(self, t, dur, final_power):
         """Ramp the tweezer power from current to final value.
-        
+
         Args:
             t (float): Start time for the power ramp
             dur (float): Duration of the ramp
             final_power (float): Target power level
-            
+
         Returns:
             float: End time of the ramp
         """
@@ -625,7 +625,7 @@ class TweezerLaser:
 
     def sine_mod_power(self, t, dur, amp, freq):
         """Apply sinusoidal modulation to the tweezer power.
-        
+
         Args:
             t (float): Start time for modulation
             dur (float): Duration of modulation
@@ -645,29 +645,29 @@ class TweezerLaser:
 
 class Microwave:
     """Controls for microwave wave generation and manipulation.
-    
+
     This class manages the microwave system used for driving transitions between hyperfine
     states and Rydberg levels. It handles both single-frequency pulses and frequency sweeps
     using a spectrum card, and includes controls for switches and power levels.
-    
+
     Attributes:
         CONST_SPECTRUM_CARD_OFFSET (float): Delay time between spectrum card output and trigger (52.8µs)
         CONST_SPECTRUM_UWAVE_CABLE_ATTEN (float): Attenuation in dB for the microwave output at 300 MHz (4.4)
     """
-    
+
     CONST_SPECTRUM_CARD_OFFSET: ClassVar[float] = 52.8e-6
     CONST_SPECTRUM_UWAVE_CABLE_ATTEN: ClassVar[float] = 4.4
 
     def __init__(self, t):
         """Initialize the microwave system.
-        
+
         Sets up the spectrum card configuration for microwave
         channels, including power levels, clock settings, and switch states.
-        
+
         Args:
             t (float): Time to initialize the microwave system
         """
-        
+
         self.mw_detuning = shot_globals.mw_detuning  # tune the microwave detuning here
         self.uwave_dds_switch_on = True
         self.uwave_absorp_switch_on = False
@@ -689,7 +689,7 @@ class Microwave:
                 {
                     "name": "microwaves",
                     "power": self.spectrum_uwave_power
-                    + CONST_SPECTRUM_UWAVE_CABLE_ATTEN,
+                    + self.CONST_SPECTRUM_UWAVE_CABLE_ATTEN,
                     "port": 0,
                     "is_amplified": False,
                     "amplifier": None,
@@ -715,14 +715,14 @@ class Microwave:
 
     def do_pulse(self, t, dur):
         """Generate a single-frequency microwave pulse.
-        
+
         Produces a microwave pulse at the current detuning frequency with specified duration.
         Handles timing offsets and switch control automatically.
-        
+
         Args:
             t (float): Start time for the pulse
             dur (float): Duration of the pulse
-            
+
         Returns:
             float: End time after the pulse is complete
         """
@@ -747,16 +747,16 @@ class Microwave:
 
     def do_sweep(self, t, start_freq, end_freq, dur):
         """Perform a frequency sweep of the microwave signal.
-        
+
         Generates a linear frequency sweep between specified start and end frequencies.
         Controls switches and timing for proper sweep execution.
-        
+
         Args:
             t (float): Start time for the sweep
             start_freq (float): Starting frequency for the sweep
             end_freq (float): Ending frequency for the sweep
             dur (float): Duration of the sweep
-            
+
         Returns:
             float: End time after the sweep is complete
         """
@@ -784,13 +784,13 @@ class Microwave:
 
     def reset_spectrum(self, t):
         """Reset the spectrum card by sending a dummy segment.
-        
+
         Due to spectrum card behavior, two pulses are required to properly stop
         the card. This method sends a dummy segment and stops the card.
-        
+
         Args:
             t (float): Time to perform the reset
-            
+
         Returns:
             float: End time after reset is complete
         """
@@ -806,14 +806,14 @@ class Microwave:
 
 class RydLasers:
     """Controls for Rydberg excitation lasers (blue and red).
-    
+
     This class manages the laser systems used for Rydberg excitation, including
     intensity servos, AOM controls, and mirror positioning for both blue and red lasers.
     """
-    
+
     def __init__(self, t):
         """Initialize the Rydberg laser system.
-        
+
         Args:
             t (float): Time to start the Rydberg lasers
         """
@@ -823,7 +823,7 @@ class RydLasers:
 
     def blue_intensity_servo_keep_on(self, t):
         """Maintain the blue laser intensity servo in active state.
-        
+
         Args:
             t (float): Time to ensure servo remains active
         """
@@ -832,7 +832,7 @@ class RydLasers:
 
     def red_intensity_servo_keep_on(self, t):
         """Maintain the red laser intensity servo in active state.
-        
+
         Args:
             t (float): Time to ensure servo remains active
         """
@@ -841,7 +841,7 @@ class RydLasers:
 
     def blue_servo_aom_on(self, t, const):
         """Turn on the blue laser servo AOM.
-        
+
         Args:
             t (float): Time to turn on the AOM
             const (float): Power level for the AOM
@@ -852,7 +852,7 @@ class RydLasers:
 
     def blue_servo_aom_off(self, t):
         """Turn off the blue laser servo AOM.
-        
+
         Args:
             t (float): Time to turn off the AOM
         """
@@ -862,7 +862,7 @@ class RydLasers:
 
     def blue_pulse_aom_on(self, t, const):
         """Turn on the blue laser pulse AOM.
-        
+
         Args:
             t (float): Time to turn on the AOM
             const (float): Power level for the AOM
@@ -873,7 +873,7 @@ class RydLasers:
 
     def blue_pulse_aom_off(self, t):
         """Turn off the blue laser pulse AOM.
-        
+
         Args:
             t (float): Time to turn off the AOM
         """
@@ -883,7 +883,7 @@ class RydLasers:
 
     def red_servo_aom_on(self, t, const):
         """Turn on the red laser servo AOM.
-        
+
         Args:
             t (float): Time to turn on the AOM
             const (float): Power level for the AOM
@@ -894,7 +894,7 @@ class RydLasers:
 
     def red_servo_aom_off(self, t):
         """Turn off the red laser servo AOM.
-        
+
         Args:
             t (float): Time to turn off the AOM
         """
@@ -904,7 +904,7 @@ class RydLasers:
 
     def red_pulse_aom_on(self, t, const):
         """Turn on the red laser pulse AOM.
-        
+
         Args:
             t (float): Time to turn on the AOM
             const (float): Power level for the AOM
@@ -915,7 +915,7 @@ class RydLasers:
 
     def red_pulse_aom_off(self, t):
         """Turn off the red laser pulse AOM.
-        
+
         Args:
             t (float): Time to turn off the AOM
         """
@@ -925,7 +925,7 @@ class RydLasers:
 
     def blue_mirror_1_position(self, t):
         """Set the position of the first blue laser mirror.
-        
+
         Args:
             t (float): Time to set the mirror position
         """
@@ -936,7 +936,7 @@ class RydLasers:
 
     def blue_mirror_2_position(self, t):
         """Set the position of the second blue laser mirror.
-        
+
         Args:
             t (float): Time to set the mirror position
         """
@@ -947,7 +947,7 @@ class RydLasers:
 
     def red_mirror_1_position(self, t):
         """Set the position of the first red laser mirror.
-        
+
         Args:
             t (float): Time to set the mirror position
         """
@@ -958,7 +958,7 @@ class RydLasers:
 
     def red_mirror_2_position(self, t):
         """Set the position of the second red laser mirror.
-        
+
         Args:
             t (float): Time to set the mirror position
         """
@@ -970,14 +970,14 @@ class RydLasers:
 
 class UVLamps:
     """Controls for UV LED lamps used in the experiment.
-    
+
     This class manages the UV LED lamps, which are typically used for MOT loading
     enhancement through light-induced atom desorption.
     """
-    
+
     def __init__(self, t):
         """Initialize the UV lamp system.
-        
+
         Args:
             t (float): Time to start the UV lamps
         """
@@ -986,11 +986,11 @@ class UVLamps:
 
     def uv_pulse(self, t, dur):
         """Flash the UV LED lamps for a specified duration.
-        
+
         Args:
             t (float): Start time for the UV pulse
             dur (float): Duration of the UV pulse
-            
+
         Returns:
             float: End time of the UV pulse
         """
@@ -1002,11 +1002,11 @@ class UVLamps:
 
 class BField:
     """Controls for magnetic field generation and manipulation.
-    
+
     This class manages the magnetic field coils used in the experiment, including MOT coils
     and bias field coils. It provides methods for switching coils, ramping fields, and
     converting between spherical and Cartesian coordinates for field control.
-    
+
     Attributes:
         CONST_COIL_OFF_TIME (float): Time required for coils to turn off (1.4e-3 s)
         CONST_COIL_RAMP_TIME (float): Standard time for ramping coil currents (100e-6 s)
@@ -1024,10 +1024,10 @@ class BField:
     current_outputs = tuple[AnalogOut, AnalogOut, AnalogOut]
     feedback_disable_ttls = tuple[DigitalOut, DigitalOut, DigitalOut]
 
-    
+
     def __init__(self, t: float):
         """Initialize the magnetic field system.
-        
+
         Args:
             t (float): Time to start the magnetic field
         """
@@ -1038,7 +1038,7 @@ class BField:
         ]
         self.mot_coils_on = shot_globals.mot_do_coil
         self.mot_coils_on_current = 10 / 6
-     
+
         self.t_last_change = 0
 
         self.current_outputs = (
@@ -1070,22 +1070,22 @@ class BField:
     ):
         """
         Flip the polarity of a specified magnetic field coil.
-        
+
         Performs a controlled polarity flip of a magnetic field coil by ramping through
         an intermediate voltage state. The process involves:
         1. Ramping to a small intermediate voltage
         2. Disabling feedback during the polarity change
         3. Waiting for the flip to complete
         4. Ramping to the final voltage
-        
+
         Args:
             t (float): Time to begin coil polarity flipping
             final_voltage (float): Target control voltage for the coil after polarity flip
             component (Literal[0, 1, 2]): Field component to flip (0=x, 1=y, 2=z)
-            
+
         Returns:
             float: Start time for parallel operations (accounts for flip duration)
-            
+
         Note:
             The method returns the start time instead of end time to allow parallel
             operations on other coils. Total operation time is CONST_BIPOLAR_COIL_FLIP_TIME
@@ -1129,13 +1129,13 @@ class BField:
 
     def ramp_bias_field(self, t, dur = 100e-6,  bias_field_vector=None, voltage_vector=None):
         """Ramp the bias field to new values.
-        
+
         Args:
             t (float): Start time for the ramp
             dur (float, optional): Duration of the ramp. Defaults to 100e-6 s
             bias_field_vector (tuple, optional): Target bias field values in Gauss
             voltage_vector (tuple, optional): Target voltage values for coils
-            
+
         Returns:
             float: End time of the ramp
         """
@@ -1197,10 +1197,10 @@ class BField:
 
     def switch_mot_coils(self, t):
         """Switch the MOT coils on or off.
-        
+
         Args:
             t (float): Time to switch the coils
-            
+
         Returns:
             float: End time after switching operation is complete
         """
@@ -1228,12 +1228,12 @@ class BField:
 
     def convert_bias_fields_sph_to_cart(self, bias_amp, bias_phi, bias_theta):
         """Convert spherical coordinates to Cartesian for bias field control.
-        
+
         Args:
             bias_amp (float): Amplitude of the bias field
             bias_phi (float): Azimuthal angle in radians
             bias_theta (float): Polar angle in radians
-            
+
         Returns:
             tuple: Cartesian coordinates (x, y, z) for the bias field
         """
@@ -1256,14 +1256,14 @@ class BField:
 
 class Camera:
     """Controls for experimental imaging cameras.
-    
+
     This class manages the camera systems used for imaging atoms in the experiment,
     including exposure timing and triggering.
     """
-    
+
     def __init__(self, t):
         """Initialize the camera system.
-        
+
         Args:
             t (float): Time to start the camera
         """
@@ -1271,16 +1271,16 @@ class Camera:
 
     def set_type(self, type):
         """Set the type of imaging to be performed.
-        
+
         Args:
-            type (str): Type of imaging configuration to use, "MOT_manta" or 
+            type (str): Type of imaging configuration to use, "MOT_manta" or
             "tweezer_manta" or "kinetix"
         """
         self.type = type
 
     def expose(self, t, exposure_time, trigger_local_manta=False):
         """Trigger camera exposure.
-        
+
         Args:
             t (float): Start time for the exposure
             exposure_time (float): Duration of the exposure
@@ -1314,14 +1314,14 @@ class Camera:
 
 class EField:
     """Controls for electric field generation and manipulation.
-    
+
     This class manages the electric field controls in the experiment, including
     field generation, ramping, and manipulation for various experimental sequences.
     """
-    
+
     def __init__(self, t):
         """Initialize the electric field system.
-        
+
         Args:
             t (float): Time to start the electric field
         """
