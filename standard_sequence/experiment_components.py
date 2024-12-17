@@ -805,10 +805,10 @@ class Microwave:
 
 
 class RydLasers:
-    """Controls for Rydberg excitation lasers (blue and red).
+    """Controls for Rydberg excitation lasers (456nm and 1064nm).
 
     This class manages the laser systems used for Rydberg excitation, including
-    intensity servos, AOM controls, and mirror positioning for both blue and red lasers.
+    intensity servos, AOM controls, and mirror positioning for both 456nm and 1064nm lasers.
     """
 
     def __init__(self, t):
@@ -818,92 +818,92 @@ class RydLasers:
             t (float): Time to start the Rydberg lasers
         """
         # Keep the intensity servo on, regardless of BLACs settings
-        self.blue_intensity_servo_keep_on(t)
-        self.red_intensity_servo_keep_on(t)
+        self.servo_456_intensity_keep_on(t)
+        self.servo_1064_intensity_keep_on(t)
 
-    def blue_intensity_servo_keep_on(self, t):
-        """Maintain the blue laser intensity servo in active state.
-
-        Args:
-            t (float): Time to ensure servo remains active
-        """
-        """keep the AOM digital high for intensity servo"""
-        self.blue_servo_aom_on(t, 0)
-
-    def red_intensity_servo_keep_on(self, t):
-        """Maintain the red laser intensity servo in active state.
+    def servo_456_intensity_keep_on(self, t):
+        """Maintain the 456nm laser intensity servo in active state.
 
         Args:
             t (float): Time to ensure servo remains active
         """
         """keep the AOM digital high for intensity servo"""
-        self.red_servo_aom_on(t, 0)
+        self.servo_456_aom_on(t, 0)
 
-    def blue_servo_aom_on(self, t, const):
-        """Turn on the blue laser servo AOM.
+    def servo_1064_intensity_keep_on(self, t):
+        """Maintain the 1064nm laser intensity servo in active state.
+
+        Args:
+            t (float): Time to ensure servo remains active
+        """
+        """keep the AOM digital high for intensity servo"""
+        self.servo_1064_aom_on(t, 0)
+
+    def servo_456_aom_on(self, t, const):
+        """Turn on the 456nm laser servo AOM.
 
         Args:
             t (float): Time to turn on the AOM
             const (float): Power level for the AOM
         """
-        devices.moglabs_456_aom_digital.go_high(t)  # digital on
-        devices.moglabs_456_aom_analog.constant(t, const)  # analog to const
-        self.blue_power = const
+        devices.servo_456_aom_digital.go_high(t)  # digital on
+        devices.servo_456_aom_analog.constant(t, const)  # analog to const
+        self.power_456 = const
 
-    def blue_servo_aom_off(self, t):
-        """Turn off the blue laser servo AOM.
+    def servo_456_aom_off(self, t):
+        """Turn off the 456nm laser servo AOM.
 
         Args:
             t (float): Time to turn off the AOM
         """
-        devices.moglabs_456_aom_digital.go_low(t)  # digital off
-        devices.moglabs_456_aom_analog.constant(t, 0)  # analog off
-        self.blue_power = 0
+        devices.servo_456_aom_digital.go_low(t)  # digital off
+        devices.servo_456_aom_analog.constant(t, 0)  # analog off
+        self.power_456 = 0
 
-    def blue_pulse_aom_on(self, t, const):
-        """Turn on the blue laser pulse AOM.
+    def pulse_456_aom_on(self, t, const):
+        """Turn on the 456nm laser pulse AOM.
 
         Args:
             t (float): Time to turn on the AOM
             const (float): Power level for the AOM
         """
-        devices.octagon_456_aom_digital.go_high(t)  # digital on
-        devices.octagon_456_aom_analog.constant(t, const)  # analog to const
-        self.blue_power = const
+        devices.pulse_456_aom_digital.go_high(t)  # digital on
+        devices.pulse_456_aom_analog.constant(t, const)  # analog to const
+        self.power_456 = const
 
-    def blue_pulse_aom_off(self, t):
-        """Turn off the blue laser pulse AOM.
+    def pulse_456_aom_off(self, t):
+        """Turn off the 456nm laser pulse AOM.
 
         Args:
             t (float): Time to turn off the AOM
         """
-        devices.octagon_456_aom_digital.go_low(t)  # digital off
-        devices.octagon_456_aom_analog.constant(t, 0)  # analog off
-        self.blue_power = 0
+        devices.pulse_456_aom_digital.go_low(t)  # digital off
+        devices.pulse_456_aom_analog.constant(t, 0)  # analog off
+        self.power_456 = 0
 
-    def red_servo_aom_on(self, t, const):
-        """Turn on the red laser servo AOM.
+    def servo_1064_aom_on(self, t, const):
+        """Turn on the 1064nm laser servo AOM.
 
         Args:
             t (float): Time to turn on the AOM
             const (float): Power level for the AOM
         """
-        devices.ipg_1064_aom_digital.go_high(t)  # digital on
-        devices.ipg_1064_aom_analog.constant(t, const)  # analog to const
-        self.red_power = const
+        devices.servo_1064_aom_digital.go_high(t)  # digital on
+        devices.servo_1064_aom_analog.constant(t, const)  # analog to const
+        self.power_1064 = const
 
-    def red_servo_aom_off(self, t):
-        """Turn off the red laser servo AOM.
+    def servo_1064_aom_off(self, t):
+        """Turn off the 1064nm laser servo AOM.
 
         Args:
             t (float): Time to turn off the AOM
         """
-        devices.ipg_1064_aom_digital.go_low(t)  # digital off
-        devices.ipg_1064_aom_analog.constant(t, 0)  # analog off
-        self.red_power = 0
+        devices.servo_1064_aom_digital.go_low(t)  # digital off
+        devices.servo_1064_aom_analog.constant(t, 0)  # analog off
+        self.power_1064 = 0
 
-    def red_pulse_aom_on(self, t, const):
-        """Turn on the red laser pulse AOM.
+    def pulse_1064_aom_on(self, t, const):
+        """Turn on the 1064nm laser pulse AOM.
 
         Args:
             t (float): Time to turn on the AOM
@@ -911,61 +911,61 @@ class RydLasers:
         """
         devices.pulse_1064_digital.go_high(t)  # digital on
         devices.pulse_1064_analog.constant(t, const)  # analog to const
-        self.red_power = const
+        self.power_1064 = const
 
-    def red_pulse_aom_off(self, t):
-        """Turn off the red laser pulse AOM.
+    def pulse_1064_aom_off(self, t):
+        """Turn off the 1064nm laser pulse AOM.
 
         Args:
             t (float): Time to turn off the AOM
         """
         devices.pulse_1064_digital.go_low(t)  # digital off
         devices.pulse_1064_analog.constant(t, 0)  # analog off
-        self.red_power = 0
+        self.power_1064 = 0
 
-    def blue_mirror_1_position(self, t):
-        """Set the position of the first blue laser mirror.
+    def mirror_456_1_position(self, t):
+        """Set the position of the first 456nm laser mirror.
 
         Args:
             t (float): Time to set the mirror position
         """
-        devices.mirror_1_horizontal.constant(
+        devices.mirror_456_1_horizontal.constant(
             t, shot_globals.ryd_456_mirror_1_h_position
         )
-        devices.mirror_1_vertical.constant(t, shot_globals.ryd_456_mirror_1_v_position)
+        devices.mirror_456_1_vertical.constant(t, shot_globals.ryd_456_mirror_1_v_position)
 
-    def blue_mirror_2_position(self, t):
-        """Set the position of the second blue laser mirror.
+    def mirror_456_2_position(self, t):
+        """Set the position of the second 456nm laser mirror.
 
         Args:
             t (float): Time to set the mirror position
         """
-        devices.mirror_2_horizontal.constant(
+        devices.mirror_456_2_horizontal.constant(
             t, shot_globals.ryd_456_mirror_2_h_position
         )
-        devices.mirror_2_vertical.constant(t, shot_globals.ryd_456_mirror_2_v_position)
+        devices.mirror_456_2_vertical.constant(t, shot_globals.ryd_456_mirror_2_v_position)
 
-    def red_mirror_1_position(self, t):
-        """Set the position of the first red laser mirror.
+    def mirror_1064_1_position(self, t):
+        """Set the position of the first 1064nm laser mirror.
 
         Args:
             t (float): Time to set the mirror position
         """
-        devices.mirror_3_horizontal.constant(
+        devices.mirror_1064_1_horizontal.constant(
             t, shot_globals.ryd_1064_mirror_1_h_position
         )
-        devices.mirror_3_vertical.constant(t, shot_globals.ryd_1064_mirror_1_v_position)
+        devices.mirror_1064_1_vertical.constant(t, shot_globals.ryd_1064_mirror_1_v_position)
 
-    def red_mirror_2_position(self, t):
-        """Set the position of the second red laser mirror.
+    def mirror_1064_2_position(self, t):
+        """Set the position of the second 1064nm laser mirror.
 
         Args:
             t (float): Time to set the mirror position
         """
-        devices.mirror_4_horizontal.constant(
+        devices.mirror_1064_2_horizontal.constant(
             t, shot_globals.ryd_1064_mirror_2_h_position
         )
-        devices.mirror_4_vertical.constant(t, shot_globals.ryd_1064_mirror_2_v_position)
+        devices.mirror_1064_2_vertical.constant(t, shot_globals.ryd_1064_mirror_2_v_position)
 
 
 class UVLamps:
