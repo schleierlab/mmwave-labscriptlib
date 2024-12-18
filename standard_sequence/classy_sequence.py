@@ -1165,7 +1165,7 @@ class TweezerSequence(OpticalPumpingSequence):
         Args:
             t (float): Start time for the sequence
         """
-        pass
+        raise NotImplementedError
 
     def _tweezer_modulation_sequence(self, t):
         """Execute a tweezer modulation sequence.
@@ -1176,7 +1176,7 @@ class TweezerSequence(OpticalPumpingSequence):
         Args:
             t (float): Start time for the sequence
         """
-        pass
+        raise NotImplementedError
 
     def _do_optical_pump_in_tweezer_check(self, t):
         """Check optical pumping of atoms in tweezers.
@@ -1360,8 +1360,49 @@ class RydSequence(TweezerSequence):
         super(RydSequence, self).__init__(t)
         self.RydLasers_obj = RydLasers(t)
 
-    
+    def _do_rydberg_check_sequence(self, t):
+        """Perform a Rydberg excitation check sequence.
+        
+        Executes a sequence to verify Rydberg excitation:
+        1. Load atoms into tweezers
+        2. Take first image
+        3. Apply Rydberg excitation pulse
+        4. Take second image to check for atom loss
+        5. Reset MOT parameters
+        
+        Args:
+            t (float): Start time for the sequence
+            
+        Returns:
+            float: End time of the sequence
+        """
+        t = self.load_tweezers(t)
+        t = self.image_tweezers(t, shot_number=1)
+        
+        # Apply Rydberg pulse 
+        t, t_ryd_pulse_start = self.RydLasers_obj.do_rydberg_pulse(
+            t,
+            dur=shot_globals.ryd_456_duration,
+            power_456=shot_globals.ryd_456_power,
+            power_1064=0,
+            close_shutter=True  # Close shutter after pulse to prevent any residual light
+        )
+        # TODO: add if statement to only run blue+repump OR make a whole new sequence for blue_check
+        # Apply repump pulse simultaneously
+        t, _ = self.D2Lasers_obj.do_pulse(
+            t_ryd_pulse_start,
+            shot_globals.ryd_456_duration,
+            ShutterConfig.MOT_REPUMP,
+            0,
+            shot_globals.ryd_456_repump_power,
+            close_all_shutters=True,
+        )
+        
+        t += shot_globals.img_wait_time_between_shots
+        t = self.image_tweezers(t, shot_number=2)
+        t = self.reset_mot(t)
 
+        return t
 
 # Full Sequences, we'll see if we really want all these in a class or just separate sequence files?
 class ScienceSequence(RydSequence):
@@ -1422,8 +1463,7 @@ if __name__ == "__main__":
     elif shot_globals.do_rydberg_check:
         RydSequence_obj = RydSequence(t)
         sequence_objects.append(RydSequence_obj)
-        t+=10e-3
-        #t = RydSequence_obj._do_rydberg_check_sequence(t)
+        t = RydSequence_obj._do_rydberg_check_sequence(t)
 
     # if shot_globals.do_tweezer_check_fifo:
     #     t = do_tweezer_check_fifo(t)

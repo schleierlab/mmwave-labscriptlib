@@ -811,6 +811,10 @@ class RydLasers:
     This class manages the laser systems used for Rydberg excitation, including
     intensity servos, AOM controls, and mirror positioning for both 456nm and 1064nm lasers.
     """
+    # Constants for shutter timing
+    CONST_SHUTTER_TURN_ON_TIME: ClassVar[float] = 2e-3  # 2ms for shutter to open
+    CONST_SHUTTER_TURN_OFF_TIME: ClassVar[float] = 2e-3  # 2ms for shutter to close
+
 
     def __init__(self, t):
         """Initialize the Rydberg laser system.
@@ -824,12 +828,15 @@ class RydLasers:
         self.servo_456_intensity_keep_on(t)
         self.servo_1064_intensity_keep_on(t)
         # Initialize 456nm laser detuning
-        devices.dds1.synthesize(t, freq = shot_globals.blue_456_detuning, amp = 0.5, ph = 0)
+        self.detuning_456 = shot_globals.ryd_456_detuning
+        devices.dds1.synthesize(t, freq = self.detuning_456, amp = 0.5, ph = 0)
         # Initialize shutter state
         self.shutter_open = False
-        # Constants for shutter timing
-        self.CONST_SHUTTER_TURN_ON_TIME = 3e-3  # 3ms for shutter to open
-        self.CONST_SHUTTER_TURN_OFF_TIME = 3e-3  # 3ms for shutter to close
+        # Mirrors go to initial positions
+        self.mirror_456_1_position(t)
+        self.mirror_456_2_position(t)
+        self.mirror_1064_1_position(t)
+        self.mirror_1064_2_position(t)
 
     def servo_456_intensity_keep_on(self, t):
         """Maintain the 456nm laser intensity servo in active state.
@@ -919,8 +926,8 @@ class RydLasers:
             t (float): Time to turn on the AOM
             const (float): Power level for the AOM
         """
-        devices.pulse_1064_digital.go_high(t)  # digital on
-        devices.pulse_1064_analog.constant(t, const)  # analog to const
+        devices.pulse_1064_aom_digital.go_high(t)  # digital on
+        devices.pulse_1064_aom_analog.constant(t, const)  # analog to const
         self.power_1064 = const
 
     def pulse_1064_aom_off(self, t):
@@ -929,8 +936,8 @@ class RydLasers:
         Args:
             t (float): Time to turn off the AOM
         """
-        devices.pulse_1064_digital.go_low(t)  # digital off
-        devices.pulse_1064_analog.constant(t, 0)  # analog off
+        devices.pulse_1064_aom_digital.go_low(t)  # digital off
+        devices.pulse_1064_aom_analog.constant(t, 0)  # analog off
         self.power_1064 = 0
 
     def mirror_456_1_position(self, t):
@@ -939,10 +946,10 @@ class RydLasers:
         Args:
             t (float): Time to set the mirror position
         """
-        devices.mirror_456_1_horizontal.constant(
-            t, shot_globals.ryd_456_mirror_1_h_position
+        devices.mirror_456_1_h.constant(
+            t, shot_globals.ryd_456_mirror_1_h
         )
-        devices.mirror_456_1_vertical.constant(t, shot_globals.ryd_456_mirror_1_v_position)
+        devices.mirror_456_1_v.constant(t, shot_globals.ryd_456_mirror_1_v)
 
     def mirror_456_2_position(self, t):
         """Set the position of the second 456nm laser mirror.
@@ -950,10 +957,10 @@ class RydLasers:
         Args:
             t (float): Time to set the mirror position
         """
-        devices.mirror_456_2_horizontal.constant(
-            t, shot_globals.ryd_456_mirror_2_h_position
+        devices.mirror_456_2_h.constant(
+            t, shot_globals.ryd_456_mirror_2_h
         )
-        devices.mirror_456_2_vertical.constant(t, shot_globals.ryd_456_mirror_2_v_position)
+        devices.mirror_456_2_v.constant(t, shot_globals.ryd_456_mirror_2_v)
 
     def mirror_1064_1_position(self, t):
         """Set the position of the first 1064nm laser mirror.
@@ -961,10 +968,10 @@ class RydLasers:
         Args:
             t (float): Time to set the mirror position
         """
-        devices.mirror_1064_1_horizontal.constant(
-            t, shot_globals.ryd_1064_mirror_1_h_position
+        devices.mirror_1064_1_h.constant(
+            t, shot_globals.ryd_1064_mirror_1_h
         )
-        devices.mirror_1064_1_vertical.constant(t, shot_globals.ryd_1064_mirror_1_v_position)
+        devices.mirror_1064_1_v.constant(t, shot_globals.ryd_1064_mirror_1_v)
 
     def mirror_1064_2_position(self, t):
         """Set the position of the second 1064nm laser mirror.
@@ -972,10 +979,10 @@ class RydLasers:
         Args:
             t (float): Time to set the mirror position
         """
-        devices.mirror_1064_2_horizontal.constant(
-            t, shot_globals.ryd_1064_mirror_2_h_position
+        devices.mirror_1064_2_h.constant(
+            t, shot_globals.ryd_1064_mirror_2_h
         )
-        devices.mirror_1064_2_vertical.constant(t, shot_globals.ryd_1064_mirror_2_v_position)
+        devices.mirror_1064_2_v.constant(t, shot_globals.ryd_1064_mirror_2_v)
 
     def do_rydberg_pulse(self, t, dur, power_456, power_1064, close_shutter=False):
         """Perform a Rydberg excitation pulse with specified parameters.
@@ -995,12 +1002,12 @@ class RydLasers:
         """
         if not self.shutter_open:
             # Add time for shutter to open if it's currently closed
-            t += self.CONST_SHUTTER_TURN_ON_TIME
-            devices.blue_456_shutter.open(t - self.CONST_SHUTTER_TURN_ON_TIME)
+            t += RydLasers.CONST_SHUTTER_TURN_ON_TIME
+            devices.blue_456_shutter.open(t)
             self.shutter_open = True
             # Turn off AOMs while waiting for shutter
-            self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
-            self.pulse_1064_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
+            self.pulse_456_aom_off(t - RydLasers.CONST_SHUTTER_TURN_ON_TIME)
+            self.pulse_1064_aom_off(t - RydLasers.CONST_SHUTTER_TURN_ON_TIME)
 
         # Turn on AOMs with specified powers
         if power_456 != 0:
@@ -1016,9 +1023,10 @@ class RydLasers:
         self.pulse_1064_aom_off(t)
 
         if close_shutter:
-            t += self.CONST_SHUTTER_TURN_OFF_TIME
-            devices.blue_456_shutter.close(t - self.CONST_SHUTTER_TURN_OFF_TIME)
+            t += RydLasers.CONST_SHUTTER_TURN_OFF_TIME
+            devices.blue_456_shutter.close(t)
             self.shutter_open = False
+            self.pulse_456_aom_on(t, 1)
 
         return t, t_aom_start
 
