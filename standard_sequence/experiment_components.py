@@ -999,6 +999,13 @@ class RydLasers:
         Executes a laser pulse by configuring the shutter and AOM powers for both 456nm and 1064nm lasers.
         The servo AOMs remain unchanged during the pulse.
 
+        # TODO: Check that this explanation is clear, @Sam, @Lin, @Michelle.
+        Note that this routine is a little different from the D2Lasers do_pulse routine.
+        In D2Lasers do_pulse, there is automatic time added if shutters need to be changed,
+        so the input t is not necessarily the start time of the pulse. In contrast, here, t
+        is the start time of the pulse, and the shutter is opened in time for the
+        start of the pulse.
+
         Args:
             t (float): Start time for the aom part of the pulse
             dur (float): Duration of the pulse
@@ -1010,7 +1017,7 @@ class RydLasers:
             tuple[float]: (End time after pulse and shutter operations)
         """
         if not self.shutter_open:
-            devices.blue_456_shutter.open(t) #shutter fully opned
+            devices.blue_456_shutter.open(t) # shutter fully open
             self.shutter_open = True
             # Turn off AOMs while waiting for shutter to fully open
             self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)

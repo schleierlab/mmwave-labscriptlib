@@ -1353,14 +1353,12 @@ class TweezerSequence(OpticalPumpingSequence):
         return t
 
 
-# I think we should leave both 456 and 1064 stuff here because really the only debugging
-# we would need to do is checking their overlap or looking for a Rydberg loss signal in the dipole trap
 class RydSequence(TweezerSequence):
     def __init__(self, t):
         super(RydSequence, self).__init__(t)
         self.RydLasers_obj = RydLasers(t)
 
-    def _do_rydberg_check_sequence(self, t):
+    def _do_456_check_sequence(self, t):
         """Perform a Rydberg excitation check sequence.
         
         Executes a sequence to verify Rydberg excitation:
@@ -1379,8 +1377,7 @@ class RydSequence(TweezerSequence):
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
 
-        # TODO: add if statement to only run blue+repump OR make a whole new sequence for blue_check
-        # Apply repump pulse simultaneously
+        # Apply repump pulse 
         t, t_aom_start = self.D2Lasers_obj.do_pulse(
             t,
             shot_globals.ryd_456_duration,
@@ -1389,7 +1386,7 @@ class RydSequence(TweezerSequence):
             shot_globals.ryd_456_repump_power,
             close_all_shutters=True,
         )
-        # Apply Rydberg pulse 
+        # Apply Rydberg pulse with only 456 active
         t = self.RydLasers_obj.do_rydberg_pulse(
             t_aom_start,
             dur=shot_globals.ryd_456_duration,
@@ -1460,10 +1457,10 @@ if __name__ == "__main__":
         sequence_objects.append(TweezerSequence_obj)
         t = TweezerSequence_obj._do_tweezer_check_sequence(t)
 
-    elif shot_globals.do_rydberg_check:
+    elif shot_globals.do_456_check:
         RydSequence_obj = RydSequence(t)
         sequence_objects.append(RydSequence_obj)
-        t = RydSequence_obj._do_rydberg_check_sequence(t)
+        t = RydSequence_obj._do_456_check_sequence(t)
 
     # if shot_globals.do_tweezer_check_fifo:
     #     t = do_tweezer_check_fifo(t)
