@@ -1378,24 +1378,24 @@ class RydSequence(TweezerSequence):
         """
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
-        
-        # Apply Rydberg pulse 
-        t, t_ryd_pulse_start = self.RydLasers_obj.do_rydberg_pulse(
+
+        # TODO: add if statement to only run blue+repump OR make a whole new sequence for blue_check
+        # Apply repump pulse simultaneously
+        t, t_aom_start = self.D2Lasers_obj.do_pulse(
             t,
+            shot_globals.ryd_456_duration,
+            ShutterConfig.OPTICAL_PUMPING_REPUMP,
+            0,
+            shot_globals.ryd_456_repump_power,
+            close_all_shutters=True,
+        )
+        # Apply Rydberg pulse 
+        t = self.RydLasers_obj.do_rydberg_pulse(
+            t_aom_start,
             dur=shot_globals.ryd_456_duration,
             power_456=shot_globals.ryd_456_power,
             power_1064=0,
             close_shutter=True  # Close shutter after pulse to prevent any residual light
-        )
-        # TODO: add if statement to only run blue+repump OR make a whole new sequence for blue_check
-        # Apply repump pulse simultaneously
-        t, _ = self.D2Lasers_obj.do_pulse(
-            t_ryd_pulse_start,
-            shot_globals.ryd_456_duration,
-            ShutterConfig.MOT_REPUMP,
-            0,
-            shot_globals.ryd_456_repump_power,
-            close_all_shutters=True,
         )
         
         t += shot_globals.img_wait_time_between_shots
@@ -1488,7 +1488,7 @@ if __name__ == "__main__":
         print("current_obj has TweezerLaser_obj")
         t = current_obj.TweezerLaser_obj.stop_tweezers(t)
 
-    # Reset spectrum for all objects with a Microwave_obj and use microwave in the sequence
+    # Reset spectrum if the object has Microwave_obj and if we use microwave in the sequence
     do_mw = shot_globals.do_mw_pulse or shot_globals.do_mw_sweep
     for obj in sequence_objects:
         if obj is not None and hasattr(obj, 'Microwave_obj') and do_mw:

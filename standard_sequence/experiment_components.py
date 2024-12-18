@@ -422,7 +422,9 @@ class D2Lasers:
             # short, but rather shifts the time of the next pulse.
             t += self.CONST_SHUTTER_TURN_ON_TIME
             print("shutter config changed, adding time to account for switching")
+            # print("shutter config:", shutter_config, ", t:", t)
             t = self.update_shutters(t, shutter_config)
+            # print("****shutter config:", shutter_config, ", t:", t)
 
             self.ta_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
             self.repump_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
@@ -814,6 +816,12 @@ class RydLasers:
     # Constants for shutter timing
     CONST_SHUTTER_TURN_ON_TIME: ClassVar[float] = 2e-3  # 2ms for shutter to open
     CONST_SHUTTER_TURN_OFF_TIME: ClassVar[float] = 2e-3  # 2ms for shutter to close
+    CONST_MIN_SHUTTER_OFF_TIME: ClassVar[float] = (
+        6.28e-3  # minimum time for shutter to be off and on again
+    )
+    CONST_MIN_SHUTTER_ON_TIME: ClassVar[float] = (
+        3.6e-3  # minimum time for shutter to be on
+    )
 
 
     def __init__(self, t):
@@ -984,6 +992,7 @@ class RydLasers:
         )
         devices.mirror_1064_2_v.constant(t, shot_globals.ryd_1064_mirror_2_v)
 
+
     def do_rydberg_pulse(self, t, dur, power_456, power_1064, close_shutter=False):
         """Perform a Rydberg excitation pulse with specified parameters.
 
@@ -991,23 +1000,21 @@ class RydLasers:
         The servo AOMs remain unchanged during the pulse.
 
         Args:
-            t (float): Start time for the pulse
+            t (float): Start time for the aom part of the pulse
             dur (float): Duration of the pulse
             power_456 (float): Power level for the 456nm beam (0 to 1)
             power_1064 (float): Power level for the 1064nm beam (0 to 1)
             close_shutter (bool, optional): Whether to close shutter after pulse. Defaults to False.
 
         Returns:
-            tuple[float, float]: (End time after pulse and shutter operations, AOM start time)
+            tuple[float]: (End time after pulse and shutter operations)
         """
         if not self.shutter_open:
-            # Add time for shutter to open if it's currently closed
-            t += RydLasers.CONST_SHUTTER_TURN_ON_TIME
-            devices.blue_456_shutter.open(t)
+            devices.blue_456_shutter.open(t) #shutter fully opned
             self.shutter_open = True
-            # Turn off AOMs while waiting for shutter
-            self.pulse_456_aom_off(t - RydLasers.CONST_SHUTTER_TURN_ON_TIME)
-            self.pulse_1064_aom_off(t - RydLasers.CONST_SHUTTER_TURN_ON_TIME)
+            # Turn off AOMs while waiting for shutter to fully open
+            self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
+            self.pulse_1064_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
 
         # Turn on AOMs with specified powers
         if power_456 != 0:
@@ -1015,7 +1022,6 @@ class RydLasers:
         if power_1064 != 0:
             self.pulse_1064_aom_on(t, power_1064)
 
-        t_aom_start = t
         t += dur
 
         # Turn off AOMs at the end of the pulse
@@ -1023,13 +1029,12 @@ class RydLasers:
         self.pulse_1064_aom_off(t)
 
         if close_shutter:
-            t += RydLasers.CONST_SHUTTER_TURN_OFF_TIME
-            devices.blue_456_shutter.close(t)
+            devices.blue_456_shutter.close(t) #shutter start to close
+            t += self.CONST_SHUTTER_TURN_OFF_TIME
             self.shutter_open = False
             self.pulse_456_aom_on(t, 1)
 
-        return t, t_aom_start
-
+        return t
 
 class UVLamps:
     """Controls for UV LED lamps used in the experiment.
