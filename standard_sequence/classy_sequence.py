@@ -1488,9 +1488,10 @@ if __name__ == "__main__":
         print("current_obj has TweezerLaser_obj")
         t = current_obj.TweezerLaser_obj.stop_tweezers(t)
 
-    # Reset spectrum for all objects with a Microwave_obj
+    # Reset spectrum for all objects with a Microwave_obj and use microwave in the sequence
+    do_mw = shot_globals.do_mw_pulse or shot_globals.do_mw_sweep
     for obj in sequence_objects:
-        if obj is not None and hasattr(obj, 'Microwave_obj'):
+        if obj is not None and hasattr(obj, 'Microwave_obj') and do_mw:
             t = obj.Microwave_obj.reset_spectrum(t)
 
     labscript.stop(t + 1e-2)
