@@ -120,6 +120,13 @@
 <div class="viewcode-block" id="MOTSequence">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence">[docs]</a>
 <span class="k">class</span> <span class="nc">MOTSequence</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sequence for Magneto-Optical Trap (MOT) operations.</span>
+<span class="sd">    </span>
+<span class="sd">    This class manages the sequence of operations related to MOT loading, imaging,</span>
+<span class="sd">    and manipulation. It coordinates multiple hardware components including D2 lasers,</span>
+<span class="sd">    magnetic fields, microwave systems, UV lamps, and cameras.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
         <span class="c1"># Standard initialization for hardware objects puts everything in</span>
         <span class="c1"># correct state/tuning to start loading the MOT</span>
@@ -132,6 +139,19 @@
 <div class="viewcode-block" id="MOTSequence.do_mot">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.do_mot">[docs]</a>
     <span class="k">def</span> <span class="nf">do_mot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute MOT loading sequence.</span>
+<span class="sd">        </span>
+<span class="sd">        Performs a complete MOT loading sequence, including optional UV enhancement</span>
+<span class="sd">        and proper timing coordination between different components.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for MOT sequence</span>
+<span class="sd">            dur (float): Duration of MOT loading</span>
+<span class="sd">            close_all_shutters (bool, optional): Whether to close all shutters after sequence</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the MOT sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_do_uv</span><span class="p">:</span>
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">UVLamps_obj</span><span class="o">.</span><span class="n">uv_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mot_uv_duration</span><span class="p">)</span>
             <span class="c1"># the uv duration should be determined for each dispenser current</span>
@@ -155,6 +175,17 @@
 <div class="viewcode-block" id="MOTSequence.reset_mot">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.reset_mot">[docs]</a>
     <span class="k">def</span> <span class="nf">reset_mot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset MOT parameters to default values.</span>
+<span class="sd">        </span>
+<span class="sd">        Resets magnetic fields, laser frequencies, and other MOT parameters to their</span>
+<span class="sd">        default values for MOT operation.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Time to begin reset</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the reset sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># B fields</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">mot_coils_on</span><span class="p">:</span>
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">switch_mot_coils</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
@@ -179,6 +210,18 @@
 <div class="viewcode-block" id="MOTSequence.image_mot">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.image_mot">[docs]</a>
     <span class="k">def</span> <span class="nf">image_mot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Capture an image of the MOT.</span>
+<span class="sd">        </span>
+<span class="sd">        Configures imaging parameters and captures an image of the MOT using the</span>
+<span class="sd">        camera system.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Time to begin imaging</span>
+<span class="sd">            close_all_shutters (bool, optional): Whether to close all shutters after imaging</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the imaging sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Move to on resonance, make sure AOM is off</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_ta_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">D2Lasers</span><span class="o">.</span><span class="n">CONST_TA_VCO_RAMP_TIME</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">+=</span> <span class="n">D2Lasers</span><span class="o">.</span><span class="n">CONST_TA_VCO_RAMP_TIME</span>
@@ -203,9 +246,17 @@
 
 
     <span class="k">def</span> <span class="nf">_do_mot_in_situ_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        &lt;describe what this does&gt;</span>
-<span class="sd">        This is a standalone sequence not intended to be called as a part of a large sequence.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform in-situ MOT loading and imaging sequence.</span>
+<span class="sd">        </span>
+<span class="sd">        This standalone sequence loads a MOT and images it in-situ, optionally</span>
+<span class="sd">        including a background image and MOT reset.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for sequence</span>
+<span class="sd">            reset_mot (bool, optional): Whether to reset MOT parameters after sequence</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the sequence</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running _do_mot_in_situ_sequence&quot;</span><span class="p">)</span>
 
@@ -232,6 +283,18 @@
 
     <span class="c1"># TODO: Needs more experimental debugging. When should the shutter close? What timescales should we expect the MOT to disperse in?</span>
     <span class="k">def</span> <span class="nf">_do_mot_tof_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform time-of-flight MOT imaging sequence.</span>
+<span class="sd">        </span>
+<span class="sd">        This sequence loads a MOT, releases it, and images after a time-of-flight</span>
+<span class="sd">        period to measure temperature or expansion.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for sequence</span>
+<span class="sd">            reset_mot (bool, optional): Whether to reset MOT parameters after sequence</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running _do_mot_tof_sequence&quot;</span><span class="p">)</span>
 
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;MOT coils = &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">mot_coils_on</span><span class="p">)</span>
@@ -258,10 +321,20 @@
 
         <span class="k">return</span> <span class="n">t</span>
 
-    <span class="c1"># Molasses sequences</span>
 <div class="viewcode-block" id="MOTSequence.ramp_to_molasses">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.ramp_to_molasses">[docs]</a>
     <span class="k">def</span> <span class="nf">ramp_to_molasses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configure system for optical molasses.</span>
+<span class="sd">        </span>
+<span class="sd">        Ramps laser detunings and turns off magnetic fields to transition from</span>
+<span class="sd">        MOT to optical molasses configuration.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Time to begin transition</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the transition</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># detuning is ramped slowly here (duration = 1e-3) because atoms</span>
         <span class="c1"># see the light during the frequency ramp.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_ta_freq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_ta_detuning</span><span class="p">)</span>
@@ -276,6 +349,19 @@
 <div class="viewcode-block" id="MOTSequence.do_molasses">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.MOTSequence.do_molasses">[docs]</a>
     <span class="k">def</span> <span class="nf">do_molasses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute optical molasses cooling sequence.</span>
+<span class="sd">        </span>
+<span class="sd">        Performs optical molasses cooling with specified parameters and beam</span>
+<span class="sd">        configurations.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for molasses</span>
+<span class="sd">            dur (float): Duration of molasses cooling</span>
+<span class="sd">            close_all_shutters (bool, optional): Whether to close shutters after sequence</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the molasses sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="p">(</span>
             <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_molasses_img_beam</span> <span class="ow">or</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_molasses_mot_beam</span>
         <span class="p">),</span> <span class="s2">&quot;either do_molasses_img_beam or do_molasses_mot_beam has to be on&quot;</span>
@@ -322,6 +408,22 @@
         <span class="n">exposure</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_exposure_time</span><span class="p">,</span>
         <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Capture an image of the molasses or the dipole trap.</span>
+<span class="sd">        </span>
+<span class="sd">        Configures imaging parameters and captures an image of the molasses or the</span>
+<span class="sd">        dipole trap using the camera system.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Time to begin imaging</span>
+<span class="sd">            ta_power (float, optional): Power of the TA beam</span>
+<span class="sd">            repump_power (float, optional): Power of the repump beam</span>
+<span class="sd">            exposure (float, optional): Exposure time of the camera</span>
+<span class="sd">            do_repump (bool, optional): Whether to use the repump beam</span>
+<span class="sd">            close_all_shutters (bool, optional): Whether to close all shutters after imaging</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the imaging sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># zero the field</span>
         <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_bias_field</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">bias_field_vector</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 
@@ -344,22 +446,35 @@
 
         <span class="c1"># TODO: ask Lin and Michelle and max() logic and if we always want it there</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span><span class="o">.</span><span class="n">set_type</span><span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">camera_type</span><span class="p">)</span>
+        <span class="n">exposure_time</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">exposure</span><span class="p">,</span> <span class="mf">50e-6</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;MOT_manta&quot;</span> <span class="ow">or</span> <span class="s2">&quot;tweezer_manta&quot;</span><span class="p">:</span>
-            <span class="n">exposure</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">exposure</span><span class="p">,</span> <span class="mf">50e-6</span><span class="p">)</span>
+            <span class="n">exposure_time</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">exposure_time</span><span class="p">,</span> <span class="mf">50e-6</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;kinetix&quot;</span><span class="p">:</span>
-            <span class="n">exposure</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">exposure</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">)</span>
+            <span class="n">exposure_time</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">exposure_time</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">)</span>
 
         <span class="c1"># expose the camera</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span><span class="o">.</span><span class="n">expose</span><span class="p">(</span><span class="n">t_aom_start</span><span class="p">,</span> <span class="n">exposure</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span><span class="o">.</span><span class="n">expose</span><span class="p">(</span><span class="n">t_aom_start</span><span class="p">,</span> <span class="n">exposure_time</span><span class="p">)</span>
 
         <span class="c1"># Closes the aom and the specified shutters</span>
-        <span class="n">t</span> <span class="o">+=</span> <span class="n">exposure</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">exposure_time</span>
         <span class="n">t</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">t_pulse_end</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">t</span></div>
 
 
     <span class="k">def</span> <span class="nf">_do_molasses_in_situ_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform in-situ molasses loading and imaging sequence.</span>
+<span class="sd">        </span>
+<span class="sd">        This standalone sequence loads a molasses and images it in-situ, optionally</span>
+<span class="sd">        including a background image and MOT reset.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for sequence</span>
+<span class="sd">            reset_mot (bool, optional): Whether to reset MOT parameters after sequence</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># MOT loading time 500 ms</span>
         <span class="n">mot_load_dur</span> <span class="o">=</span> <span class="mf">0.5</span>
 
@@ -379,6 +494,18 @@
         <span class="k">return</span> <span class="n">t</span>
 
     <span class="k">def</span> <span class="nf">_do_molasses_tof_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform time-of-flight molasses imaging sequence.</span>
+<span class="sd">        </span>
+<span class="sd">        This sequence loads a molasses, releases it, and images after a time-of-flight</span>
+<span class="sd">        period to measure temperature or expansion.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for sequence</span>
+<span class="sd">            reset_mot (bool, optional): Whether to reset MOT parameters after sequence</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">mot_load_dur</span> <span class="o">=</span> <span class="mf">0.5</span>
 
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_mot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">mot_load_dur</span><span class="p">)</span>
@@ -407,12 +534,42 @@
 <div class="viewcode-block" id="OpticalPumpingSequence">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.OpticalPumpingSequence">[docs]</a>
 <span class="k">class</span> <span class="nc">OpticalPumpingSequence</span><span class="p">(</span><span class="n">MOTSequence</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sequence for optical pumping operations.</span>
+<span class="sd">    </span>
+<span class="sd">    This class manages sequences related to optical pumping of atoms between different</span>
+<span class="sd">    hyperfine states (F=3 and F=4) of the Cs ground state (6S) using either MOT beams or sigma-polarized light.</span>
+<span class="sd">    It inherits from MOTSequence and adds specialized optical pumping capabilities.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the optical pumping sequence.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Initial time for the sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">OpticalPumpingSequence</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
 <div class="viewcode-block" id="OpticalPumpingSequence.pump_to_F4">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.OpticalPumpingSequence.pump_to_F4">[docs]</a>
     <span class="k">def</span> <span class="nf">pump_to_F4</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Pump atoms from F=3 to F=4 hyperfine state.</span>
+<span class="sd">        </span>
+<span class="sd">        Uses either MOT beams or sigma-polarized light to pump atoms from the F=3</span>
+<span class="sd">        to F=4 ground state. The method configures the appropriate magnetic fields,</span>
+<span class="sd">        laser frequencies, and timing sequences based on the chosen pumping method.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for the pumping sequence</span>
+<span class="sd">            label (str): Pumping method to use (&#39;mot&#39; or &#39;sigma&#39;)</span>
+<span class="sd">            close_all_shutters (bool, optional): Whether to close all shutters after</span>
+<span class="sd">                the sequence. Defaults to True.</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple[float, float]: End time of sequence and AOM turn-off time</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: If an unsupported pumping method is specified</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">mot_coils_on</span><span class="p">:</span>
             <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">switch_mot_coils</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
@@ -493,9 +650,20 @@
 <div class="viewcode-block" id="OpticalPumpingSequence.depump_ta_pulse">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.OpticalPumpingSequence.depump_ta_pulse">[docs]</a>
     <span class="k">def</span> <span class="nf">depump_ta_pulse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="c1"># This method is only depump pulse with ta alone to pump atom from F=4 -&gt; F=3</span>
-        <span class="c1"># This will determine the minimum time offset between repump and ta when doing depump_to_F3</span>
-        <span class="c1"># This will also be used in dark state measurement</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute a TA pulse to depump atoms from F=4 to F=3.</span>
+<span class="sd">        </span>
+<span class="sd">        Performs a standalone TA pulse for depumping atoms from F=4 to F=3. This method</span>
+<span class="sd">        is used to determine minimum time offsets between repump and TA when doing</span>
+<span class="sd">        depump_to_F3, and for dark state measurements.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for the depumping pulse</span>
+<span class="sd">            close_all_shutters (bool, optional): Whether to close all shutters after</span>
+<span class="sd">                the sequence. Defaults to True.</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the depumping sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">mot_coils_on</span><span class="p">:</span>
             <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">switch_mot_coils</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
@@ -523,8 +691,24 @@
 <div class="viewcode-block" id="OpticalPumpingSequence.depump_to_F3">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.OpticalPumpingSequence.depump_to_F3">[docs]</a>
     <span class="k">def</span> <span class="nf">depump_to_F3</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="c1"># This method should be quite similar to pump_to_F4, but trying to call pump_to_F4 with</span>
-        <span class="c1"># different parameters would produce a very long argument list</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Pump atoms from F=4 to F=3 hyperfine state.</span>
+<span class="sd">        </span>
+<span class="sd">        Uses either MOT beams or sigma-polarized light to pump atoms from the F=4</span>
+<span class="sd">        to F=3 ground state. Similar to pump_to_F4 but optimized for depumping</span>
+<span class="sd">        to minimize parameter complexity.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for the depumping sequence</span>
+<span class="sd">            label (str): Depumping method to use (&#39;mot&#39; or &#39;sigma&#39;)</span>
+<span class="sd">            close_all_shutters (bool, optional): Whether to close all shutters after</span>
+<span class="sd">                the sequence. Defaults to True.</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple[float, float]: End time of sequence and AOM turn-off time</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: If an unsupported depumping method is specified</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">mot_coils_on</span><span class="p">:</span>
             <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">switch_mot_coils</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;mot&quot;</span><span class="p">:</span>
@@ -591,35 +775,23 @@
             <span class="p">)</span></div>
 
 
-    <span class="c1"># def kill_F4(self, t, close_all_shutters = True):</span>
-    <span class="c1">#     &quot;&quot;&quot;Push away atoms in F = 4&quot;&quot;&quot;</span>
-    <span class="c1">#     # The shutter configuration can be optical_pumping_full or optical_pump_TA</span>
-    <span class="c1">#     # optical_pumping_full allow the two pulse sequence purely switched with aom after</span>
-    <span class="c1">#     # pump_to_F4 / depump_to_F3</span>
-    <span class="c1">#     if self.D2Lasers_obj.shutter_config == ShutterConfig.OPTICAL_PUMPING_FULL:</span>
-    <span class="c1">#         shutter_config = ShutterConfig.OPTICAL_PUMPING_FULL</span>
-    <span class="c1">#     else:</span>
-    <span class="c1">#         shutter_config = ShutterConfig.OPTICAL_PUMPING_TA</span>
-
-    <span class="c1">#     # tune to resonance</span>
-    <span class="c1">#     self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.killing_pulse_detuning)</span>
-    <span class="c1">#     t += D2Lasers.CONST_TA_VCO_RAMP_TIME</span>
-    <span class="c1">#     # do a ta pulse via optical pumping path</span>
-    <span class="c1">#     t, _ = self.D2Lasers_obj.do_pulse(</span>
-    <span class="c1">#         t,</span>
-    <span class="c1">#         shot_globals.op_killing_pulse_time,</span>
-    <span class="c1">#         shutter_config,</span>
-    <span class="c1">#         shot_globals.op_killing_ta_power,</span>
-    <span class="c1">#         0,</span>
-    <span class="c1">#         close_all_shutters=close_all_shutters,</span>
-    <span class="c1">#     )</span>
-
-    <span class="c1">#     return t</span>
-
 <div class="viewcode-block" id="OpticalPumpingSequence.kill_F4">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.OpticalPumpingSequence.kill_F4">[docs]</a>
     <span class="k">def</span> <span class="nf">kill_F4</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Push away atoms in F = 4&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove atoms in the F=4 hyperfine state using resonant light.</span>
+
+<span class="sd">        Uses a resonant TA pulse to push away atoms in the F=4 state while leaving</span>
+<span class="sd">        F=3 atoms unaffected. The method configures the appropriate shutter and</span>
+<span class="sd">        laser parameters for efficient state-selective removal.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for the removal sequence</span>
+<span class="sd">            close_all_shutters (bool, optional): Whether to close all shutters after</span>
+<span class="sd">                the sequence. Defaults to True.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple[float, float]: End time of sequence and AOM turn-off time</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># The shutter configuration can be optical_pumping_full or optical_pump_TA</span>
         <span class="c1"># optical_pumping_full allow the two pulse sequence purely switched with aom after</span>
         <span class="c1"># pump_to_F4 / depump_to_F3</span>
@@ -650,10 +822,34 @@
 <div class="viewcode-block" id="OpticalPumpingSequence.kill_F3">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.OpticalPumpingSequence.kill_F3">[docs]</a>
     <span class="k">def</span> <span class="nf">kill_F3</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove atoms in the F=3 hyperfine state.</span>
+
+<span class="sd">        This method is not yet implemented but will provide functionality to</span>
+<span class="sd">        selectively remove atoms in the F=3 state.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for the removal sequence</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: This method is not yet implemented</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
     <span class="k">def</span> <span class="nf">_optical_pump_molasses_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute a complete optical pumping sequence in molasses.</span>
+
+<span class="sd">        Performs a sequence of: MOT loading, molasses cooling, optical pumping to F=4,</span>
+<span class="sd">        and imaging. Optionally includes background imaging and MOT reset.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for the sequence</span>
+<span class="sd">            reset_mot (bool, optional): Whether to reset MOT parameters after sequence.</span>
+<span class="sd">                Defaults to False.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># MOT loading time 500 ms</span>
         <span class="n">mot_load_dur</span> <span class="o">=</span> <span class="mf">0.5</span>
 
@@ -676,6 +872,26 @@
         <span class="k">return</span> <span class="n">t</span>
 
     <span class="k">def</span> <span class="nf">_do_pump_debug_in_molasses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Debug optical pumping sequence in molasses.</span>
+
+<span class="sd">        Executes a comprehensive debug sequence for optical pumping, including options</span>
+<span class="sd">        for depumping, pumping, dark state measurements, and microwave transitions.</span>
+<span class="sd">        The sequence can be configured through shot_globals parameters for:</span>
+<span class="sd">        - Depumping to F=3</span>
+<span class="sd">        - Optical pumping to F=4</span>
+<span class="sd">        - Dark state lifetime measurements</span>
+<span class="sd">        - Microwave transitions</span>
+<span class="sd">        - State-selective removal</span>
+<span class="sd">        - Imaging with variable parameters</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for the sequence</span>
+<span class="sd">            reset_mot (bool, optional): Whether to reset MOT parameters after sequence.</span>
+<span class="sd">                Defaults to False.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">mot_load_dur</span> <span class="o">=</span> <span class="mf">0.5</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_mot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">mot_load_dur</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_molasses</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_time</span><span class="p">)</span>
@@ -747,8 +963,27 @@
         <span class="k">return</span> <span class="n">t</span>
 
     <span class="k">def</span> <span class="nf">_do_F4_microwave_spec_molasses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;measuring the microwave transition with atom initially pumping to F=4</span>
-<span class="sd">        OP + microwave + killing + imaging atom with repump&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Measure microwave transitions with atoms initially in F=4.</span>
+
+<span class="sd">        Performs a sequence to measure microwave transitions starting with atoms in F=4:</span>
+<span class="sd">        1. Load MOT and cool to molasses</span>
+<span class="sd">        2. Optically pump atoms to F=4</span>
+<span class="sd">        3. Apply microwave pulse or frequency sweep</span>
+<span class="sd">        4. Selectively remove F=4 atoms</span>
+<span class="sd">        5. Image remaining atoms</span>
+<span class="sd">        </span>
+<span class="sd">        The sequence operates in molasses conditions for better control and can be</span>
+<span class="sd">        configured for either fixed-frequency pulses or frequency sweeps through</span>
+<span class="sd">        shot_globals parameters.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for the sequence</span>
+<span class="sd">            reset_mot (bool, optional): Whether to reset MOT parameters after sequence.</span>
+<span class="sd">                Defaults to False.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">mot_load_dur</span> <span class="o">=</span> <span class="mf">0.5</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_mot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">mot_load_dur</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_molasses</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_time</span><span class="p">)</span>
@@ -819,48 +1054,45 @@
 
 
 
-<span class="c1"># ExperimentalSequence &gt; F4MicrowaveSpectrumMolasses: at the end of a seq, merge lists of cleanupabbles from Helpers, call cleanupabble.cleanup() for each</span>
-<span class="c1"># MOTHelper, OPHelper: [TweezerLAser, Microwave, ...]</span>
-<span class="c1"># TweezerLaser, Microwave,: cleanup()</span>
-<span class="c1"># Spectrum (Jacob): stop()</span>
-
-
-<span class="c1"># class ExperimentalSequence(ABC):</span>
-<span class="c1">#     helpers: list</span>
-
-<span class="c1">#     @abstractmethod</span>
-<span class="c1">#     def sequence(self): ...</span>
-
-<span class="c1">#     def run(self):</span>
-<span class="c1">#         self.sequence()</span>
-<span class="c1">#         cleanupabbles = set(</span>
-<span class="c1">#             helper.cleanupabbles</span>
-<span class="c1">#             for helper in self.helpers</span>
-<span class="c1">#         )</span>
-<span class="c1">#         for cleanupabble in cleanupabbles:</span>
-<span class="c1">#             cleanupabble.cleanup()</span>
-
-<span class="c1"># class F4MicrowaveSpectrumMolasses(ExperimentalSequence):</span>
-<span class="c1">#     def __init__(self, spectrum_mgr):</span>
-<span class="c1">#         self.spectrum_mgr = spectrum_mgr</span>
-<span class="c1">#         self.helpers = []</span>
-
-<span class="c1">#     def sequence(self):</span>
-<span class="c1">#         ...</span>
-
-
 <div class="viewcode-block" id="TweezerSequence">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.TweezerSequence">[docs]</a>
 <span class="k">class</span> <span class="nc">TweezerSequence</span><span class="p">(</span><span class="n">OpticalPumpingSequence</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sequence for optical tweezer operations.</span>
+<span class="sd">    </span>
+<span class="sd">    This class manages sequences related to loading, manipulating, and imaging atoms</span>
+<span class="sd">    in optical tweezers. It inherits from OpticalPumpingSequence to combine optical</span>
+<span class="sd">    pumping capabilities with tweezer operations. The class coordinates multiple</span>
+<span class="sd">    hardware components including tweezer lasers, imaging systems, and atom manipulation</span>
+<span class="sd">    tools.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the tweezer sequence.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Initial time for the sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TweezerSequence</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span> <span class="o">=</span> <span class="n">TweezerLaser</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
 <div class="viewcode-block" id="TweezerSequence.ramp_to_imaging_parameters">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.TweezerSequence.ramp_to_imaging_parameters">[docs]</a>
     <span class="k">def</span> <span class="nf">ramp_to_imaging_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
-        <span class="c1"># ramping to imaging detuning and power, previously referred to as &quot;pre_imaging&quot;</span>
-        <span class="c1"># also used for additional cooling</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configure laser parameters for imaging or additional cooling.</span>
+<span class="sd">        </span>
+<span class="sd">        Ramps the laser detunings and powers to values optimized for imaging.</span>
+<span class="sd">        Also used for additional cooling of atoms in tweezers. Sets bias fields</span>
+<span class="sd">        to zero and configures both TA and repump frequencies.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for parameter ramping</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the ramping sequence</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            AssertionError: If imaging TA or repump powers are set to zero</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_bias_field</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">bias_field_vector</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_ta_freq</span><span class="p">(</span>
             <span class="n">t</span><span class="p">,</span> <span class="n">D2Lasers</span><span class="o">.</span><span class="n">CONST_TA_VCO_RAMP_TIME</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">img_ta_detuning</span>
@@ -875,6 +1107,24 @@
 <div class="viewcode-block" id="TweezerSequence.load_tweezers">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.TweezerSequence.load_tweezers">[docs]</a>
     <span class="k">def</span> <span class="nf">load_tweezers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load atoms into optical tweezers.</span>
+<span class="sd">        </span>
+<span class="sd">        Executes a complete sequence to load atoms from MOT into optical tweezers:</span>
+<span class="sd">        1. Load MOT and cool to molasses</span>
+<span class="sd">        2. Ramp up tweezer power</span>
+<span class="sd">        3. Optional parity projection pulse</span>
+<span class="sd">        4. Configure imaging parameters</span>
+<span class="sd">        5. Optional robust loading pulse for additional cooling</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for the loading sequence</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the loading sequence</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            AssertionError: If time-of-flight delay is too short</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_mot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_molasses</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_time</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
@@ -926,12 +1176,33 @@
 <div class="viewcode-block" id="TweezerSequence.rearrange_to_dense">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.TweezerSequence.rearrange_to_dense">[docs]</a>
     <span class="k">def</span> <span class="nf">rearrange_to_dense</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Rearrange atoms into a dense configuration.</span>
+<span class="sd">        </span>
+<span class="sd">        Not yet implemented. Will provide functionality to rearrange atoms</span>
+<span class="sd">        in tweezers to form dense arrays or specific patterns.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for rearrangement</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="TweezerSequence.image_tweezers">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.TweezerSequence.image_tweezers">[docs]</a>
     <span class="k">def</span> <span class="nf">image_tweezers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">shot_number</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Image atoms in optical tweezers.</span>
+<span class="sd">        </span>
+<span class="sd">        Captures images of atoms in tweezers with proper timing for different shots.</span>
+<span class="sd">        Handles both first and second imaging shots with appropriate delays for</span>
+<span class="sd">        camera readout and shutter operations.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for imaging</span>
+<span class="sd">            shot_number (int): Which shot in the imaging sequence (1 or 2)</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the imaging sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ramp_to_imaging_parameters</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">shot_number</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_tweezer_imaging</span><span class="p">(</span>
@@ -951,6 +1222,21 @@
 <div class="viewcode-block" id="TweezerSequence.do_tweezer_imaging">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.TweezerSequence.do_tweezer_imaging">[docs]</a>
     <span class="k">def</span> <span class="nf">do_tweezer_imaging</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute the tweezer imaging sequence.</span>
+<span class="sd">        </span>
+<span class="sd">        Configures and executes the imaging sequence for atoms in tweezers:</span>
+<span class="sd">        1. Set up imaging shutters and laser pulses</span>
+<span class="sd">        2. Configure camera parameters</span>
+<span class="sd">        3. Synchronize camera exposure with laser pulses</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for imaging</span>
+<span class="sd">            close_all_shutters (bool, optional): Whether to close all shutters after</span>
+<span class="sd">                imaging. Defaults to False.</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the imaging sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">shutter_config</span> <span class="o">=</span> <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">select_imaging_shutters</span><span class="p">(</span><span class="n">do_repump</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">t_pulse_end</span><span class="p">,</span> <span class="n">t_aom_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span>
             <span class="n">t</span><span class="p">,</span>
@@ -975,6 +1261,21 @@
 
 
     <span class="k">def</span> <span class="nf">_do_tweezer_check_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform a basic tweezer loading and imaging check sequence.</span>
+<span class="sd">        </span>
+<span class="sd">        Executes a complete sequence to verify tweezer operation:</span>
+<span class="sd">        1. Load atoms into tweezers</span>
+<span class="sd">        2. Take first image</span>
+<span class="sd">        3. Wait specified time</span>
+<span class="sd">        4. Take second image</span>
+<span class="sd">        5. Reset MOT parameters</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for the sequence</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="c1"># TODO: add tweezer modulation here, or in a separate sequence?</span>
@@ -986,12 +1287,46 @@
         <span class="k">return</span> <span class="n">t</span>
 
     <span class="k">def</span> <span class="nf">_tweezer_release_recapture_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
-        <span class="k">pass</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute a release and recapture sequence.</span>
+<span class="sd">        </span>
+<span class="sd">        Not yet implemented. Will provide functionality to release atoms</span>
+<span class="sd">        from tweezers and recapture them after a specified time.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for the sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
     <span class="k">def</span> <span class="nf">_tweezer_modulation_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
-        <span class="k">pass</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute a tweezer modulation sequence.</span>
+<span class="sd">        </span>
+<span class="sd">        Not yet implemented. Will provide functionality to perform</span>
+<span class="sd">        a complete sequence involving tweezer modulation.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for the sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
     <span class="k">def</span> <span class="nf">_do_optical_pump_in_tweezer_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check optical pumping of atoms in tweezers.</span>
+<span class="sd">        </span>
+<span class="sd">        Performs a comprehensive sequence to verify optical pumping in tweezers:</span>
+<span class="sd">        1. Load atoms and take initial image</span>
+<span class="sd">        2. Optional depumping before main pumping</span>
+<span class="sd">        3. Perform main optical pumping (to F=4) or depumping (to F=3)</span>
+<span class="sd">        4. Optional post-pump operations (depumping or microwave)</span>
+<span class="sd">        5. Configure magnetic fields for state manipulation</span>
+<span class="sd">        </span>
+<span class="sd">        The sequence can be configured through shot_globals parameters for</span>
+<span class="sd">        various pumping and manipulation options.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for the sequence</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
@@ -1149,27 +1484,55 @@
 
 
 
-<span class="c1"># I think we should leave both 456 and 1064 stuff here because really the only debugging</span>
-<span class="c1"># we would need to do is checking their overlap or looking for a Rydberg loss signal in the dipole trap</span>
 <div class="viewcode-block" id="RydSequence">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.RydSequence">[docs]</a>
 <span class="k">class</span> <span class="nc">RydSequence</span><span class="p">(</span><span class="n">TweezerSequence</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">RydSequence</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">RydLasers_obj</span> <span class="o">=</span> <span class="n">RydLasers</span><span class="p">()</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RydSequence</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">RydLasers_obj</span> <span class="o">=</span> <span class="n">RydLasers</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
-<div class="viewcode-block" id="RydSequence.pulse_blue">
-<a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.RydSequence.pulse_blue">[docs]</a>
-    <span class="k">def</span> <span class="nf">pulse_blue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="p">):</span>
-        <span class="k">pass</span></div>
+    <span class="k">def</span> <span class="nf">_do_456_check_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform a Rydberg excitation check sequence.</span>
+<span class="sd">        </span>
+<span class="sd">        Executes a sequence to verify Rydberg excitation:</span>
+<span class="sd">        1. Load atoms into tweezers</span>
+<span class="sd">        2. Take first image</span>
+<span class="sd">        3. Apply Rydberg excitation pulse</span>
+<span class="sd">        4. Take second image to check for atom loss</span>
+<span class="sd">        5. Reset MOT parameters</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for the sequence</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
+        <span class="c1"># Apply repump pulse </span>
+        <span class="n">t</span><span class="p">,</span> <span class="n">t_aom_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span>
+            <span class="n">t</span><span class="p">,</span>
+            <span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_456_duration</span><span class="p">,</span>
+            <span class="n">ShutterConfig</span><span class="o">.</span><span class="n">OPTICAL_PUMPING_REPUMP</span><span class="p">,</span>
+            <span class="mi">0</span><span class="p">,</span>
+            <span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_456_repump_power</span><span class="p">,</span>
+            <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># Apply Rydberg pulse with only 456 active</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RydLasers_obj</span><span class="o">.</span><span class="n">do_rydberg_pulse</span><span class="p">(</span>
+            <span class="n">t_aom_start</span><span class="p">,</span>
+            <span class="n">dur</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_456_duration</span><span class="p">,</span>
+            <span class="n">power_456</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_456_power</span><span class="p">,</span>
+            <span class="n">power_1064</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">close_shutter</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># Close shutter after pulse to prevent any residual light</span>
+        <span class="p">)</span>
+        
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">img_wait_time_between_shots</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_number</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reset_mot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
-<div class="viewcode-block" id="RydSequence.pulse_1064">
-<a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.RydSequence.pulse_1064">[docs]</a>
-    <span class="k">def</span> <span class="nf">pulse_1064</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">dur</span><span class="p">):</span>
-        <span class="k">pass</span></div>
-</div>
-
+        <span class="k">return</span> <span class="n">t</span></div>
 
 
 <span class="c1"># Full Sequences, we&#39;ll see if we really want all these in a class or just separate sequence files?</span>
@@ -1184,31 +1547,37 @@
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">labscript</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
     <span class="n">t</span> <span class="o">=</span> <span class="mi">0</span>
-
+    <span class="n">sequence_objects</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="c1"># Insert &quot;stay on&quot; statements for alignment here...</span>
 
     <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_mot_in_situ_check</span><span class="p">:</span>
         <span class="n">MOTSeq_obj</span> <span class="o">=</span> <span class="n">MOTSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">sequence_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">MOTSeq_obj</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">MOTSeq_obj</span><span class="o">.</span><span class="n">_do_mot_in_situ_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">elif</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_mot_tof_check</span><span class="p">:</span>
         <span class="n">MOTSeq_obj</span> <span class="o">=</span> <span class="n">MOTSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">sequence_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">MOTSeq_obj</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">MOTSeq_obj</span><span class="o">.</span><span class="n">_do_mot_tof_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">elif</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_molasses_in_situ_check</span><span class="p">:</span>
         <span class="n">MOTSeq_obj</span> <span class="o">=</span> <span class="n">MOTSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">sequence_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">MOTSeq_obj</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">MOTSeq_obj</span><span class="o">.</span><span class="n">_do_molasses_in_situ_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">elif</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_molasses_tof_check</span><span class="p">:</span>
         <span class="n">MOTSeq_obj</span> <span class="o">=</span> <span class="n">MOTSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">sequence_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">MOTSeq_obj</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">MOTSeq_obj</span><span class="o">.</span><span class="n">_do_molasses_tof_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">elif</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_pump_debug_in_molasses</span><span class="p">:</span>
         <span class="n">OPSeq_obj</span> <span class="o">=</span> <span class="n">OpticalPumpingSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">sequence_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">OPSeq_obj</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">OPSeq_obj</span><span class="o">.</span><span class="n">_do_pump_debug_in_molasses</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">elif</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_F4_microwave_spec_molasses</span><span class="p">:</span>
         <span class="n">OPSeq_obj</span> <span class="o">=</span> <span class="n">OpticalPumpingSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">sequence_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">OPSeq_obj</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">OPSeq_obj</span><span class="o">.</span><span class="n">_do_F4_microwave_spec_molasses</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">reset_mot</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1"># if shot_globals.do_dipole_trap_tof_check:</span>
@@ -1222,32 +1591,42 @@
 
     <span class="k">elif</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_tweezer_check</span><span class="p">:</span>
         <span class="n">TweezerSequence_obj</span> <span class="o">=</span> <span class="n">TweezerSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">sequence_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">TweezerSequence_obj</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">TweezerSequence_obj</span><span class="o">.</span><span class="n">_do_tweezer_check_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_456_check</span><span class="p">:</span>
+        <span class="n">RydSequence_obj</span> <span class="o">=</span> <span class="n">RydSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">sequence_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">RydSequence_obj</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">RydSequence_obj</span><span class="o">.</span><span class="n">_do_456_check_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
     <span class="c1"># if shot_globals.do_tweezer_check_fifo:</span>
     <span class="c1">#     t = do_tweezer_check_fifo(t)</span>
 
     <span class="k">elif</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_optical_pump_in_tweezer_check</span><span class="p">:</span>
-        <span class="n">TweezerSequence_obj</span> <span class="o">=</span> <span class="n">TweezerSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">TweezerSequence_obj</span> <span class="o">=</span> <span class="n">TweezerSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>        
+        <span class="n">sequence_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">TweezerSequence_obj</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">TweezerSequence_obj</span><span class="o">.</span><span class="n">_do_optical_pump_in_tweezer_check</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
     <span class="c1"># if shot_globals.do_optical_pump_in_microtrap_check:</span>
     <span class="c1">#     t = do_optical_pump_in_microtrap_check(t)</span>
 
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Here doing all the finish up quirk for spectrum cards &quot;&quot;&quot;</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">current_obj</span> <span class="o">=</span> <span class="n">MOTSeq_obj</span>
-    <span class="k">except</span><span class="p">:</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">current_obj</span> <span class="o">=</span> <span class="n">OPSeq_obj</span>
-        <span class="k">except</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">current_obj</span> <span class="o">=</span> <span class="n">TweezerSequence_obj</span>
-            <span class="k">except</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="n">current_obj</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">stop_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+    <span class="c1"># Find the first non-None sequence object</span>
+    <span class="n">current_obj</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">obj</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">sequence_objects</span> <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
 
-    <span class="n">t</span> <span class="o">=</span> <span class="n">current_obj</span><span class="o">.</span><span class="n">Microwave_obj</span><span class="o">.</span><span class="n">reset_spectrum</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">current_obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;No valid sequence object found&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Stop tweezers if the object has a TweezerLaser_obj</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">current_obj</span><span class="p">,</span> <span class="s1">&#39;TweezerLaser_obj&#39;</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;current_obj has TweezerLaser_obj&quot;</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">current_obj</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">stop_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+    <span class="c1"># Reset spectrum if the object has Microwave_obj and if we use microwave in the sequence</span>
+    <span class="n">do_mw</span> <span class="o">=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_mw_pulse</span> <span class="ow">or</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_mw_sweep</span>
+    <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">sequence_objects</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;Microwave_obj&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">do_mw</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">Microwave_obj</span><span class="o">.</span><span class="n">reset_spectrum</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
     <span class="n">labscript</span><span class="o">.</span><span class="n">stop</span><span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="mf">1e-2</span><span class="p">)</span>
 </pre></div>
