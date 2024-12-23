@@ -405,7 +405,7 @@
         <span class="n">ta_power</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">repump_power</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">do_repump</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">exposure</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_exposure_time</span><span class="p">,</span>
+        <span class="n">exposure_time</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_exposure_time</span><span class="p">,</span>
         <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Capture an image of the molasses or the dipole trap.</span>
@@ -437,7 +437,7 @@
         <span class="c1"># full power ta and repump pulse</span>
         <span class="n">t_pulse_end</span><span class="p">,</span> <span class="n">t_aom_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span>
             <span class="n">t</span><span class="p">,</span>
-            <span class="n">exposure</span><span class="p">,</span>
+            <span class="n">exposure_time</span><span class="p">,</span>
             <span class="n">shutter_config</span><span class="p">,</span>
             <span class="n">ta_power</span><span class="p">,</span>
             <span class="n">repump_power</span><span class="p">,</span>
@@ -446,11 +446,12 @@
 
         <span class="c1"># TODO: ask Lin and Michelle and max() logic and if we always want it there</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span><span class="o">.</span><span class="n">set_type</span><span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">camera_type</span><span class="p">)</span>
-        <span class="n">exposure_time</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">exposure</span><span class="p">,</span> <span class="mf">50e-6</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;MOT_manta&quot;</span> <span class="ow">or</span> <span class="s2">&quot;tweezer_manta&quot;</span><span class="p">:</span>
             <span class="n">exposure_time</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">exposure_time</span><span class="p">,</span> <span class="mf">50e-6</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;kinetix&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;kinetix&quot;</span><span class="p">:</span>
             <span class="n">exposure_time</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">exposure_time</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Camera type </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2"> not recognized&quot;</span><span class="p">)</span>
 
         <span class="c1"># expose the camera</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span><span class="o">.</span><span class="n">expose</span><span class="p">(</span><span class="n">t_aom_start</span><span class="p">,</span> <span class="n">exposure_time</span><span class="p">)</span>
@@ -939,7 +940,7 @@
             <span class="n">t</span><span class="p">,</span>
             <span class="n">ta_power</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
             <span class="n">repump_power</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="n">exposure</span><span class="o">=</span><span class="mf">10e-3</span><span class="p">,</span>
+            <span class="n">exposure_time</span><span class="o">=</span><span class="mf">10e-3</span><span class="p">,</span>
             <span class="n">do_repump</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_imaging_do_repump</span><span class="p">,</span>
             <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
@@ -951,7 +952,7 @@
             <span class="n">t</span><span class="p">,</span>
             <span class="n">ta_power</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
             <span class="n">repump_power</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="n">exposure</span><span class="o">=</span><span class="mf">10e-3</span><span class="p">,</span>
+            <span class="n">exposure_time</span><span class="o">=</span><span class="mf">10e-3</span><span class="p">,</span>
             <span class="n">do_repump</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_imaging_do_repump</span><span class="p">,</span>
             <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
@@ -1031,7 +1032,7 @@
             <span class="n">t</span><span class="p">,</span>
             <span class="n">ta_power</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
             <span class="n">repump_power</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="n">exposure</span><span class="o">=</span><span class="mf">10e-3</span><span class="p">,</span>
+            <span class="n">exposure_time</span><span class="o">=</span><span class="mf">10e-3</span><span class="p">,</span>
             <span class="n">do_repump</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
@@ -1042,7 +1043,7 @@
             <span class="n">t</span><span class="p">,</span>
             <span class="n">ta_power</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
             <span class="n">repump_power</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="n">exposure</span><span class="o">=</span><span class="mf">10e-3</span><span class="p">,</span>
+            <span class="n">exposure_time</span><span class="o">=</span><span class="mf">10e-3</span><span class="p">,</span>
             <span class="n">do_repump</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
@@ -1521,7 +1522,7 @@
         <span class="p">)</span>
         <span class="c1"># Apply Rydberg pulse with only 456 active</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RydLasers_obj</span><span class="o">.</span><span class="n">do_rydberg_pulse</span><span class="p">(</span>
-            <span class="n">t_aom_start</span><span class="p">,</span>
+            <span class="n">t_aom_start</span><span class="p">,</span> <span class="c1"># synchronize with repump pulse</span>
             <span class="n">dur</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_456_duration</span><span class="p">,</span>
             <span class="n">power_456</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_456_power</span><span class="p">,</span>
             <span class="n">power_1064</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
