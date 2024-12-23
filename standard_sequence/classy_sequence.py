@@ -315,7 +315,7 @@ class MOTSequence:
         ta_power=1,
         repump_power=1,
         do_repump=True,
-        exposure=shot_globals.bm_exposure_time,
+        exposure_time=shot_globals.bm_exposure_time,
         close_all_shutters=False,
     ):
         """Capture an image of the molasses or the dipole trap.
@@ -347,7 +347,7 @@ class MOTSequence:
         # full power ta and repump pulse
         t_pulse_end, t_aom_start = self.D2Lasers_obj.do_pulse(
             t,
-            exposure,
+            exposure_time,
             shutter_config,
             ta_power,
             repump_power,
@@ -356,11 +356,12 @@ class MOTSequence:
 
         # TODO: ask Lin and Michelle and max() logic and if we always want it there
         self.Camera_obj.set_type(shot_globals.camera_type)
-        exposure_time = max(exposure, 50e-6)
         if self.Camera_obj.type == "MOT_manta" or "tweezer_manta":
             exposure_time = max(exposure_time, 50e-6)
-        if self.Camera_obj.type == "kinetix":
+        elif self.Camera_obj.type == "kinetix":
             exposure_time = max(exposure_time, 1e-3)
+        else:
+            raise ValueError(f"Camera type {self.Camera_obj.type} not recognized")
 
         # expose the camera
         self.Camera_obj.expose(t_aom_start, exposure_time)
@@ -830,7 +831,7 @@ class OpticalPumpingSequence(MOTSequence):
             t,
             ta_power=0.1,
             repump_power=1,
-            exposure=10e-3,
+            exposure_time=10e-3,
             do_repump=shot_globals.mw_imaging_do_repump,
             close_all_shutters=True,
         )
@@ -842,7 +843,7 @@ class OpticalPumpingSequence(MOTSequence):
             t,
             ta_power=0.1,
             repump_power=1,
-            exposure=10e-3,
+            exposure_time=10e-3,
             do_repump=shot_globals.mw_imaging_do_repump,
             close_all_shutters=True,
         )
@@ -922,7 +923,7 @@ class OpticalPumpingSequence(MOTSequence):
             t,
             ta_power=0.1,
             repump_power=1,
-            exposure=10e-3,
+            exposure_time=10e-3,
             do_repump=True,
             close_all_shutters=True,
         )
@@ -933,7 +934,7 @@ class OpticalPumpingSequence(MOTSequence):
             t,
             ta_power=0.1,
             repump_power=1,
-            exposure=10e-3,
+            exposure_time=10e-3,
             do_repump=True,
             close_all_shutters=True,
         )
@@ -1388,7 +1389,7 @@ class RydSequence(TweezerSequence):
         )
         # Apply Rydberg pulse with only 456 active
         t = self.RydLasers_obj.do_rydberg_pulse(
-            t_aom_start,
+            t_aom_start, # synchronize with repump pulse
             dur=shot_globals.ryd_456_duration,
             power_456=shot_globals.ryd_456_power,
             power_1064=0,
