@@ -47,6 +47,13 @@ CONST_REPUMP_DEPUMPING_DETUNING = -201.24  # MHz 3->3 transition
 
 
 class MOTSequence:
+    """Sequence for Magneto-Optical Trap (MOT) operations.
+    
+    This class manages the sequence of operations related to MOT loading, imaging,
+    and manipulation. It coordinates multiple hardware components including D2 lasers,
+    magnetic fields, microwave systems, UV lamps, and cameras.
+    """
+    
     def __init__(self, t):
         # Standard initialization for hardware objects puts everything in
         # correct state/tuning to start loading the MOT
@@ -57,6 +64,19 @@ class MOTSequence:
         self.Camera_obj = Camera(t)
 
     def do_mot(self, t, dur, close_all_shutters=False):
+        """Execute MOT loading sequence.
+        
+        Performs a complete MOT loading sequence, including optional UV enhancement
+        and proper timing coordination between different components.
+        
+        Args:
+            t (float): Start time for MOT sequence
+            dur (float): Duration of MOT loading
+            close_all_shutters (bool, optional): Whether to close all shutters after sequence
+            
+        Returns:
+            float: End time of the MOT sequence
+        """
         if shot_globals.mot_do_uv:
             t = self.UVLamps_obj.uv_pulse(t, dur=shot_globals.mot_uv_duration)
             # the uv duration should be determined for each dispenser current
@@ -77,6 +97,17 @@ class MOTSequence:
         return t
 
     def reset_mot(self, t):
+        """Reset MOT parameters to default values.
+        
+        Resets magnetic fields, laser frequencies, and other MOT parameters to their
+        default values for MOT operation.
+        
+        Args:
+            t (float): Time to begin reset
+            
+        Returns:
+            float: End time of the reset sequence
+        """
         # B fields
         if not self.BField_obj.mot_coils_on:
             t = self.BField_obj.switch_mot_coils(t)
@@ -98,6 +129,18 @@ class MOTSequence:
         return t
 
     def image_mot(self, t, close_all_shutters=False):
+        """Capture an image of the MOT.
+        
+        Configures imaging parameters and captures an image of the MOT using the
+        camera system.
+        
+        Args:
+            t (float): Time to begin imaging
+            close_all_shutters (bool, optional): Whether to close all shutters after imaging
+            
+        Returns:
+            float: End time of the imaging sequence
+        """
         # Move to on resonance, make sure AOM is off
         self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
         t += D2Lasers.CONST_TA_VCO_RAMP_TIME
@@ -121,9 +164,17 @@ class MOTSequence:
         return t
 
     def _do_mot_in_situ_sequence(self, t, reset_mot=False):
-        """
-        <describe what this does>
-        This is a standalone sequence not intended to be called as a part of a large sequence.
+        """Perform in-situ MOT loading and imaging sequence.
+        
+        This standalone sequence loads a MOT and images it in-situ, optionally
+        including a background image and MOT reset.
+        
+        Args:
+            t (float): Start time for sequence
+            reset_mot (bool, optional): Whether to reset MOT parameters after sequence
+            
+        Returns:
+            float: End time of the sequence
         """
         print("Running _do_mot_in_situ_sequence")
 
@@ -150,6 +201,18 @@ class MOTSequence:
 
     # TODO: Needs more experimental debugging. When should the shutter close? What timescales should we expect the MOT to disperse in?
     def _do_mot_tof_sequence(self, t, reset_mot=False):
+        """Perform time-of-flight MOT imaging sequence.
+        
+        This sequence loads a MOT, releases it, and images after a time-of-flight
+        period to measure temperature or expansion.
+        
+        Args:
+            t (float): Start time for sequence
+            reset_mot (bool, optional): Whether to reset MOT parameters after sequence
+            
+        Returns:
+            float: End time of the sequence
+        """
         print("Running _do_mot_tof_sequence")
 
         print("MOT coils = ", self.BField_obj.mot_coils_on)
@@ -176,8 +239,18 @@ class MOTSequence:
 
         return t
 
-    # Molasses sequences
     def ramp_to_molasses(self, t):
+        """Configure system for optical molasses.
+        
+        Ramps laser detunings and turns off magnetic fields to transition from
+        MOT to optical molasses configuration.
+        
+        Args:
+            t (float): Time to begin transition
+            
+        Returns:
+            float: End time of the transition
+        """
         # detuning is ramped slowly here (duration = 1e-3) because atoms
         # see the light during the frequency ramp.
         self.D2Lasers_obj.ramp_ta_freq(t, 1e-3, shot_globals.bm_ta_detuning)
@@ -189,6 +262,19 @@ class MOTSequence:
         return t
 
     def do_molasses(self, t, dur, close_all_shutters=False):
+        """Execute optical molasses cooling sequence.
+        
+        Performs optical molasses cooling with specified parameters and beam
+        configurations.
+        
+        Args:
+            t (float): Start time for molasses
+            dur (float): Duration of molasses cooling
+            close_all_shutters (bool, optional): Whether to close shutters after sequence
+            
+        Returns:
+            float: End time of the molasses sequence
+        """
         assert (
             shot_globals.do_molasses_img_beam or shot_globals.do_molasses_mot_beam
         ), "either do_molasses_img_beam or do_molasses_mot_beam has to be on"
@@ -229,9 +315,25 @@ class MOTSequence:
         ta_power=1,
         repump_power=1,
         do_repump=True,
-        exposure=shot_globals.bm_exposure_time,
+        exposure_time=shot_globals.bm_exposure_time,
         close_all_shutters=False,
     ):
+        """Capture an image of the molasses or the dipole trap.
+        
+        Configures imaging parameters and captures an image of the molasses or the
+        dipole trap using the camera system.
+        
+        Args:
+            t (float): Time to begin imaging
+            ta_power (float, optional): Power of the TA beam
+            repump_power (float, optional): Power of the repump beam
+            exposure (float, optional): Exposure time of the camera
+            do_repump (bool, optional): Whether to use the repump beam
+            close_all_shutters (bool, optional): Whether to close all shutters after imaging
+            
+        Returns:
+            float: End time of the imaging sequence
+        """
         # zero the field
         _ = self.BField_obj.ramp_bias_field(t, bias_field_vector=(0, 0, 0))
 
@@ -245,7 +347,7 @@ class MOTSequence:
         # full power ta and repump pulse
         t_pulse_end, t_aom_start = self.D2Lasers_obj.do_pulse(
             t,
-            exposure,
+            exposure_time,
             shutter_config,
             ta_power,
             repump_power,
@@ -255,20 +357,34 @@ class MOTSequence:
         # TODO: ask Lin and Michelle and max() logic and if we always want it there
         self.Camera_obj.set_type(shot_globals.camera_type)
         if self.Camera_obj.type == "MOT_manta" or "tweezer_manta":
-            exposure = max(exposure, 50e-6)
-        if self.Camera_obj.type == "kinetix":
-            exposure = max(exposure, 1e-3)
+            exposure_time = max(exposure_time, 50e-6)
+        elif self.Camera_obj.type == "kinetix":
+            exposure_time = max(exposure_time, 1e-3)
+        else:
+            raise ValueError(f"Camera type {self.Camera_obj.type} not recognized")
 
         # expose the camera
-        self.Camera_obj.expose(t_aom_start, exposure)
+        self.Camera_obj.expose(t_aom_start, exposure_time)
 
         # Closes the aom and the specified shutters
-        t += exposure
+        t += exposure_time
         t = max(t, t_pulse_end)
 
         return t
 
     def _do_molasses_in_situ_sequence(self, t, reset_mot=False):
+        """Perform in-situ molasses loading and imaging sequence.
+        
+        This standalone sequence loads a molasses and images it in-situ, optionally
+        including a background image and MOT reset.
+        
+        Args:
+            t (float): Start time for sequence
+            reset_mot (bool, optional): Whether to reset MOT parameters after sequence
+            
+        Returns:
+            float: End time of the sequence
+        """
         # MOT loading time 500 ms
         mot_load_dur = 0.5
 
@@ -288,6 +404,18 @@ class MOTSequence:
         return t
 
     def _do_molasses_tof_sequence(self, t, reset_mot=False):
+        """Perform time-of-flight molasses imaging sequence.
+        
+        This sequence loads a molasses, releases it, and images after a time-of-flight
+        period to measure temperature or expansion.
+        
+        Args:
+            t (float): Start time for sequence
+            reset_mot (bool, optional): Whether to reset MOT parameters after sequence
+            
+        Returns:
+            float: End time of the sequence
+        """
         mot_load_dur = 0.5
 
         t = self.do_mot(t, mot_load_dur)
@@ -313,10 +441,40 @@ class MOTSequence:
 
 
 class OpticalPumpingSequence(MOTSequence):
+    """Sequence for optical pumping operations.
+    
+    This class manages sequences related to optical pumping of atoms between different
+    hyperfine states (F=3 and F=4) of the Cs ground state (6S) using either MOT beams or sigma-polarized light.
+    It inherits from MOTSequence and adds specialized optical pumping capabilities.
+    """
+
     def __init__(self, t):
+        """Initialize the optical pumping sequence.
+        
+        Args:
+            t (float): Initial time for the sequence
+        """
         super(OpticalPumpingSequence, self).__init__(t)
 
     def pump_to_F4(self, t, label, close_all_shutters=True):
+        """Pump atoms from F=3 to F=4 hyperfine state.
+        
+        Uses either MOT beams or sigma-polarized light to pump atoms from the F=3
+        to F=4 ground state. The method configures the appropriate magnetic fields,
+        laser frequencies, and timing sequences based on the chosen pumping method.
+        
+        Args:
+            t (float): Start time for the pumping sequence
+            label (str): Pumping method to use ('mot' or 'sigma')
+            close_all_shutters (bool, optional): Whether to close all shutters after
+                the sequence. Defaults to True.
+                
+        Returns:
+            tuple[float, float]: End time of sequence and AOM turn-off time
+            
+        Raises:
+            NotImplementedError: If an unsupported pumping method is specified
+        """
         if self.BField_obj.mot_coils_on:
             _ = self.BField_obj.switch_mot_coils(t)
 
@@ -394,9 +552,20 @@ class OpticalPumpingSequence(MOTSequence):
             raise NotImplementedError("This optical pumping method is not implemented")
 
     def depump_ta_pulse(self, t, close_all_shutters=True):
-        # This method is only depump pulse with ta alone to pump atom from F=4 -> F=3
-        # This will determine the minimum time offset between repump and ta when doing depump_to_F3
-        # This will also be used in dark state measurement
+        """Execute a TA pulse to depump atoms from F=4 to F=3.
+        
+        Performs a standalone TA pulse for depumping atoms from F=4 to F=3. This method
+        is used to determine minimum time offsets between repump and TA when doing
+        depump_to_F3, and for dark state measurements.
+        
+        Args:
+            t (float): Start time for the depumping pulse
+            close_all_shutters (bool, optional): Whether to close all shutters after
+                the sequence. Defaults to True.
+                
+        Returns:
+            float: End time of the depumping sequence
+        """
         if self.BField_obj.mot_coils_on:
             _ = self.BField_obj.switch_mot_coils(t)
 
@@ -421,8 +590,24 @@ class OpticalPumpingSequence(MOTSequence):
         return t
 
     def depump_to_F3(self, t, label, close_all_shutters=True):
-        # This method should be quite similar to pump_to_F4, but trying to call pump_to_F4 with
-        # different parameters would produce a very long argument list
+        """Pump atoms from F=4 to F=3 hyperfine state.
+        
+        Uses either MOT beams or sigma-polarized light to pump atoms from the F=4
+        to F=3 ground state. Similar to pump_to_F4 but optimized for depumping
+        to minimize parameter complexity.
+        
+        Args:
+            t (float): Start time for the depumping sequence
+            label (str): Depumping method to use ('mot' or 'sigma')
+            close_all_shutters (bool, optional): Whether to close all shutters after
+                the sequence. Defaults to True.
+                
+        Returns:
+            tuple[float, float]: End time of sequence and AOM turn-off time
+            
+        Raises:
+            NotImplementedError: If an unsupported depumping method is specified
+        """
         if self.BField_obj.mot_coils_on:
             _ = self.BField_obj.switch_mot_coils(t)
         if label == "mot":
@@ -488,33 +673,21 @@ class OpticalPumpingSequence(MOTSequence):
                 "This optical depumping method is not implemented"
             )
 
-    # def kill_F4(self, t, close_all_shutters = True):
-    #     """Push away atoms in F = 4"""
-    #     # The shutter configuration can be optical_pumping_full or optical_pump_TA
-    #     # optical_pumping_full allow the two pulse sequence purely switched with aom after
-    #     # pump_to_F4 / depump_to_F3
-    #     if self.D2Lasers_obj.shutter_config == ShutterConfig.OPTICAL_PUMPING_FULL:
-    #         shutter_config = ShutterConfig.OPTICAL_PUMPING_FULL
-    #     else:
-    #         shutter_config = ShutterConfig.OPTICAL_PUMPING_TA
-
-    #     # tune to resonance
-    #     self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.killing_pulse_detuning)
-    #     t += D2Lasers.CONST_TA_VCO_RAMP_TIME
-    #     # do a ta pulse via optical pumping path
-    #     t, _ = self.D2Lasers_obj.do_pulse(
-    #         t,
-    #         shot_globals.op_killing_pulse_time,
-    #         shutter_config,
-    #         shot_globals.op_killing_ta_power,
-    #         0,
-    #         close_all_shutters=close_all_shutters,
-    #     )
-
-    #     return t
-
     def kill_F4(self, t, close_all_shutters=True):
-        """Push away atoms in F = 4"""
+        """Remove atoms in the F=4 hyperfine state using resonant light.
+
+        Uses a resonant TA pulse to push away atoms in the F=4 state while leaving
+        F=3 atoms unaffected. The method configures the appropriate shutter and
+        laser parameters for efficient state-selective removal.
+
+        Args:
+            t (float): Start time for the removal sequence
+            close_all_shutters (bool, optional): Whether to close all shutters after
+                the sequence. Defaults to True.
+
+        Returns:
+            tuple[float, float]: End time of sequence and AOM turn-off time
+        """
         # The shutter configuration can be optical_pumping_full or optical_pump_TA
         # optical_pumping_full allow the two pulse sequence purely switched with aom after
         # pump_to_F4 / depump_to_F3
@@ -542,9 +715,33 @@ class OpticalPumpingSequence(MOTSequence):
         return t, t_aom_off
 
     def kill_F3(self, t):
+        """Remove atoms in the F=3 hyperfine state.
+
+        This method is not yet implemented but will provide functionality to
+        selectively remove atoms in the F=3 state.
+
+        Args:
+            t (float): Start time for the removal sequence
+
+        Raises:
+            NotImplementedError: This method is not yet implemented
+        """
         raise NotImplementedError
 
     def _optical_pump_molasses_sequence(self, t, reset_mot=False):
+        """Execute a complete optical pumping sequence in molasses.
+
+        Performs a sequence of: MOT loading, molasses cooling, optical pumping to F=4,
+        and imaging. Optionally includes background imaging and MOT reset.
+
+        Args:
+            t (float): Start time for the sequence
+            reset_mot (bool, optional): Whether to reset MOT parameters after sequence.
+                Defaults to False.
+
+        Returns:
+            float: End time of the sequence
+        """
         # MOT loading time 500 ms
         mot_load_dur = 0.5
 
@@ -567,6 +764,26 @@ class OpticalPumpingSequence(MOTSequence):
         return t
 
     def _do_pump_debug_in_molasses(self, t, reset_mot=False):
+        """Debug optical pumping sequence in molasses.
+
+        Executes a comprehensive debug sequence for optical pumping, including options
+        for depumping, pumping, dark state measurements, and microwave transitions.
+        The sequence can be configured through shot_globals parameters for:
+        - Depumping to F=3
+        - Optical pumping to F=4
+        - Dark state lifetime measurements
+        - Microwave transitions
+        - State-selective removal
+        - Imaging with variable parameters
+
+        Args:
+            t (float): Start time for the sequence
+            reset_mot (bool, optional): Whether to reset MOT parameters after sequence.
+                Defaults to False.
+
+        Returns:
+            float: End time of the sequence
+        """
         mot_load_dur = 0.5
         t = self.do_mot(t, mot_load_dur)
         t = self.do_molasses(t, shot_globals.bm_time)
@@ -614,7 +831,7 @@ class OpticalPumpingSequence(MOTSequence):
             t,
             ta_power=0.1,
             repump_power=1,
-            exposure=10e-3,
+            exposure_time=10e-3,
             do_repump=shot_globals.mw_imaging_do_repump,
             close_all_shutters=True,
         )
@@ -626,7 +843,7 @@ class OpticalPumpingSequence(MOTSequence):
             t,
             ta_power=0.1,
             repump_power=1,
-            exposure=10e-3,
+            exposure_time=10e-3,
             do_repump=shot_globals.mw_imaging_do_repump,
             close_all_shutters=True,
         )
@@ -638,8 +855,27 @@ class OpticalPumpingSequence(MOTSequence):
         return t
 
     def _do_F4_microwave_spec_molasses(self, t, reset_mot=False):
-        """measuring the microwave transition with atom initially pumping to F=4
-        OP + microwave + killing + imaging atom with repump"""
+        """Measure microwave transitions with atoms initially in F=4.
+
+        Performs a sequence to measure microwave transitions starting with atoms in F=4:
+        1. Load MOT and cool to molasses
+        2. Optically pump atoms to F=4
+        3. Apply microwave pulse or frequency sweep
+        4. Selectively remove F=4 atoms
+        5. Image remaining atoms
+        
+        The sequence operates in molasses conditions for better control and can be
+        configured for either fixed-frequency pulses or frequency sweeps through
+        shot_globals parameters.
+
+        Args:
+            t (float): Start time for the sequence
+            reset_mot (bool, optional): Whether to reset MOT parameters after sequence.
+                Defaults to False.
+
+        Returns:
+            float: End time of the sequence
+        """
         mot_load_dur = 0.5
         t = self.do_mot(t, mot_load_dur)
         t = self.do_molasses(t, shot_globals.bm_time)
@@ -687,7 +923,7 @@ class OpticalPumpingSequence(MOTSequence):
             t,
             ta_power=0.1,
             repump_power=1,
-            exposure=10e-3,
+            exposure_time=10e-3,
             do_repump=True,
             close_all_shutters=True,
         )
@@ -698,7 +934,7 @@ class OpticalPumpingSequence(MOTSequence):
             t,
             ta_power=0.1,
             repump_power=1,
-            exposure=10e-3,
+            exposure_time=10e-3,
             do_repump=True,
             close_all_shutters=True,
         )
@@ -709,44 +945,41 @@ class OpticalPumpingSequence(MOTSequence):
         return t
 
 
-# ExperimentalSequence > F4MicrowaveSpectrumMolasses: at the end of a seq, merge lists of cleanupabbles from Helpers, call cleanupabble.cleanup() for each
-# MOTHelper, OPHelper: [TweezerLAser, Microwave, ...]
-# TweezerLaser, Microwave,: cleanup()
-# Spectrum (Jacob): stop()
-
-
-# class ExperimentalSequence(ABC):
-#     helpers: list
-
-#     @abstractmethod
-#     def sequence(self): ...
-
-#     def run(self):
-#         self.sequence()
-#         cleanupabbles = set(
-#             helper.cleanupabbles
-#             for helper in self.helpers
-#         )
-#         for cleanupabble in cleanupabbles:
-#             cleanupabble.cleanup()
-
-# class F4MicrowaveSpectrumMolasses(ExperimentalSequence):
-#     def __init__(self, spectrum_mgr):
-#         self.spectrum_mgr = spectrum_mgr
-#         self.helpers = []
-
-#     def sequence(self):
-#         ...
-
-
 class TweezerSequence(OpticalPumpingSequence):
+    """Sequence for optical tweezer operations.
+    
+    This class manages sequences related to loading, manipulating, and imaging atoms
+    in optical tweezers. It inherits from OpticalPumpingSequence to combine optical
+    pumping capabilities with tweezer operations. The class coordinates multiple
+    hardware components including tweezer lasers, imaging systems, and atom manipulation
+    tools.
+    """
+
     def __init__(self, t):
+        """Initialize the tweezer sequence.
+        
+        Args:
+            t (float): Initial time for the sequence
+        """
         super(TweezerSequence, self).__init__(t)
         self.TweezerLaser_obj = TweezerLaser(t)
 
     def ramp_to_imaging_parameters(self, t):
-        # ramping to imaging detuning and power, previously referred to as "pre_imaging"
-        # also used for additional cooling
+        """Configure laser parameters for imaging or additional cooling.
+        
+        Ramps the laser detunings and powers to values optimized for imaging.
+        Also used for additional cooling of atoms in tweezers. Sets bias fields
+        to zero and configures both TA and repump frequencies.
+        
+        Args:
+            t (float): Start time for parameter ramping
+            
+        Returns:
+            float: End time of the ramping sequence
+            
+        Raises:
+            AssertionError: If imaging TA or repump powers are set to zero
+        """
         t = self.BField_obj.ramp_bias_field(t, bias_field_vector=(0, 0, 0))
         t = self.D2Lasers_obj.ramp_ta_freq(
             t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.img_ta_detuning
@@ -758,6 +991,24 @@ class TweezerSequence(OpticalPumpingSequence):
         return t
 
     def load_tweezers(self, t):
+        """Load atoms into optical tweezers.
+        
+        Executes a complete sequence to load atoms from MOT into optical tweezers:
+        1. Load MOT and cool to molasses
+        2. Ramp up tweezer power
+        3. Optional parity projection pulse
+        4. Configure imaging parameters
+        5. Optional robust loading pulse for additional cooling
+        
+        Args:
+            t (float): Start time for the loading sequence
+            
+        Returns:
+            float: End time of the loading sequence
+            
+        Raises:
+            AssertionError: If time-of-flight delay is too short
+        """
         t = self.do_mot(t, dur=0.5)
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
 
@@ -803,9 +1054,30 @@ class TweezerSequence(OpticalPumpingSequence):
         pass
 
     def rearrange_to_dense(self, t):
+        """Rearrange atoms into a dense configuration.
+        
+        Not yet implemented. Will provide functionality to rearrange atoms
+        in tweezers to form dense arrays or specific patterns.
+        
+        Args:
+            t (float): Start time for rearrangement
+        """
         pass
 
     def image_tweezers(self, t, shot_number):
+        """Image atoms in optical tweezers.
+        
+        Captures images of atoms in tweezers with proper timing for different shots.
+        Handles both first and second imaging shots with appropriate delays for
+        camera readout and shutter operations.
+        
+        Args:
+            t (float): Start time for imaging
+            shot_number (int): Which shot in the imaging sequence (1 or 2)
+            
+        Returns:
+            float: End time of the imaging sequence
+        """
         t = self.ramp_to_imaging_parameters(t)
         if shot_number == 1:
             t = self.do_tweezer_imaging(
@@ -822,6 +1094,21 @@ class TweezerSequence(OpticalPumpingSequence):
         return t
 
     def do_tweezer_imaging(self, t, close_all_shutters=False):
+        """Execute the tweezer imaging sequence.
+        
+        Configures and executes the imaging sequence for atoms in tweezers:
+        1. Set up imaging shutters and laser pulses
+        2. Configure camera parameters
+        3. Synchronize camera exposure with laser pulses
+        
+        Args:
+            t (float): Start time for imaging
+            close_all_shutters (bool, optional): Whether to close all shutters after
+                imaging. Defaults to False.
+                
+        Returns:
+            float: End time of the imaging sequence
+        """
         shutter_config = ShutterConfig.select_imaging_shutters(do_repump=True)
         t_pulse_end, t_aom_start = self.D2Lasers_obj.do_pulse(
             t,
@@ -845,6 +1132,21 @@ class TweezerSequence(OpticalPumpingSequence):
         return t
 
     def _do_tweezer_check_sequence(self, t):
+        """Perform a basic tweezer loading and imaging check sequence.
+        
+        Executes a complete sequence to verify tweezer operation:
+        1. Load atoms into tweezers
+        2. Take first image
+        3. Wait specified time
+        4. Take second image
+        5. Reset MOT parameters
+        
+        Args:
+            t (float): Start time for the sequence
+            
+        Returns:
+            float: End time of the sequence
+        """
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
         # TODO: add tweezer modulation here, or in a separate sequence?
@@ -856,12 +1158,46 @@ class TweezerSequence(OpticalPumpingSequence):
         return t
 
     def _tweezer_release_recapture_sequence(self, t):
-        pass
+        """Execute a release and recapture sequence.
+        
+        Not yet implemented. Will provide functionality to release atoms
+        from tweezers and recapture them after a specified time.
+        
+        Args:
+            t (float): Start time for the sequence
+        """
+        raise NotImplementedError
 
     def _tweezer_modulation_sequence(self, t):
-        pass
+        """Execute a tweezer modulation sequence.
+        
+        Not yet implemented. Will provide functionality to perform
+        a complete sequence involving tweezer modulation.
+        
+        Args:
+            t (float): Start time for the sequence
+        """
+        raise NotImplementedError
 
     def _do_optical_pump_in_tweezer_check(self, t):
+        """Check optical pumping of atoms in tweezers.
+        
+        Performs a comprehensive sequence to verify optical pumping in tweezers:
+        1. Load atoms and take initial image
+        2. Optional depumping before main pumping
+        3. Perform main optical pumping (to F=4) or depumping (to F=3)
+        4. Optional post-pump operations (depumping or microwave)
+        5. Configure magnetic fields for state manipulation
+        
+        The sequence can be configured through shot_globals parameters for
+        various pumping and manipulation options.
+        
+        Args:
+            t (float): Start time for the sequence
+            
+        Returns:
+            float: End time of the sequence
+        """
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
 
@@ -1018,19 +1354,53 @@ class TweezerSequence(OpticalPumpingSequence):
         return t
 
 
-# I think we should leave both 456 and 1064 stuff here because really the only debugging
-# we would need to do is checking their overlap or looking for a Rydberg loss signal in the dipole trap
 class RydSequence(TweezerSequence):
-    def __init__(self):
-        super(RydSequence, self).__init__()
-        self.RydLasers_obj = RydLasers()
+    def __init__(self, t):
+        super(RydSequence, self).__init__(t)
+        self.RydLasers_obj = RydLasers(t)
 
-    def pulse_blue(self, t, dur):
-        pass
+    def _do_456_check_sequence(self, t):
+        """Perform a Rydberg excitation check sequence.
+        
+        Executes a sequence to verify Rydberg excitation:
+        1. Load atoms into tweezers
+        2. Take first image
+        3. Apply Rydberg excitation pulse
+        4. Take second image to check for atom loss
+        5. Reset MOT parameters
+        
+        Args:
+            t (float): Start time for the sequence
+            
+        Returns:
+            float: End time of the sequence
+        """
+        t = self.load_tweezers(t)
+        t = self.image_tweezers(t, shot_number=1)
 
-    def pulse_1064(self, t, dur):
-        pass
+        # Apply repump pulse 
+        t, t_aom_start = self.D2Lasers_obj.do_pulse(
+            t,
+            shot_globals.ryd_456_duration,
+            ShutterConfig.OPTICAL_PUMPING_REPUMP,
+            0,
+            shot_globals.ryd_456_repump_power,
+            close_all_shutters=True,
+        )
+        # Apply Rydberg pulse with only 456 active
+        t = self.RydLasers_obj.do_rydberg_pulse(
+            t_aom_start, # synchronize with repump pulse
+            dur=shot_globals.ryd_456_duration,
+            power_456=shot_globals.ryd_456_power,
+            power_1064=0,
+            close_shutter=True  # Close shutter after pulse to prevent any residual light
+        )
+        
+        t += shot_globals.img_wait_time_between_shots
+        t = self.image_tweezers(t, shot_number=2)
+        t = self.reset_mot(t)
 
+        return t
 
 # Full Sequences, we'll see if we really want all these in a class or just separate sequence files?
 class ScienceSequence(RydSequence):
@@ -1041,31 +1411,37 @@ class ScienceSequence(RydSequence):
 if __name__ == "__main__":
     labscript.start()
     t = 0
-
+    sequence_objects = []
     # Insert "stay on" statements for alignment here...
 
     if shot_globals.do_mot_in_situ_check:
         MOTSeq_obj = MOTSequence(t)
+        sequence_objects.append(MOTSeq_obj)
         t = MOTSeq_obj._do_mot_in_situ_sequence(t, reset_mot=True)
 
     elif shot_globals.do_mot_tof_check:
         MOTSeq_obj = MOTSequence(t)
+        sequence_objects.append(MOTSeq_obj)
         t = MOTSeq_obj._do_mot_tof_sequence(t, reset_mot=True)
 
     elif shot_globals.do_molasses_in_situ_check:
         MOTSeq_obj = MOTSequence(t)
+        sequence_objects.append(MOTSeq_obj)
         t = MOTSeq_obj._do_molasses_in_situ_sequence(t, reset_mot=True)
 
     elif shot_globals.do_molasses_tof_check:
         MOTSeq_obj = MOTSequence(t)
+        sequence_objects.append(MOTSeq_obj)
         t = MOTSeq_obj._do_molasses_tof_sequence(t, reset_mot=True)
 
     elif shot_globals.do_pump_debug_in_molasses:
         OPSeq_obj = OpticalPumpingSequence(t)
+        sequence_objects.append(OPSeq_obj)
         t = OPSeq_obj._do_pump_debug_in_molasses(t, reset_mot=True)
 
     elif shot_globals.do_F4_microwave_spec_molasses:
         OPSeq_obj = OpticalPumpingSequence(t)
+        sequence_objects.append(OPSeq_obj)
         t = OPSeq_obj._do_F4_microwave_spec_molasses(t, reset_mot=True)
 
     # if shot_globals.do_dipole_trap_tof_check:
@@ -1079,31 +1455,41 @@ if __name__ == "__main__":
 
     elif shot_globals.do_tweezer_check:
         TweezerSequence_obj = TweezerSequence(t)
+        sequence_objects.append(TweezerSequence_obj)
         t = TweezerSequence_obj._do_tweezer_check_sequence(t)
+
+    elif shot_globals.do_456_check:
+        RydSequence_obj = RydSequence(t)
+        sequence_objects.append(RydSequence_obj)
+        t = RydSequence_obj._do_456_check_sequence(t)
 
     # if shot_globals.do_tweezer_check_fifo:
     #     t = do_tweezer_check_fifo(t)
 
     elif shot_globals.do_optical_pump_in_tweezer_check:
-        TweezerSequence_obj = TweezerSequence(t)
+        TweezerSequence_obj = TweezerSequence(t)        
+        sequence_objects.append(TweezerSequence_obj)
         t = TweezerSequence_obj._do_optical_pump_in_tweezer_check(t)
 
     # if shot_globals.do_optical_pump_in_microtrap_check:
     #     t = do_optical_pump_in_microtrap_check(t)
 
     """ Here doing all the finish up quirk for spectrum cards """
-    try:
-        current_obj = MOTSeq_obj
-    except:
-        try:
-            current_obj = OPSeq_obj
-        except:
-            try:
-                current_obj = TweezerSequence_obj
-            except:
-                raise NotImplementedError
-            t = current_obj.TweezerLaser_obj.stop_tweezers(t)
+    # Find the first non-None sequence object
+    current_obj = next((obj for obj in sequence_objects if obj is not None), None)
 
-    t = current_obj.Microwave_obj.reset_spectrum(t)
+    if current_obj is None:
+        raise NotImplementedError("No valid sequence object found")
+
+    # Stop tweezers if the object has a TweezerLaser_obj
+    if hasattr(current_obj, 'TweezerLaser_obj'):
+        print("current_obj has TweezerLaser_obj")
+        t = current_obj.TweezerLaser_obj.stop_tweezers(t)
+
+    # Reset spectrum if the object has Microwave_obj and if we use microwave in the sequence
+    do_mw = shot_globals.do_mw_pulse or shot_globals.do_mw_sweep
+    for obj in sequence_objects:
+        if obj is not None and hasattr(obj, 'Microwave_obj') and do_mw:
+            t = obj.Microwave_obj.reset_spectrum(t)
 
     labscript.stop(t + 1e-2)

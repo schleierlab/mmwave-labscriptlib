@@ -24,6 +24,34 @@ from spectrum_manager import spectrum_manager
 
 
 class ShutterConfig(Flag):
+    """Configuration flags for controlling various shutters in the experimental setup.
+
+    This class uses Flag enumeration to represent different shutter configurations that can be
+    combined using bitwise operations. Each configuration represents a specific combination of
+    shutters for different experimental phases like MOT operation, imaging, and optical pumping.
+
+    Attributes:
+        NONE (Flag): No shutters active
+        TA (Flag): Tapered Amplifier shutter
+        REPUMP (Flag): Repump laser shutter
+        MOT_XY (Flag): MOT beams in XY plane shutter
+        MOT_Z (Flag): MOT beam in Z direction shutter
+        IMG_XY (Flag): Imaging beams in XY plane shutter
+        IMG_Z (Flag): Imaging beam in Z direction shutter
+        OPTICAL_PUMPING (Flag): Optical pumping beam shutter
+
+        Combinations:
+        UPSTREAM: Combined TA and REPUMP shutters
+        MOT_FULL: All MOT-related shutters (UPSTREAM | MOT_XY | MOT_Z)
+        MOT_TA: TA and MOT directional shutters
+        MOT_REPUMP: Repump and MOT directional shutters
+        IMG_FULL: All imaging-related shutters
+        IMG_TA: TA and imaging directional shutters
+        IMG_REPUMP: Repump and imaging directional shutters
+        OPTICAL_PUMPING_FULL: All optical pumping shutters
+        OPTICAL_PUMPING_TA: TA and optical pumping shutters
+        OPTICAL_PUMPING_REPUMP: Repump and optical pumping shutters
+    """
     NONE = 0
 
     TA = auto()
@@ -85,12 +113,24 @@ class ShutterConfig(Flag):
 # Hardware control classes
 # -------------------------------------------------------------------------------
 class D2Lasers:
+    """Controls for D2 transition lasers including Tapered Amplifier (TA) and repump lasers.
+
+    This class manages the frequency, power, and shutter configurations for D2 transition lasers
+    used in the experiment. It provides methods for ramping frequencies, controlling AOMs, and
+    managing shutter configurations.
+
+    Attributes:
+        CONST_TA_VCO_RAMP_TIME (float): Minimal TA VCO ramp time to maintain beatnote lock (1.2e-4 s)
+        CONST_SHUTTER_TURN_OFF_TIME (float): Time for shutter to fully close (2e-3 s)
+        CONST_SHUTTER_TURN_ON_TIME (float): Time for shutter to fully open (2e-3 s)
+        CONST_MIN_SHUTTER_OFF_TIME (float): Minimum time for shutter off-on cycle (6.28e-3 s)
+        CONST_MIN_SHUTTER_ON_TIME (float): Minimum time for shutter to stay on (3.6e-3 s)
+    """
     shutter_config: ShutterConfig
 
     CONST_TA_VCO_RAMP_TIME: ClassVar[float] = (
         1.2e-4
     )
-    """minimal ta vco ramp time to stay in beatnote lock"""
     CONST_SHUTTER_TURN_OFF_TIME: ClassVar[float] = (
         2e-3  # for shutter take from start to open to fully close
     )
@@ -109,6 +149,14 @@ class D2Lasers:
     # Can we put this somewhere nicer?
 
     def __init__(self, t):
+        """Initialize the D2 laser system.
+
+        Sets up initial frequencies and powers for MOT operation, initializes shutter
+        configuration, and configures hardware devices.
+
+        Args:
+            t (float): Time to start the D2 laser system
+        """
         # Tune to MOT frequency, full power
         self.ta_freq = shot_globals.mot_ta_detuning
         self.repump_freq = 0  # shot_globals.mot_repump_detuning
@@ -130,8 +178,21 @@ class D2Lasers:
         devices.ta_aom_analog.constant(t, self.ta_power)
         devices.repump_aom_analog.constant(t, self.repump_power)
 
-    # Move freq_calib to a function within here? Probably not needed.
     def ramp_ta_freq(self, t, duration, final):
+        """Ramp the TA laser frequency from current to final value.
+
+        The ramp duration will be at least CONST_TA_VCO_RAMP_TIME to maintain
+        beatnote lock. If current and final frequencies are the same, no ramp
+        is performed.
+
+        Args:
+            t (float): Start time for the frequency ramp
+            duration (float): Desired duration of the ramp
+            final (float): Target frequency detuning in MHz
+
+        Returns:
+            float: End time of the ramp
+        """
         # TODO: check that duration statement here is valid for optical pumping
         if self.ta_freq == final:
             print("ta freq is same for initial and final, skip ramp")
@@ -149,6 +210,20 @@ class D2Lasers:
             return t + duration
 
     def ramp_repump_freq(self, t, duration, final):
+        """Ramp the repump laser frequency from current to final value.
+
+        The ramp duration will be at least CONST_TA_VCO_RAMP_TIME to maintain
+        beatnote lock. If current and final frequencies are the same, no ramp
+        is performed.
+
+        Args:
+            t (float): Start time for the frequency ramp
+            duration (float): Desired duration of the ramp
+            final (float): Target frequency detuning in MHz
+
+        Returns:
+            float: End time of the ramp
+        """
         # TODO: check that duration statement here is valid for optical pumping
         if self.repump_freq == final:
             print("repump freq is same for initial and final, skip ramp")
@@ -166,31 +241,72 @@ class D2Lasers:
             return t + duration
 
     def ta_aom_off(self, t):
-        """Turn off the ta beam using aom"""
+        """Turn off the TA beam using AOM.
+
+        Disables both digital and analog controls of the TA AOM to ensure
+        complete beam extinction.
+
+        Args:
+            t (float): Time to turn off the AOM
+        """
         devices.ta_aom_digital.go_low(t)  # digital off
         devices.ta_aom_analog.constant(t, 0)  # analog off
         self.ta_power = 0
 
     def ta_aom_on(self, t, const):
-        """Turn on the ta beam using aom"""
+        """Turn on the TA beam using AOM.
+
+        Enables both digital and analog controls of the TA AOM to activate
+        the beam at specified power.
+
+        Args:
+            t (float): Time to turn on the AOM
+            const (float): Power level for the AOM (0 to 1)
+        """
         devices.ta_aom_digital.go_high(t)  # digital on
         devices.ta_aom_analog.constant(t, const)  # analog to const
         self.ta_power = const
 
     def repump_aom_off(self, t):
-        """Turn off the repump beam using aom"""
+        """Turn off the repump beam using AOM.
+
+        Disables both digital and analog controls of the repump AOM to ensure
+        complete beam extinction.
+
+        Args:
+            t (float): Time to turn off the AOM
+        """
         devices.repump_aom_digital.go_low(t)  # digital off
         devices.repump_aom_analog.constant(t, 0)  # analog off
         self.repump_power = 0
 
     def repump_aom_on(self, t, const):
-        """Turn on the repump beam using aom"""
+        """Turn on the repump beam using AOM.
+
+        Enables both digital and analog controls of the repump AOM to activate
+        the beam at specified power.
+
+        Args:
+            t (float): Time to turn on the AOM
+            const (float): Power level for the AOM (0 to 1)
+        """
         devices.repump_aom_digital.go_high(t)  # digital on
         devices.repump_aom_analog.constant(t, const)  # analog to const
         self.repump_power = const
 
     def ramp_ta_aom(self, t, dur, final_power):
-        """ramp ta power from current value to final power"""
+        """Ramp the TA AOM power from current to final value.
+
+        Performs a smooth power ramp of the TA beam using the AOM.
+
+        Args:
+            t (float): Start time for the power ramp
+            dur (float): Duration of the ramp
+            final_power (float): Target power level (0 to 1)
+
+        Returns:
+            float: End time of the ramp
+        """
         devices.ta_aom_analog.ramp(
             t,
             duration=dur,
@@ -200,7 +316,18 @@ class D2Lasers:
         )
 
     def ramp_repump_aom(self, t, dur, final_power):
-        """ramp repump power from current value to final power"""
+        """Ramp the repump AOM power from current to final value.
+
+        Performs a smooth power ramp of the repump beam using the AOM.
+
+        Args:
+            t (float): Start time for the power ramp
+            dur (float): Duration of the ramp
+            final_power (float): Target power level (0 to 1)
+
+        Returns:
+            float: End time of the ramp
+        """
         devices.repump_aom_analog.ramp(
             t,
             duration=dur,
@@ -210,6 +337,18 @@ class D2Lasers:
         )
 
     def update_shutters(self, t, new_shutter_config: ShutterConfig):
+        """Update the shutter configuration of the laser system.
+
+        Manages the opening and closing of various shutters based on the new configuration.
+        Ensures proper timing between shutter operations to maintain system stability.
+
+        Args:
+            t (float): Time to update the shutter configuration
+            new_shutter_config (ShutterConfig): New shutter configuration to apply
+
+        Returns:
+            float: Updated time after all shutter operations are complete
+        """
         basic_shutters: list[ShutterConfig] = [
             ShutterConfig.TA,
             ShutterConfig.REPUMP,
@@ -237,18 +376,22 @@ class D2Lasers:
         shutters_to_close = changed_shutters & self.shutter_config
         close_bool_list = [(shutter in shutters_to_close) for shutter in basic_shutters]
 
+        # if the last shutter is closed and now needs to be opened, open it after CONST_MIN_SHUTTER_OFF_TIME
         if any(t - self.last_shutter_close_t * open_bool_list < self.CONST_MIN_SHUTTER_OFF_TIME):
-            t = max(self.last_shutter_close_t * open_bool_list) + self.CONST_MIN_SHUTTER_OFF_TIME # if the last shutter is closed and now needs to be opened, open it after CONST_MIN_SHUTTER_OFF_TIME
+            t = max(self.last_shutter_close_t * open_bool_list) + self.CONST_MIN_SHUTTER_OFF_TIME
+        # if the last shutter is opened and now needs to be closed, close it after CONST_MIN_SHUTTER_ON_TIME
         elif any (t - self.last_shutter_open_t * close_bool_list < self.CONST_MIN_SHUTTER_ON_TIME):
-            t = max(self.last_shutter_open_t * close_bool_list) + self.CONST_MIN_SHUTTER_ON_TIME + self.CONST_SHUTTER_TURN_OFF_TIME # if the last shutter is opened and now needs to be closed, close it after CONST_MIN_SHUTTER_ON_TIME
+            t = max(self.last_shutter_open_t * close_bool_list) + self.CONST_MIN_SHUTTER_ON_TIME + self.CONST_SHUTTER_TURN_OFF_TIME
 
         for shutter in basic_shutters:
             if shutter in shutters_to_open:
                 shutter_dict[shutter].open(t)
-                self.last_shutter_open_t[basic_shutters.index(shutter)] = t # record the last time the shutter was opened
+                # record the last time the shutter was opened
+                self.last_shutter_open_t[basic_shutters.index(shutter)] = t
             if shutter in shutters_to_close:
                 shutter_dict[shutter].close(t - self.CONST_SHUTTER_TURN_OFF_TIME)
-                self.last_shutter_close_t[basic_shutters.index(shutter)] = t - self.CONST_SHUTTER_TURN_OFF_TIME # record the last time the shutter was closed
+                # record the last time the shutter was closed
+                self.last_shutter_close_t[basic_shutters.index(shutter)] = t - self.CONST_SHUTTER_TURN_OFF_TIME
 
         self.shutter_config = new_shutter_config
         return t
@@ -256,14 +399,32 @@ class D2Lasers:
     def do_pulse(
         self, t, dur, shutter_config, ta_power, repump_power, close_all_shutters=False
     ):
+        """Perform a laser pulse with specified parameters.
 
+        Executes a laser pulse by configuring shutters and AOM powers. Can optionally
+        close all shutters after the pulse.
+
+        Args:
+            t (float): Start time for the pulse
+            dur (float): Duration of the pulse
+            shutter_config (ShutterConfig): Shutter configuration for the pulse
+            ta_power (float): Power level for the TA beam (0 to 1)
+            repump_power (float): Power level for the repump beam (0 to 1)
+            close_all_shutters (bool, optional): Whether to close all shutters after pulse. Defaults to False.
+
+        Returns:
+            tuple[float, float]: (End time after pulse and shutter operations, AOM start time)
+        """
         change_shutters = self.shutter_config != shutter_config
 
         if change_shutters:
-            # NOTE:Adding this to t makes it so it doesn't cut the previous pulse short, but shifts the time of the next.
+            # NOTE: Adding this to t makes it so it doesn't cut the previous pulse
+            # short, but rather shifts the time of the next pulse.
             t += self.CONST_SHUTTER_TURN_ON_TIME
             print("shutter config changed, adding time to account for switching")
+            # print("shutter config:", shutter_config, ", t:", t)
             t = self.update_shutters(t, shutter_config)
+            # print("****shutter config:", shutter_config, ", t:", t)
 
             self.ta_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
             self.repump_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
@@ -295,6 +456,16 @@ class D2Lasers:
         return t, t_aom_start
 
     def reset_to_mot_freq(self, t):
+        """Reset laser frequencies to MOT operation values.
+
+        Ramps both TA and repump laser frequencies back to their MOT operation values.
+
+        Args:
+            t (float): Start time for the frequency reset
+
+        Returns:
+            float: End time after frequency ramps are complete
+        """
         self.ramp_repump_freq(t, duration=self.CONST_TA_VCO_RAMP_TIME, final=0)
         self.ramp_ta_freq(
             t, duration=self.CONST_TA_VCO_RAMP_TIME, final=shot_globals.mot_ta_detuning
@@ -303,6 +474,16 @@ class D2Lasers:
         return t
 
     def reset_to_mot_on(self, t):
+        """Reset the laser system to MOT operation state.
+
+        Configures shutters and powers for MOT operation and ensures proper timing.
+
+        Args:
+            t (float): Start time for the MOT reset
+
+        Returns:
+            float: End time after reset operations are complete
+        """
         self.ta_aom_on(t, shot_globals.mot_ta_power)
         self.repump_aom_on(t, shot_globals.mot_repump_power)
         t = self.update_shutters(t, ShutterConfig.MOT_FULL)
@@ -311,6 +492,19 @@ class D2Lasers:
         return t
 
     def parity_projection_pulse(self, t, dur, close_all_shutters=False):
+        """Execute a parity projection pulse sequence.
+
+        Performs a specialized pulse sequence for parity projection measurements,
+        using specific shutter configurations and power levels.
+
+        Args:
+            t (float): Start time for the parity projection pulse
+            dur (float): Duration of the pulse
+            close_all_shutters (bool, optional): Whether to close all shutters after pulse. Defaults to False.
+
+        Returns:
+            tuple[float, float]: (End time after pulse sequence, AOM start time)
+        """
         self.ramp_ta_freq(
             t,
             duration=self.CONST_TA_VCO_RAMP_TIME,
@@ -329,15 +523,34 @@ class D2Lasers:
 
 
 class TweezerLaser:
+    """Controls for the optical tweezer laser system.
+
+    This class manages the optical tweezer laser system, including power control,
+    intensity servo operation, and modulation capabilities.
+
+    Attributes:
+        CONST_TWEEZER_RAMPING_TIME (float): Standard ramping time for tweezer power changes (10e-3 s)
+    """
+
     CONST_TWEEZER_RAMPING_TIME: ClassVar[float] = 10e-3
 
     def __init__(self, t):
+        """Initialize the tweezer laser system.
+
+        Args:
+            t (float): Time to start the tweezers
+        """
         self.tw_power = shot_globals.tw_power
 
         # self.intensity_servo_keep_on(t)
         self.start_tweezers(t)
 
     def start_tweezers(self, t):
+        """Initialize and start the optical tweezer system.
+
+        Args:
+            t (float): Time to start the tweezers
+        """
         assert shot_globals.do_sequence_mode, "shot_globals.do_sequence_mode is False, running Fifo mode now. Set to True for sequence mode"
         spectrum_manager.start_card()
         t1 = spectrum_manager.start_tweezers(t)
@@ -345,38 +558,68 @@ class TweezerLaser:
         self.aom_on(t, self.tw_power)
 
     def stop_tweezers(self, t):
+        """Safely stop and power down the optical tweezer system.
+
+        Args:
+            t (float): Time to stop the tweezers
+        """
         # stop tweezers
         t2 = spectrum_manager.stop_tweezers(t)
         print("tweezer stop time:", t2)
 
-        # TODO: explain what this does, Answer: only when there is a dummy segment the spectrum card will actually output waveform, a bug related to the spectrum card server
-
-        # dummy segment
+        # dummy segment, need this to stop tweezers due to spectrum card bug
         t1 = spectrum_manager.start_tweezers(t)
         print("tweezer start time:", t1)
         t += 2e-3
         t2 = spectrum_manager.stop_tweezers(t)
         print("tweezer stop time:", t2)
         spectrum_manager.stop_card(t)
+        print("tweezers have been stopped... for good...")
         return t
 
     def intensity_servo_keep_on(self, t):
+        """Maintain the intensity servo in active state.
+
+        Args:
+            t (float): Time to ensure servo remains active
+        """
         """keep the AOM digital high for intensity servo"""
         self.aom_on(t, 1)
 
     def aom_on(self, t, const):
+        """Turn on the tweezer beam using AOM.
+
+        Args:
+            t (float): Time to turn on the AOM
+            const (float): Power level for the AOM
+        """
         """Turn on the tweezer beam using aom"""
         devices.tweezer_aom_digital.go_high(t)  # digital on
         devices.tweezer_aom_analog.constant(t, const)  # analog on
         self.tw_power = const
 
     def aom_off(self, t):
+        """Turn off the tweezer beam using AOM.
+
+        Args:
+            t (float): Time to turn off the AOM
+        """
         """Turn off the tweezer beam using aom"""
         devices.tweezer_aom_digital.go_low(t)  # digital off
         devices.tweezer_aom_analog.constant(t, 0)  # analog off
         self.tw_power = 0
 
     def ramp_power(self, t, dur, final_power):
+        """Ramp the tweezer power from current to final value.
+
+        Args:
+            t (float): Start time for the power ramp
+            dur (float): Duration of the ramp
+            final_power (float): Target power level
+
+        Returns:
+            float: End time of the ramp
+        """
         devices.tweezer_aom_analog.ramp(
             t, duration=dur, initial=self.tw_power, final=final_power, samplerate=1e5
         )
@@ -384,6 +627,14 @@ class TweezerLaser:
         return t + dur
 
     def sine_mod_power(self, t, dur, amp, freq):
+        """Apply sinusoidal modulation to the tweezer power.
+
+        Args:
+            t (float): Start time for modulation
+            dur (float): Duration of modulation
+            amp (float): Amplitude of the modulation
+            freq (float): Frequency of the modulation in Hz
+        """
         devices.tweezer_aom_analog.sine(
             t,
             duration=dur,
@@ -396,13 +647,30 @@ class TweezerLaser:
 
 
 class Microwave:
+    """Controls for microwave wave generation and manipulation.
+
+    This class manages the microwave system used for driving transitions between hyperfine
+    states and Rydberg levels. It handles both single-frequency pulses and frequency sweeps
+    using a spectrum card, and includes controls for switches and power levels.
+
+    Attributes:
+        CONST_SPECTRUM_CARD_OFFSET (float): Delay time between spectrum card output and trigger (52.8µs)
+        CONST_SPECTRUM_UWAVE_CABLE_ATTEN (float): Attenuation in dB for the microwave output at 300 MHz (4.4)
+    """
+
     CONST_SPECTRUM_CARD_OFFSET: ClassVar[float] = 52.8e-6
-    """ the delay time between spectrum card output and trigger """
+    CONST_SPECTRUM_UWAVE_CABLE_ATTEN: ClassVar[float] = 4.4
 
     def __init__(self, t):
-        CONST_SPECTRUM_UWAVE_CABLE_ATTEN = (
-            4.4  # cable attenutation, dB  meausred at 300 MHz
-        )
+        """Initialize the microwave system.
+
+        Sets up the spectrum card configuration for microwave
+        channels, including power levels, clock settings, and switch states.
+
+        Args:
+            t (float): Time to initialize the microwave system
+        """
+
         self.mw_detuning = shot_globals.mw_detuning  # tune the microwave detuning here
         self.uwave_dds_switch_on = True
         self.uwave_absorp_switch_on = False
@@ -424,7 +692,7 @@ class Microwave:
                 {
                     "name": "microwaves",
                     "power": self.spectrum_uwave_power
-                    + CONST_SPECTRUM_UWAVE_CABLE_ATTEN,
+                    + self.CONST_SPECTRUM_UWAVE_CABLE_ATTEN,
                     "port": 0,
                     "is_amplified": False,
                     "amplifier": None,
@@ -449,8 +717,18 @@ class Microwave:
         )
 
     def do_pulse(self, t, dur):
-        """do microwave pulse"""
+        """Generate a single-frequency microwave pulse.
 
+        Produces a microwave pulse at the current detuning frequency with specified duration.
+        Handles timing offsets and switch control automatically.
+
+        Args:
+            t (float): Start time for the pulse
+            dur (float): Duration of the pulse
+
+        Returns:
+            float: End time after the pulse is complete
+        """
         t += self.CONST_SPECTRUM_CARD_OFFSET
         devices.uwave_absorp_switch.go_high(t)
         self.uwave_absorp_switch_on = True
@@ -471,7 +749,20 @@ class Microwave:
         return t
 
     def do_sweep(self, t, start_freq, end_freq, dur):
-        """do microwave sweep"""
+        """Perform a frequency sweep of the microwave signal.
+
+        Generates a linear frequency sweep between specified start and end frequencies.
+        Controls switches and timing for proper sweep execution.
+
+        Args:
+            t (float): Start time for the sweep
+            start_freq (float): Starting frequency for the sweep
+            end_freq (float): Ending frequency for the sweep
+            dur (float): Duration of the sweep
+
+        Returns:
+            float: End time after the sweep is complete
+        """
         print("I'm doing microwave sweep")
         t += self.CONST_SPECTRUM_CARD_OFFSET
         devices.uwave_absorp_switch.go_high(t)
@@ -495,7 +786,17 @@ class Microwave:
         return t
 
     def reset_spectrum(self, t):
-        """stop microwave using dummy segment because of spectrum card, you have to send two pulses to make it work"""
+        """Reset the spectrum card by sending a dummy segment.
+
+        Due to spectrum card behavior, two pulses are required to properly stop
+        the card. This method sends a dummy segment and stops the card.
+
+        Args:
+            t (float): Time to perform the reset
+
+        Returns:
+            float: End time after reset is complete
+        """
         # dummy segment ####
         devices.spectrum_uwave.single_freq(
             t, duration=100e-6, freq=10**6, amplitude=0.99, phase=0, ch=0, loops=1
@@ -507,91 +808,267 @@ class Microwave:
 
 
 class RydLasers:
+    """Controls for Rydberg excitation lasers (456nm and 1064nm).
+
+    This class manages the laser systems used for Rydberg excitation, including
+    intensity servos, AOM controls, and mirror positioning for both 456nm and 1064nm lasers.
+    """
+    # Constants for shutter timing
+    CONST_SHUTTER_TURN_ON_TIME: ClassVar[float] = 2e-3  # 2ms for shutter to open
+    CONST_SHUTTER_TURN_OFF_TIME: ClassVar[float] = 2e-3  # 2ms for shutter to close
+    CONST_MIN_SHUTTER_OFF_TIME: ClassVar[float] = (
+        6.28e-3  # minimum time for shutter to be off and on again
+    )
+    CONST_MIN_SHUTTER_ON_TIME: ClassVar[float] = (
+        3.6e-3  # minimum time for shutter to be on
+    )
+
+
     def __init__(self, t):
+        """Initialize the Rydberg laser system.
+
+        Args:
+            t (float): Time to start the Rydberg lasers
+        """
+        # Can't do any output from NI card until 12e-6
+        t += 12e-6 if t < 12e-6 else 0
         # Keep the intensity servo on, regardless of BLACs settings
-        self.blue_intensity_servo_keep_on(t)
-        self.red_intensity_servo_keep_on(t)
+        self.servo_456_intensity_keep_on(t)
+        self.servo_1064_intensity_keep_on(t)
+        # Initialize 456nm laser detuning
+        self.detuning_456 = shot_globals.ryd_456_detuning
+        devices.dds1.synthesize(t, freq = self.detuning_456, amp = 0.5, ph = 0)
+        # Initialize shutter state
+        self.shutter_open = False
+        # Mirrors go to initial positions
+        self.mirror_456_1_position(t)
+        self.mirror_456_2_position(t)
+        self.mirror_1064_1_position(t)
+        self.mirror_1064_2_position(t)
 
-    def blue_intensity_servo_keep_on(self, t):
+    def servo_456_intensity_keep_on(self, t):
+        """Maintain the 456nm laser intensity servo in active state.
+
+        Args:
+            t (float): Time to ensure servo remains active
+        """
         """keep the AOM digital high for intensity servo"""
-        self.blue_servo_aom_on(t, 0)
+        self.servo_456_aom_on(t, 0)
 
-    def red_intensity_servo_keep_on(self, t):
+    def servo_1064_intensity_keep_on(self, t):
+        """Maintain the 1064nm laser intensity servo in active state.
+
+        Args:
+            t (float): Time to ensure servo remains active
+        """
         """keep the AOM digital high for intensity servo"""
-        self.red_servo_aom_on(t, 0)
+        self.servo_1064_aom_on(t, 0)
 
-    def blue_servo_aom_on(self, t, const):
-        devices.moglabs_456_aom_digital.go_high(t)  # digital on
-        devices.moglabs_456_aom_analog.constant(t, const)  # analog to const
-        self.blue_power = const
+    def servo_456_aom_on(self, t, const):
+        """Turn on the 456nm laser servo AOM.
 
-    def blue_servo_aom_off(self, t):
-        devices.moglabs_456_aom_digital.go_low(t)  # digital off
-        devices.moglabs_456_aom_analog.constant(t, 0)  # analog off
-        self.blue_power = 0
+        Args:
+            t (float): Time to turn on the AOM
+            const (float): Power level for the AOM
+        """
+        devices.servo_456_aom_digital.go_high(t)  # digital on
+        devices.servo_456_aom_analog.constant(t, const)  # analog to const
+        self.power_456 = const
 
-    def blue_pulse_aom_on(self, t, const):
-        devices.octagon_456_aom_digital.go_high(t)  # digital on
-        devices.octagon_456_aom_analog.constant(t, const)  # analog to const
-        self.blue_power = const
+    def servo_456_aom_off(self, t):
+        """Turn off the 456nm laser servo AOM.
 
-    def blue_pulse_aom_off(self, t):
-        devices.octagon_456_aom_digital.go_low(t)  # digital off
-        devices.octagon_456_aom_analog.constant(t, 0)  # analog off
-        self.blue_power = 0
+        Args:
+            t (float): Time to turn off the AOM
+        """
+        devices.servo_456_aom_digital.go_low(t)  # digital off
+        devices.servo_456_aom_analog.constant(t, 0)  # analog off
+        self.power_456 = 0
 
-    def red_servo_aom_on(self, t, const):
-        devices.ipg_1064_aom_digital.go_high(t)  # digital on
-        devices.ipg_1064_aom_analog.constant(t, const)  # analog to const
-        self.red_power = const
+    def pulse_456_aom_on(self, t, const):
+        """Turn on the 456nm laser pulse AOM.
 
-    def red_servo_aom_off(self, t):
-        devices.ipg_1064_aom_digital.go_low(t)  # digital off
-        devices.ipg_1064_aom_analog.constant(t, 0)  # analog off
-        self.red_power = 0
+        Args:
+            t (float): Time to turn on the AOM
+            const (float): Power level for the AOM
+        """
+        devices.pulse_456_aom_digital.go_high(t)  # digital on
+        devices.pulse_456_aom_analog.constant(t, const)  # analog to const
+        self.power_456 = const
 
-    def red_pulse_aom_on(self, t, const):
-        devices.pulse_1064_digital.go_high(t)  # digital on
-        devices.pulse_1064_analog.constant(t, const)  # analog to const
-        self.red_power = const
+    def pulse_456_aom_off(self, t):
+        """Turn off the 456nm laser pulse AOM.
 
-    def red_pulse_aom_off(self, t):
-        devices.pulse_1064_digital.go_low(t)  # digital off
-        devices.pulse_1064_analog.constant(t, 0)  # analog off
-        self.red_power = 0
+        Args:
+            t (float): Time to turn off the AOM
+        """
+        devices.pulse_456_aom_digital.go_low(t)  # digital off
+        devices.pulse_456_aom_analog.constant(t, 0)  # analog off
+        self.power_456 = 0
 
-    def blue_mirror_1_position(self, t):
-        devices.mirror_1_horizontal.constant(
-            t, shot_globals.ryd_456_mirror_1_h_position
+    def servo_1064_aom_on(self, t, const):
+        """Turn on the 1064nm laser servo AOM.
+
+        Args:
+            t (float): Time to turn on the AOM
+            const (float): Power level for the AOM
+        """
+        devices.servo_1064_aom_digital.go_high(t)  # digital on
+        devices.servo_1064_aom_analog.constant(t, const)  # analog to const
+        self.power_1064 = const
+
+    def servo_1064_aom_off(self, t):
+        """Turn off the 1064nm laser servo AOM.
+
+        Args:
+            t (float): Time to turn off the AOM
+        """
+        devices.servo_1064_aom_digital.go_low(t)  # digital off
+        devices.servo_1064_aom_analog.constant(t, 0)  # analog off
+        self.power_1064 = 0
+
+    def pulse_1064_aom_on(self, t, const):
+        """Turn on the 1064nm laser pulse AOM.
+
+        Args:
+            t (float): Time to turn on the AOM
+            const (float): Power level for the AOM
+        """
+        devices.pulse_1064_aom_digital.go_high(t)  # digital on
+        devices.pulse_1064_aom_analog.constant(t, const)  # analog to const
+        self.power_1064 = const
+
+    def pulse_1064_aom_off(self, t):
+        """Turn off the 1064nm laser pulse AOM.
+
+        Args:
+            t (float): Time to turn off the AOM
+        """
+        devices.pulse_1064_aom_digital.go_low(t)  # digital off
+        devices.pulse_1064_aom_analog.constant(t, 0)  # analog off
+        self.power_1064 = 0
+
+    def mirror_456_1_position(self, t):
+        """Set the position of the first 456nm laser mirror.
+
+        Args:
+            t (float): Time to set the mirror position
+        """
+        devices.mirror_456_1_h.constant(
+            t, shot_globals.ryd_456_mirror_1_h
         )
-        devices.mirror_1_vertical.constant(t, shot_globals.ryd_456_mirror_1_v_position)
+        devices.mirror_456_1_v.constant(t, shot_globals.ryd_456_mirror_1_v)
 
-    def blue_mirror_2_position(self, t):
-        devices.mirror_2_horizontal.constant(
-            t, shot_globals.ryd_456_mirror_2_h_position
+    def mirror_456_2_position(self, t):
+        """Set the position of the second 456nm laser mirror.
+
+        Args:
+            t (float): Time to set the mirror position
+        """
+        devices.mirror_456_2_h.constant(
+            t, shot_globals.ryd_456_mirror_2_h
         )
-        devices.mirror_2_vertical.constant(t, shot_globals.ryd_456_mirror_2_v_position)
+        devices.mirror_456_2_v.constant(t, shot_globals.ryd_456_mirror_2_v)
 
-    def red_mirror_1_position(self, t):
-        devices.mirror_3_horizontal.constant(
-            t, shot_globals.ryd_1064_mirror_1_h_position
+    def mirror_1064_1_position(self, t):
+        """Set the position of the first 1064nm laser mirror.
+
+        Args:
+            t (float): Time to set the mirror position
+        """
+        devices.mirror_1064_1_h.constant(
+            t, shot_globals.ryd_1064_mirror_1_h
         )
-        devices.mirror_3_vertical.constant(t, shot_globals.ryd_1064_mirror_1_v_position)
+        devices.mirror_1064_1_v.constant(t, shot_globals.ryd_1064_mirror_1_v)
 
-    def red_mirror_2_position(self, t):
-        devices.mirror_4_horizontal.constant(
-            t, shot_globals.ryd_1064_mirror_2_h_position
+    def mirror_1064_2_position(self, t):
+        """Set the position of the second 1064nm laser mirror.
+
+        Args:
+            t (float): Time to set the mirror position
+        """
+        devices.mirror_1064_2_h.constant(
+            t, shot_globals.ryd_1064_mirror_2_h
         )
-        devices.mirror_4_vertical.constant(t, shot_globals.ryd_1064_mirror_2_v_position)
+        devices.mirror_1064_2_v.constant(t, shot_globals.ryd_1064_mirror_2_v)
 
+
+    def do_rydberg_pulse(self, t, dur, power_456, power_1064, close_shutter=False):
+        """Perform a Rydberg excitation pulse with specified parameters.
+
+        Executes a laser pulse by configuring the shutter and AOM powers for both 456nm and 1064nm lasers.
+        The servo AOMs remain unchanged during the pulse.
+
+        # TODO: Check that this explanation is clear, @Sam, @Lin, @Michelle.
+        Note that this routine is a little different from the D2Lasers do_pulse routine.
+        In D2Lasers do_pulse, there is automatic time added if shutters need to be changed,
+        so the input t is not necessarily the start time of the pulse. In contrast, here, t
+        is the start time of the pulse, and the shutter is opened in time for the
+        start of the pulse.
+
+        Args:
+            t (float): Start time for the aom part of the pulse
+            dur (float): Duration of the pulse
+            power_456 (float): Power level for the 456nm beam (0 to 1)
+            power_1064 (float): Power level for the 1064nm beam (0 to 1)
+            close_shutter (bool, optional): Whether to close shutter after pulse. Defaults to False.
+
+        Returns:
+            tuple[float]: (End time after pulse and shutter operations)
+        """
+        if not self.shutter_open:
+            devices.blue_456_shutter.open(t) # shutter fully open
+            self.shutter_open = True
+            # Turn off AOMs while waiting for shutter to fully open
+            self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
+            self.pulse_1064_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
+
+        # Turn on AOMs with specified powers
+        if power_456 != 0:
+            self.pulse_456_aom_on(t, power_456)
+        if power_1064 != 0:
+            self.pulse_1064_aom_on(t, power_1064)
+
+        t += dur
+
+        # Turn off AOMs at the end of the pulse
+        self.pulse_456_aom_off(t)
+        self.pulse_1064_aom_off(t)
+
+        if close_shutter:
+            devices.blue_456_shutter.close(t) #shutter start to close
+            t += self.CONST_SHUTTER_TURN_OFF_TIME
+            self.shutter_open = False
+            self.pulse_456_aom_on(t, 1)
+
+        return t
 
 class UVLamps:
+    """Controls for UV LED lamps used in the experiment.
+
+    This class manages the UV LED lamps, which are typically used for MOT loading
+    enhancement through light-induced atom desorption.
+    """
+
     def __init__(self, t):
+        """Initialize the UV lamp system.
+
+        Args:
+            t (float): Time to start the UV lamps
+        """
         # Turn off UV lamps
         devices.uv_switch.go_low(t)
 
     def uv_pulse(self, t, dur):
-        """Flash the UV LED lamps for dur seconds"""
+        """Flash the UV LED lamps for a specified duration.
+
+        Args:
+            t (float): Start time for the UV pulse
+            dur (float): Duration of the UV pulse
+
+        Returns:
+            float: End time of the UV pulse
+        """
         devices.uv_switch.go_high(t)
         t += dur
         devices.uv_switch.go_low(t)
@@ -599,17 +1076,22 @@ class UVLamps:
 
 
 class BField:
+    """Controls for magnetic field generation and manipulation.
+
+    This class manages the magnetic field coils used in the experiment, including MOT coils
+    and bias field coils. It provides methods for switching coils, ramping fields, and
+    converting between spherical and Cartesian coordinates for field control.
+
+    Attributes:
+        CONST_COIL_OFF_TIME (float): Time required for coils to turn off (1.4e-3 s)
+        CONST_COIL_RAMP_TIME (float): Standard time for ramping coil currents (100e-6 s)
+        CONST_BIPOLAR_COIL_FLIP_TIME (float): Time required to flip coil polarity (10e-3 s)
+        CONST_COIL_FEEDBACK_OFF_TIME (float): Time for coil feedback to turn off (4.5e-3 s)
+    """
     CONST_COIL_OFF_TIME: ClassVar[float] = 1.4e-3
-    """minimum time for the MOT coil to be off"""
-
     CONST_COIL_RAMP_TIME: ClassVar[float] = 100e-6
-    """ramp time from initial field to final field"""
-
     CONST_BIPOLAR_COIL_FLIP_TIME: ClassVar[float] = 10e-3
-    """ the time takes to flip the polarity of the coil """
-
     CONST_COIL_FEEDBACK_OFF_TIME: ClassVar[float] = 4.5e-3
-    """how long to turn off the feedback of circuit when flipping polarity"""
 
     bias_voltages = list[float]
     mot_coils_on: bool
@@ -617,7 +1099,13 @@ class BField:
     current_outputs = tuple[AnalogOut, AnalogOut, AnalogOut]
     feedback_disable_ttls = tuple[DigitalOut, DigitalOut, DigitalOut]
 
+
     def __init__(self, t: float):
+        """Initialize the magnetic field system.
+
+        Args:
+            t (float): Time to start the magnetic field
+        """
         self.bias_voltages = [
             shot_globals.mot_x_coil_voltage,
             shot_globals.mot_y_coil_voltage,
@@ -625,11 +1113,6 @@ class BField:
         ]
         self.mot_coils_on = shot_globals.mot_do_coil
         self.mot_coils_on_current = 10 / 6
-
-        # Same question as for Dline_lasers, should we automatically initialize the hardware here or in a separate function we can call?
-
-        # initialize bias_field variable to None
-        # self.bias_field = None
 
         self.t_last_change = 0
 
@@ -661,12 +1144,27 @@ class BField:
         self, t: float, final_voltage: float, component: Literal[0, 1, 2]
     ):
         """
-        t: float
-            Time to begin coil polarity flipping
-        final_voltage: float
-            Final control voltage on the coil
-        component: {0, 1, 2}
-            Specifies the field component to flip (x, y, or z)
+        Flip the polarity of a specified magnetic field coil.
+
+        Performs a controlled polarity flip of a magnetic field coil by ramping through
+        an intermediate voltage state. The process involves:
+        1. Ramping to a small intermediate voltage
+        2. Disabling feedback during the polarity change
+        3. Waiting for the flip to complete
+        4. Ramping to the final voltage
+
+        Args:
+            t (float): Time to begin coil polarity flipping
+            final_voltage (float): Target control voltage for the coil after polarity flip
+            component (Literal[0, 1, 2]): Field component to flip (0=x, 1=y, 2=z)
+
+        Returns:
+            float: Start time for parallel operations (accounts for flip duration)
+
+        Note:
+            The method returns the start time instead of end time to allow parallel
+            operations on other coils. Total operation time is CONST_BIPOLAR_COIL_FLIP_TIME
+            plus CONST_COIL_RAMP_TIME.
         """
         coil_voltage_mid_abs = 0.03
         coil_voltage_mid = np.sign(final_voltage) * coil_voltage_mid_abs
@@ -698,13 +1196,24 @@ class BField:
             samplerate=1e5,
         )
 
-        t -= total_coil_flip_ramp_time  # subtract to the begining tp set other coils
+        t -= total_coil_flip_ramp_time  # subtract to the begining to set other coils
 
         # Update internal state
         self.bias_voltages[component] = final_voltage
         return t
 
     def ramp_bias_field(self, t, dur = 100e-6,  bias_field_vector=None, voltage_vector=None):
+        """Ramp the bias field to new values.
+
+        Args:
+            t (float): Start time for the ramp
+            dur (float, optional): Duration of the ramp. Defaults to 100e-6 s
+            bias_field_vector (tuple, optional): Target bias field values in Gauss
+            voltage_vector (tuple, optional): Target voltage values for coils
+
+        Returns:
+            float: End time of the ramp
+        """
         # bias_field_vector should be a tuple of the form (x,y,z)
         # Need to start the ramp earlier if the voltage changes sign
         dur = np.max([dur, self.CONST_COIL_RAMP_TIME])
@@ -762,6 +1271,14 @@ class BField:
         return t + dur
 
     def switch_mot_coils(self, t):
+        """Switch the MOT coils on or off.
+
+        Args:
+            t (float): Time to switch the coils
+
+        Returns:
+            float: End time after switching operation is complete
+        """
         if self.mot_coils_on:
             devices.mot_coil_current_ctrl.ramp(
                 t,
@@ -785,7 +1302,16 @@ class BField:
         return endtime
 
     def convert_bias_fields_sph_to_cart(self, bias_amp, bias_phi, bias_theta):
-        """Compute the proper bias fields for a given quantization angle from shot globals"""
+        """Convert spherical coordinates to Cartesian for bias field control.
+
+        Args:
+            bias_amp (float): Amplitude of the bias field
+            bias_phi (float): Azimuthal angle in radians
+            bias_theta (float): Polar angle in radians
+
+        Returns:
+            tuple: Cartesian coordinates (x, y, z) for the bias field
+        """
         biasx_field = (
             bias_amp
             * np.cos(np.deg2rad(bias_phi))
@@ -804,14 +1330,37 @@ class BField:
 
 
 class Camera:
+    """Controls for experimental imaging cameras.
+
+    This class manages the camera systems used for imaging atoms in the experiment,
+    including exposure timing and triggering.
+    """
+
     def __init__(self, t):
+        """Initialize the camera system.
+
+        Args:
+            t (float): Time to start the camera
+        """
         self.type = None
 
     def set_type(self, type):
-        # type = "MOT_manta" or "tweezer_manta" or "kinetix"
+        """Set the type of imaging to be performed.
+
+        Args:
+            type (str): Type of imaging configuration to use, "MOT_manta" or
+            "tweezer_manta" or "kinetix"
+        """
         self.type = type
 
     def expose(self, t, exposure_time, trigger_local_manta=False):
+        """Trigger camera exposure.
+
+        Args:
+            t (float): Start time for the exposure
+            exposure_time (float): Duration of the exposure
+            trigger_local_manta (bool, optional): Whether to trigger local Manta camera
+        """
         if trigger_local_manta:
             devices.mot_camera_trigger.go_high(t)
             devices.mot_camera_trigger.go_low(t + exposure_time)
@@ -839,5 +1388,16 @@ class Camera:
 
 
 class EField:
+    """Controls for electric field generation and manipulation.
+
+    This class manages the electric field controls in the experiment, including
+    field generation, ramping, and manipulation for various experimental sequences.
+    """
+
     def __init__(self, t):
-        pass
+        """Initialize the electric field system.
+
+        Args:
+            t (float): Time to start the electric field
+        """
+        raise NotImplementedError
