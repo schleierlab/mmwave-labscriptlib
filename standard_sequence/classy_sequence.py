@@ -6,6 +6,7 @@ import sys
 if root_path not in sys.path:
     sys.path.append(root_path)
 import labscript
+import numpy as np
 
 from connection_table import devices
 from labscriptlib.shot_globals import shot_globals
@@ -543,15 +544,15 @@ class OpticalPumpingSequence(MOTSequence):
             self.D2Lasers_obj.ramp_ta_freq(
                 t_aom_start + shot_globals.op_ta_time,
                 D2Lasers.CONST_TA_VCO_RAMP_TIME,
-                50, # move the detuning to +50MHz relative to 4->5 transtion to avoid the leakage light on 4->4 transition doing depump
+                CONST_TA_PUMPING_DETUNING/2, # move the detuning to -125 MHz relative to 4->5 transtion to avoid the leakage light on 4->4 transition doing depump, half way between 4->5 and 4->4
             )
             # Close the shutters
-            t += 1e-3
+            t = np.max([t, t_aom_start + shot_globals.op_ta_time + D2Lasers.CONST_TA_VCO_RAMP_TIME])#+= 1e-3
             return t, t_aom_off
         else:
             raise NotImplementedError("This optical pumping method is not implemented")
 
-    def depump_ta_pulse(self, t, close_all_shutters=True):
+    def depump_ta_pulse(self, t, close_all_shutters=False):
         """Execute a TA pulse to depump atoms from F=4 to F=3.
 
         Performs a standalone TA pulse for depumping atoms from F=4 to F=3. This method
@@ -570,7 +571,7 @@ class OpticalPumpingSequence(MOTSequence):
             _ = self.BField_obj.switch_mot_coils(t)
 
         t = self.D2Lasers_obj.ramp_ta_freq(
-            t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_TA_PUMPING_DETUNING
+            t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ta_pumping_detuning #CONST_TA_PUMPING_DETUNING
         )
         # t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
 
@@ -581,7 +582,7 @@ class OpticalPumpingSequence(MOTSequence):
         t, _ = self.D2Lasers_obj.do_pulse(
             t,
             shot_globals.op_depump_pulse_time,
-            ShutterConfig.OPTICAL_PUMPING_FULL,
+            ShutterConfig.OPTICAL_PUMPING_TA,
             shot_globals.op_depump_power,
             0,
             close_all_shutters=close_all_shutters,
@@ -880,7 +881,7 @@ class OpticalPumpingSequence(MOTSequence):
         t = self.do_mot(t, mot_load_dur)
         t = self.do_molasses(t, shot_globals.bm_time)
         t, t_aom_off = self.pump_to_F4(
-            t, shot_globals.op_label, close_all_shutters=False
+            t, shot_globals.op_label, close_all_shutters=False,
         )
 
         mw_biasx_field, mw_biasy_field, mw_biasz_field = (
@@ -1216,7 +1217,7 @@ class TweezerSequence(OpticalPumpingSequence):
             )
 
         if shot_globals.do_depump_ta_pulse_after_pump:
-            t_aom_off = self.depump_ta_pulse(t_aom_off)
+            t_aom_off = self.depump_ta_pulse(t)
 
         mw_biasx_field, mw_biasy_field, mw_biasz_field = (
             self.BField_obj.convert_bias_fields_sph_to_cart(
@@ -1318,11 +1319,7 @@ class TweezerSequence(OpticalPumpingSequence):
             t, t_aom_off = self.pump_to_F4(
                 t, shot_globals.op_label, close_all_shutters=True
             )
-        elif shot_globals.do_dp:
-            t, t_aom_off = self.depump_to_F3(
-                t, shot_globals.op_label, close_all_shutters=False
-            )
-
+            t += 5e-3
 
         # Making sure the ramp ends right as the pumping is starting
         t_start_ramp = (
@@ -1335,9 +1332,9 @@ class TweezerSequence(OpticalPumpingSequence):
         )
 
         # ramp up the tweezer power after optical pumping
-        _ = self.TweezerLaser_obj.ramp_power(
-            t_aom_off, shot_globals.tw_ramp_dur, 0.99
-        )
+        # _ = self.TweezerLaser_obj.ramp_power(
+        #     t_aom_off, shot_globals.tw_ramp_dur, 0.99
+        # )
 
         if shot_globals.do_depump_ta_pulse_after_pump:
             t = self.depump_ta_pulse(t)
@@ -1357,9 +1354,9 @@ class TweezerSequence(OpticalPumpingSequence):
         # ]
 
         t = self.BField_obj.ramp_bias_field(
-            t_aom_off + 5e-3, # extra time to wait for 5e-3s extra time in optical pumping field
+            t, # extra time to wait for 5e-3s extra time in optical pumping field
             bias_field_vector=(mw_biasx_field, mw_biasy_field, mw_biasz_field),
-            dur=shot_globals.mw_bias_ramp_dur,
+            # dur=shot_globals.mw_bias_ramp_dur,
         )
 
         t += shot_globals.mw_field_wait_dur  # 400e-6
@@ -1383,8 +1380,11 @@ class TweezerSequence(OpticalPumpingSequence):
 
         if shot_globals.do_killing_pulse:
             t, _ = self.kill_F4(
-                t - D2Lasers.CONST_SHUTTER_TURN_ON_TIME, close_all_shutters=False
+                t, close_all_shutters=False
             )
+            # t, _ = self.kill_F4(
+            #     t - D2Lasers.CONST_SHUTTER_TURN_ON_TIME, close_all_shutters=False
+            # )
         else:
             t += shot_globals.op_killing_pulse_time
 
