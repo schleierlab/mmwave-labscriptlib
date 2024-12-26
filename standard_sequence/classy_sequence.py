@@ -579,7 +579,7 @@ class OpticalPumpingSequence(MOTSequence):
         # to make sure no shutter switch from the depump_to_F3/pump_to_F4
         # sequence, this allow the two pulse sequence purely switched
         # with aom so that they are next to each other
-        t, _ = self.D2Lasers_obj.do_pulse(
+        t, t_aom_start = self.D2Lasers_obj.do_pulse(
             t,
             shot_globals.op_depump_pulse_time,
             ShutterConfig.OPTICAL_PUMPING_TA,
@@ -587,6 +587,14 @@ class OpticalPumpingSequence(MOTSequence):
             0,
             close_all_shutters=close_all_shutters,
         )
+
+        self.D2Lasers_obj.ramp_ta_freq(
+            t_aom_start + shot_globals.op_depump_pulse_time,
+            D2Lasers.CONST_TA_VCO_RAMP_TIME,
+            CONST_TA_PUMPING_DETUNING/2, # move the detuning to -125 MHz relative to 4->5 transtion to avoid the leakage light on 4->4 transition doing depump, half way between 4->5 and 4->4
+        )
+
+        t = np.max([t, t_aom_start + shot_globals.op_depump_pulse_time + D2Lasers.CONST_TA_VCO_RAMP_TIME])#+= 1e-3
 
         return t
 
@@ -1087,6 +1095,7 @@ class TweezerSequence(OpticalPumpingSequence):
         if shot_number == 2:
             # pulse for the second shots and wait for the first shot to finish the
             # first reading
+            print(shot_globals.kinetix_roi_row)
             kinetix_readout_time = shot_globals.kinetix_roi_row[1] * 4.7065e-6
             # need extra 7 ms for shutter to close on the second shot
             # TODO: is shot_globals.kinetix_extra_readout_time always zero? Delete if so.
@@ -1421,7 +1430,7 @@ class TweezerSequence(OpticalPumpingSequence):
         t += 3e-3
 
         t, t_aom_off = self.pump_to_F4(
-            t, shot_globals.op_label, close_all_shutters=True
+            t, shot_globals.op_label, close_all_shutters=False
         )
         t += 5e-3
 
@@ -1440,8 +1449,9 @@ class TweezerSequence(OpticalPumpingSequence):
         #     t_aom_off, shot_globals.tw_ramp_dur, 0.99
         # )
 
-        t = self.depump_ta_pulse(t)
+        t = self.depump_ta_pulse(t, close_all_shutters=False)
 
+        t = self.BField_obj.ramp_bias_field(t, bias_field_vector=(0, 0, 0))
 
         t = self.TweezerLaser_obj.ramp_power(
             t, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power
@@ -1450,7 +1460,7 @@ class TweezerSequence(OpticalPumpingSequence):
 
         if shot_globals.do_killing_pulse:
             t, _ = self.kill_F4(
-                t, close_all_shutters=False
+                t, close_all_shutters=True
             )
             # t, _ = self.kill_F4(
             #     t - D2Lasers.CONST_SHUTTER_TURN_ON_TIME, close_all_shutters=False
