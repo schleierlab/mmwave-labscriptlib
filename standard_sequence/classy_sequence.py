@@ -1397,6 +1397,75 @@ class TweezerSequence(OpticalPumpingSequence):
 
         return t
 
+    def _do_dark_state_lifetime_in_tweezer_check(self, t):
+        """Check optical pumping using sigma+ beam for atoms in tweezers.
+
+        Performs a comprehensive sequence to verify optical pumping in tweezers:
+        1. Load atoms and take initial image
+        3. Perform main optical pumping (to F=4) or depumping (to F=3)
+        4. depumping TA pulse to measure dark state decay back to F=3
+        5. Optional: killing pulse (remove F=4 atoms) to do state dependent measurement
+
+        The sequence can be configured through shot_globals parameters for
+        various pumping and manipulation options.
+
+        Args:
+            t (float): Start time for the sequence
+
+        Returns:
+            float: End time of the sequence
+        """
+        t = self.load_tweezers(t)
+        t = self.image_tweezers(t, shot_number=1)
+
+        t += 3e-3
+
+        t, t_aom_off = self.pump_to_F4(
+            t, shot_globals.op_label, close_all_shutters=True
+        )
+        t += 5e-3
+
+        # Making sure the ramp ends right as the pumping is starting
+        t_start_ramp = (
+            t_aom_off - shot_globals.tw_ramp_dur - shot_globals.op_repump_time
+        )
+
+        # ramp down the tweezer power before optical pumping
+        _ = self.TweezerLaser_obj.ramp_power(
+            t_start_ramp, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power
+        )
+
+        # ramp up the tweezer power after optical pumping
+        # _ = self.TweezerLaser_obj.ramp_power(
+        #     t_aom_off, shot_globals.tw_ramp_dur, 0.99
+        # )
+
+        t = self.depump_ta_pulse(t)
+
+
+        t = self.TweezerLaser_obj.ramp_power(
+            t, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power
+        )
+
+
+        if shot_globals.do_killing_pulse:
+            t, _ = self.kill_F4(
+                t, close_all_shutters=False
+            )
+            # t, _ = self.kill_F4(
+            #     t - D2Lasers.CONST_SHUTTER_TURN_ON_TIME, close_all_shutters=False
+            # )
+        else:
+            t += shot_globals.op_killing_pulse_time
+
+        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
+        t += 2e-3  # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
+        # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
+        t += shot_globals.img_wait_time_between_shots
+        t = self.image_tweezers(t, shot_number=2)
+        t = self.reset_mot(t)
+
+        return t
 
 class RydSequence(TweezerSequence):
     def __init__(self, t):
@@ -1517,6 +1586,14 @@ if __name__ == "__main__":
             t = TweezerSequence_obj._do_optical_pump_mot_in_tweezer_check(t)
         elif shot_globals.op_label == "sigma":
             t = TweezerSequence_obj._do_optical_pump_sigma_in_tweezer_check(t)
+
+    elif shot_globals.do_dark_state_lifetime_in_tweezer_check:
+        TweezerSequence_obj = TweezerSequence(t)
+        sequence_objects.append(TweezerSequence_obj)
+        if shot_globals.op_label == "sigma":
+            t = TweezerSequence_obj._do_dark_state_lifetime_in_tweezer_check(t)
+        else:
+            raise NotImplementedError
 
     # if shot_globals.do_optical_pump_in_microtrap_check:
     #     t = do_optical_pump_in_microtrap_check(t)
