@@ -823,6 +823,10 @@ class RydLasers:
         3.6e-3  # minimum time for shutter to be on
     )
 
+    CONST_MIN_FREQ_STEP = 2 # MHz
+    CONST_MIN_T_STEP = 10e-6 # 10us
+    CONST_DEFAULT_DETUNING_456 = 350 #MHz
+
 
     def __init__(self, t):
         """Initialize the Rydberg laser system.
@@ -836,7 +840,8 @@ class RydLasers:
         self.servo_456_intensity_keep_on(t)
         self.servo_1064_intensity_keep_on(t)
         # Initialize 456nm laser detuning
-        self.detuning_456 = shot_globals.ryd_456_detuning
+        # the initial detuning every ramp start and end to
+        self.detuning_456 = self.CONST_DEFAULT_DETUNING_456 #MHz shot_globals.ryd_456_detuning
         devices.dds1.synthesize(t, freq = self.detuning_456, amp = 0.5, ph = 0)
         # Initialize shutter state
         self.shutter_open = False
@@ -845,6 +850,34 @@ class RydLasers:
         self.mirror_456_2_position(t)
         self.mirror_1064_1_position(t)
         self.mirror_1064_2_position(t)
+
+    def do_456_freq_sweep(self, t, end_freq):
+        """Perform a frequency sweep of 456nm laser.
+
+        Generates a linear frequency sweep between specified start and end frequencies.
+        Controls switches and timing for proper sweep execution.
+
+        Args:
+            t (float): Start time for the sweep
+            start_freq (float): Starting frequency for the sweep
+            end_freq (float): Ending frequency for the sweep
+            dur (float): Duration of the sweep
+
+        Returns:
+            float: End time after the sweep is complete
+        """
+        start_freq = self.detuning_456
+        if start_freq == end_freq:
+            return t
+
+        num_steps = (start_freq - end_freq)/self.CONST_MIN_FREQ_STEP
+        freq_step = (start_freq - end_freq)/num_steps
+        dur = num_steps*self.CONST_MIN_T_STEP
+        for t_step in np.linspace(t - dur, t, num_steps):
+            devices.dds1.synthesize(t_step, freq = freq_step, amp = 0.5, ph = 0)
+
+        self.detuning_456 = end_freq
+        return t
 
     def servo_456_intensity_keep_on(self, t):
         """Maintain the 456nm laser intensity servo in active state.
@@ -1016,6 +1049,8 @@ class RydLasers:
         Returns:
             tuple[float]: (End time after pulse and shutter operations)
         """
+        t = self.do_456_freq_sweep(t, shot_globals.ryd_456_detuning)
+
         if not self.shutter_open:
             devices.blue_456_shutter.open(t) # shutter fully open
             self.shutter_open = True
@@ -1040,6 +1075,8 @@ class RydLasers:
             t += self.CONST_SHUTTER_TURN_OFF_TIME
             self.shutter_open = False
             self.pulse_456_aom_on(t, 1)
+
+        t = self.do_456_freq_sweep(t, self.CONST_DEFAULT_DETUNING_456)
 
         return t
 
