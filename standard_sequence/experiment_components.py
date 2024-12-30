@@ -850,6 +850,8 @@ class RydLasers:
         self.mirror_456_2_position(t)
         self.mirror_1064_1_position(t)
         self.mirror_1064_2_position(t)
+        self.last_shutter_close_t = 0
+        self.last_shutter_open_t = 0
 
     def do_456_freq_sweep(self, t, end_freq):
         """Perform a frequency sweep of 456nm laser.
@@ -1026,6 +1028,28 @@ class RydLasers:
         )
         devices.mirror_1064_2_v.constant(t, shot_globals.ryd_1064_mirror_2_v)
 
+    def update_blue_456_shutter(self, t, config):
+        if config == "open":
+            # if the last shutter is closed and now needs to be opened, open it after CONST_MIN_SHUTTER_OFF_TIME
+            if t - self.last_shutter_close_t < self.CONST_MIN_SHUTTER_OFF_TIME:
+                t = self.last_shutter_close_t + self.CONST_MIN_SHUTTER_OFF_TIME
+            devices.blue_456_shutter.open(t) # shutter fully open
+            self.last_shutter_open_t = t
+            self.shutter_open = True
+            return t
+        elif config == "close":
+            # if the last shutter is opened and now needs to be closed, close it after CONST_MIN_SHUTTER_ON_TIME
+            if t - self.last_shutter_open_t  < self.CONST_MIN_SHUTTER_ON_TIME:
+                t = self.last_shutter_open_t + self.CONST_MIN_SHUTTER_ON_TIME
+            self.last_shutter_close_t = t
+            devices.blue_456_shutter.close(t) #shutter start to close
+            t += self.CONST_SHUTTER_TURN_OFF_TIME
+            self.shutter_open = False
+            return t
+
+
+
+
 
     def do_rydberg_pulse(self, t, dur, power_456, power_1064, close_shutter=False):
         """Perform a Rydberg excitation pulse with specified parameters.
@@ -1053,8 +1077,7 @@ class RydLasers:
         # t = self.do_456_freq_sweep(t, shot_globals.ryd_456_detuning)
 
         if not self.shutter_open:
-            devices.blue_456_shutter.open(t) # shutter fully open
-            self.shutter_open = True
+            t = self.update_blue_456_shutter(t,"open")
             # Turn off AOMs while waiting for shutter to fully open
             self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
             self.pulse_1064_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
@@ -1072,9 +1095,7 @@ class RydLasers:
         self.pulse_1064_aom_off(t)
 
         if close_shutter:
-            devices.blue_456_shutter.close(t) #shutter start to close
-            t += self.CONST_SHUTTER_TURN_OFF_TIME
-            self.shutter_open = False
+            t = self.update_blue_456_shutter(t,"close")
             self.pulse_456_aom_on(t, 1)
 
         # t = self.do_456_freq_sweep(t, self.CONST_DEFAULT_DETUNING_456)
