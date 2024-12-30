@@ -1566,7 +1566,7 @@ class RydSequence(TweezerSequence):
         t += 3e-3
 
         t, t_aom_off = self.pump_to_F4(
-            t, shot_globals.op_label, close_all_shutters=False
+            t, shot_globals.op_label, close_all_shutters=True
         )
         t += 5e-3
 
@@ -1595,15 +1595,28 @@ class RydSequence(TweezerSequence):
             # dur=shot_globals.mw_bias_ramp_dur,
         )
 
+        t += 10e-3
 
+        # Apply repump pulse
+        # t, t_aom_start = self.D2Lasers_obj.do_pulse(
+        #     t,
+        #     shot_globals.ryd_456_duration,
+        #     ShutterConfig.OPTICAL_PUMPING_REPUMP,
+        #     0,
+        #     shot_globals.ryd_456_repump_power,
+        #     close_all_shutters=True,
+        # )
         # Apply Rydberg pulse with only 456 active
+
         t = self.RydLasers_obj.do_rydberg_pulse(
-            t, # synchronize with repump pulse
+            t, #t_aom_start, # synchronize with repump pulse
             dur=shot_globals.ryd_456_duration,
             power_456=shot_globals.ryd_456_power,
             power_1064=0,
             close_shutter=True  # Close shutter after pulse to prevent any residual light
         )
+
+        t += 10e-3
 
         if shot_globals.do_killing_pulse:
             t, _ = self.kill_F4(

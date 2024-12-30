@@ -824,8 +824,8 @@ class RydLasers:
     )
 
     CONST_MIN_FREQ_STEP = 2 # MHz
-    CONST_MIN_T_STEP = 10e-6 # 10us
-    CONST_DEFAULT_DETUNING_456 = 350 #MHz
+    CONST_MIN_T_STEP = 100e-6 # 10us
+    CONST_DEFAULT_DETUNING_456 = 600 #MHz
 
 
     def __init__(self, t):
@@ -841,7 +841,7 @@ class RydLasers:
         self.servo_1064_intensity_keep_on(t)
         # Initialize 456nm laser detuning
         # the initial detuning every ramp start and end to
-        self.detuning_456 = self.CONST_DEFAULT_DETUNING_456 #MHz shot_globals.ryd_456_detuning
+        self.detuning_456 = shot_globals.ryd_456_detuning #self.CONST_DEFAULT_DETUNING_456 #MHz
         devices.dds1.synthesize(t, freq = self.detuning_456, amp = 0.5, ph = 0)
         # Initialize shutter state
         self.shutter_open = False
@@ -870,11 +870,12 @@ class RydLasers:
         if start_freq == end_freq:
             return t
 
-        num_steps = (start_freq - end_freq)/self.CONST_MIN_FREQ_STEP
-        freq_step = (start_freq - end_freq)/num_steps
+        num_steps = 4 #int(np.abs(start_freq - end_freq)/self.CONST_MIN_FREQ_STEP)
         dur = num_steps*self.CONST_MIN_T_STEP
-        for t_step in np.linspace(t - dur, t, num_steps):
-            devices.dds1.synthesize(t_step, freq = freq_step, amp = 0.5, ph = 0)
+        t_step = np.linspace(t - dur, t, num_steps)
+        freq_step = np.linspace(start_freq, end_freq, num_steps)
+        for i in np.arange(num_steps):
+            devices.dds1.synthesize(t_step[i], freq = freq_step[i], amp = 0.5, ph = 0)
 
         self.detuning_456 = end_freq
         return t
@@ -1049,7 +1050,7 @@ class RydLasers:
         Returns:
             tuple[float]: (End time after pulse and shutter operations)
         """
-        t = self.do_456_freq_sweep(t, shot_globals.ryd_456_detuning)
+        # t = self.do_456_freq_sweep(t, shot_globals.ryd_456_detuning)
 
         if not self.shutter_open:
             devices.blue_456_shutter.open(t) # shutter fully open
@@ -1076,7 +1077,7 @@ class RydLasers:
             self.shutter_open = False
             self.pulse_456_aom_on(t, 1)
 
-        t = self.do_456_freq_sweep(t, self.CONST_DEFAULT_DETUNING_456)
+        # t = self.do_456_freq_sweep(t, self.CONST_DEFAULT_DETUNING_456)
 
         return t
 
