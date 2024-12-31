@@ -1029,6 +1029,10 @@ class RydLasers:
         devices.mirror_1064_2_v.constant(t, shot_globals.ryd_1064_mirror_2_v)
 
     def update_blue_456_shutter(self, t, config):
+        """ perform the shutter update for the 456nm laser
+        This help tracks when the last time the shutter is closed and open
+        make sure to add the minium time for the shutter open and close
+        before turn the aom back on for thermalization"""
         if config == "open":
             # if the last shutter is closed and now needs to be opened, open it after CONST_MIN_SHUTTER_OFF_TIME
             if t - self.last_shutter_close_t < self.CONST_MIN_SHUTTER_OFF_TIME:
@@ -1097,6 +1101,7 @@ class RydLasers:
         if close_shutter:
             t = self.update_blue_456_shutter(t,"close")
             self.pulse_456_aom_on(t, 1)
+            self.pulse_1064_aom_on(t,1)
 
         # t = self.do_456_freq_sweep(t, self.CONST_DEFAULT_DETUNING_456)
 

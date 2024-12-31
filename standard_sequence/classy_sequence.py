@@ -1598,18 +1598,18 @@ class RydSequence(TweezerSequence):
         t += 10e-3
 
         # Apply repump pulse
-        t, t_aom_start = self.D2Lasers_obj.do_pulse(
-            t,
-            shot_globals.ryd_456_duration,
-            ShutterConfig.OPTICAL_PUMPING_REPUMP,
-            0,
-            shot_globals.ryd_456_repump_power,
-            close_all_shutters=True,
-        )
+        # t, t_aom_start = self.D2Lasers_obj.do_pulse(
+        #     t,
+        #     shot_globals.ryd_456_duration,
+        #     ShutterConfig.OPTICAL_PUMPING_REPUMP,
+        #     0,
+        #     shot_globals.ryd_456_repump_power,
+        #     close_all_shutters=True,
+        # )
         # Apply Rydberg pulse with only 456 active
 
         t = self.RydLasers_obj.do_rydberg_pulse(
-            t_aom_start, #t, # synchronize with repump pulse
+            t, #t_aom_start synchronize with repump pulse
             dur=shot_globals.ryd_456_duration,
             power_456=shot_globals.ryd_456_power,
             power_1064=0,
@@ -1636,7 +1636,48 @@ class RydSequence(TweezerSequence):
 
         return t
 
+    def _do_1064_check_sequence(self, t):
+        """Perform a Rydberg excitation check sequence.
 
+        Executes a sequence to verify Rydberg excitation:
+        1. Load atoms into tweezers
+        2. Take first image
+        3. Apply Rydberg excitation pulse
+        4. Take second image to check for atom loss
+        5. Reset MOT parameters
+
+        Args:
+            t (float): Start time for the sequence
+
+        Returns:
+            float: End time of the sequence
+        """
+        t = self.load_tweezers(t)
+        t = self.image_tweezers(t, shot_number=1)
+
+        # Apply repump pulse
+        t, t_aom_start = self.D2Lasers_obj.do_pulse(
+            t,
+            shot_globals.ryd_456_duration,
+            ShutterConfig.OPTICAL_PUMPING_REPUMP,
+            0,
+            shot_globals.ryd_456_repump_power,
+            close_all_shutters=True,
+        )
+        # Apply Rydberg pulse with only 456 active
+        t = self.RydLasers_obj.do_rydberg_pulse(
+            t_aom_start, # synchronize with repump pulse
+            dur=shot_globals.ryd_456_duration,
+            power_456=shot_globals.ryd_456_power,
+            power_1064=shot_globals.ryd_1064_power,
+            close_shutter=True  # Close shutter after pulse to prevent any residual light
+        )
+
+        t += shot_globals.img_wait_time_between_shots
+        t = self.image_tweezers(t, shot_number=2)
+        t = self.reset_mot(t)
+
+        return t
 
 # Full Sequences, we'll see if we really want all these in a class or just separate sequence files?
 class ScienceSequence(RydSequence):
