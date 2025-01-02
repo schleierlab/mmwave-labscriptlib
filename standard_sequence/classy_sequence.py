@@ -1767,6 +1767,11 @@ if __name__ == "__main__":
         else:
             raise NotImplementedError
 
+    elif shot_globals.do_1064_check:
+        RydSequence_obj = RydSequence(t)
+        sequence_objects.append(RydSequence_obj)
+        t = RydSequence_obj._do_1064_check_sequence(t)
+
     # if shot_globals.do_optical_pump_in_microtrap_check:
     #     t = do_optical_pump_in_microtrap_check(t)
 

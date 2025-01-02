@@ -1084,13 +1084,13 @@ class RydLasers:
             t = self.update_blue_456_shutter(t,"open")
             # Turn off AOMs while waiting for shutter to fully open
             self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
-            self.pulse_1064_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
+            if power_1064 != 0:
+                self.pulse_1064_aom_on(t- self.CONST_SHUTTER_TURN_ON_TIME, power_1064)
 
         # Turn on AOMs with specified powers
         if power_456 != 0:
             self.pulse_456_aom_on(t, power_456)
-        if power_1064 != 0:
-            self.pulse_1064_aom_on(t, power_1064)
+
 
         t += dur
 
@@ -1101,7 +1101,7 @@ class RydLasers:
         if close_shutter:
             t = self.update_blue_456_shutter(t,"close")
             self.pulse_456_aom_on(t, 1)
-            self.pulse_1064_aom_on(t,1)
+            # self.pulse_1064_aom_on(t,1)
 
         # t = self.do_456_freq_sweep(t, self.CONST_DEFAULT_DETUNING_456)
 
