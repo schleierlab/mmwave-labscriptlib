@@ -1785,15 +1785,12 @@ class RydSequence(TweezerSequence):
 
         if shot_globals.do_mw_pulse:
             # self.TweezerLaser_obj.aom_off(t)
-            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+            t, t_1st_end = self.Microwave_obj.do_ramsey_pulse(t, shot_globals.mw_time, shot_globals.ryd_456_duration)
 
-        t = self.RydLasers_obj.do_rydberg_pulse(
-            t, #synchronize with repump pulse
-            dur=shot_globals.ryd_456_duration,
-            power_456=0,
-            power_1064=shot_globals.ryd_1064_power,
-            close_shutter=True  # Close shutter after pulse to prevent any residual light
-        )
+        # insert a 1064 pulse between two microwave pulse that has the same phase, make sure the pulse start the end of the 1st pulse
+        self.RydLasers_obj.pulse_1064_aom_on(t_1st_end, shot_globals.ryd_1064_power)
+        t = t_1st_end + shot_globals.ryd_456_duration
+        self.RydLasers_obj.pulse_1064_aom_off(t)
 
         t += 10e-3
 

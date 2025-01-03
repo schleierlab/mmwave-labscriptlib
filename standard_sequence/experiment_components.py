@@ -748,6 +748,48 @@ class Microwave:
 
         return t
 
+    def do_ramsey_pulse(self, t, dur, dur_between_pulse):
+        """Generate a single-frequency microwave pulse.
+
+        Produces a microwave pulse at the current detuning frequency with specified duration.
+        Handles timing offsets and switch control automatically.
+
+        Args:
+            t (float): Start time for the pulse
+            dur (float): Duration of the pulse
+
+        Returns:
+            float: End time after the pulse is complete
+        """
+        t += self.CONST_SPECTRUM_CARD_OFFSET
+        devices.uwave_absorp_switch.go_high(t)
+        self.uwave_absorp_switch_on = True
+
+        total_dur = dur + dur_between_pulse
+        devices.spectrum_uwave.single_freq(
+            t - self.CONST_SPECTRUM_CARD_OFFSET,
+            duration=total_dur,
+            freq=spec_freq_calib(self.mw_detuning),
+            amplitude=0.99,  # the amplitude can not be 1 due to the bug in spectrum card server
+            phase=0,  # initial phase = 0
+            ch=0,  # using channel 0
+            loops=1,  # doing 1 loop
+        )
+
+        t += dur/2
+        devices.uwave_absorp_switch.go_low(t)
+
+        t_1st_end = t
+
+        t += dur_between_pulse
+        devices.uwave_absorp_switch.go_high(t)
+
+        t += dur/2
+        devices.uwave_absorp_switch.go_low(t)
+        self.uwave_absorp_switch_on = False
+
+        return t, t_1st_end
+
     def do_sweep(self, t, start_freq, end_freq, dur):
         """Perform a frequency sweep of the microwave signal.
 
