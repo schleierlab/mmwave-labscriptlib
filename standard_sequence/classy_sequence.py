@@ -1691,21 +1691,107 @@ class RydSequence(TweezerSequence):
         t += 10e-3
 
         # Apply repump pulse
-        # t, t_aom_start = self.D2Lasers_obj.do_pulse(
-        #     t,
-        #     shot_globals.ryd_456_duration,
-        #     ShutterConfig.OPTICAL_PUMPING_REPUMP,
-        #     0,
-        #     shot_globals.ryd_456_repump_power,
-        #     close_all_shutters=True,
-        # )
-        # Apply Rydberg pulse with only 456 active
+        t, t_aom_start = self.D2Lasers_obj.do_pulse(
+            t,
+            shot_globals.ryd_456_duration,
+            ShutterConfig.OPTICAL_PUMPING_REPUMP,
+            0,
+            shot_globals.ryd_456_repump_power,
+            close_all_shutters=True,
+        )
+        # Apply Rydberg pulse with both 456 and 1064 active
 
         t = self.RydLasers_obj.do_rydberg_pulse(
-            t, #t_aom_start synchronize with repump pulse
+            t_aom_start, #t, synchronize with repump pulse
             dur=shot_globals.ryd_456_duration,
             power_456=shot_globals.ryd_456_power,
-            power_1064=shot_globals.ryb_1064_power,
+            power_1064=shot_globals.ryd_1064_power,
+            close_shutter=True  # Close shutter after pulse to prevent any residual light
+        )
+
+        t += 10e-3
+
+        if shot_globals.do_killing_pulse:
+            t, _ = self.kill_F4(
+                t, close_all_shutters=True
+            )
+            # t, _ = self.kill_F4(
+            #     t - D2Lasers.CONST_SHUTTER_TURN_ON_TIME, close_all_shutters=False
+            # )
+        else:
+            t += shot_globals.op_killing_pulse_time
+
+        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
+
+        t += shot_globals.img_wait_time_between_shots
+        t = self.image_tweezers(t, shot_number=2)
+        t = self.reset_mot(t)
+
+        return t
+
+    def _do_1064_light_shift_check_sequence(self, t):
+        """Perform a Rydberg excitation check sequence.
+
+        Executes a sequence to verify Rydberg excitation:
+        1. Load atoms into tweezers
+        2. Take first image
+        3. Apply Rydberg excitation pulse
+        4. Take second image to check for atom loss
+        5. Reset MOT parameters
+
+        Args:
+            t (float): Start time for the sequence
+
+        Returns:
+            float: End time of the sequence
+        """
+
+        t = self.load_tweezers(t)
+        t = self.image_tweezers(t, shot_number=1)
+
+        t += 3e-3
+
+        t, t_aom_off = self.pump_to_F4(
+            t, shot_globals.op_label, close_all_shutters=True
+        )
+        t += 5e-3
+
+        # Making sure the ramp ends right as the pumping is starting
+        t_start_ramp = (
+            t_aom_off - shot_globals.tw_ramp_dur - shot_globals.op_repump_time
+        )
+
+        # ramp down the tweezer power before optical pumping
+        t = self.TweezerLaser_obj.ramp_power(
+            t_start_ramp, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power
+        )
+
+
+        mw_biasx_field, mw_biasy_field, mw_biasz_field = (
+            self.BField_obj.convert_bias_fields_sph_to_cart(
+                shot_globals.mw_bias_amp,
+                shot_globals.mw_bias_phi,
+                shot_globals.mw_bias_theta,
+            )
+        )
+
+        t = self.BField_obj.ramp_bias_field(
+            t, # extra time to wait for 5e-3s extra time in optical pumping field
+            bias_field_vector=(mw_biasx_field, mw_biasy_field, mw_biasz_field),
+            # dur=shot_globals.mw_bias_ramp_dur,
+        )
+
+        t += 10e-3
+
+        if shot_globals.do_mw_pulse:
+            # self.TweezerLaser_obj.aom_off(t)
+            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+
+        t = self.RydLasers_obj.do_rydberg_pulse(
+            t, #synchronize with repump pulse
+            dur=shot_globals.ryd_456_duration,
+            power_456=0,
+            power_1064=shot_globals.ryd_1064_power,
             close_shutter=True  # Close shutter after pulse to prevent any residual light
         )
 
@@ -1821,6 +1907,11 @@ if __name__ == "__main__":
         RydSequence_obj = RydSequence(t)
         sequence_objects.append(RydSequence_obj)
         t = RydSequence_obj._do_1064_check_sequence(t)
+
+    elif shot_globals.do_1064_light_shift_check:
+        RydSequence_obj = RydSequence(t)
+        sequence_objects.append(RydSequence_obj)
+        t = RydSequence_obj._do_1064_light_shift_check_sequence(t)
 
     # if shot_globals.do_optical_pump_in_microtrap_check:
     #     t = do_optical_pump_in_microtrap_check(t)

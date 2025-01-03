@@ -877,7 +877,7 @@ class RydLasers:
         t_step = np.linspace(t - dur, t, num_steps)
         freq_step = np.linspace(start_freq, end_freq, num_steps)
         for i in np.arange(num_steps):
-            devices.dds1.synthesize(t_step[i], freq = freq_step[i], amp = 0.5, ph = 0)
+            devices.dds1.synthesize(t_step[i], freq = freq_step[i], amp = 0.7, ph = 0)
 
         self.detuning_456 = end_freq
         return t
@@ -1081,7 +1081,8 @@ class RydLasers:
         # t = self.do_456_freq_sweep(t, shot_globals.ryd_456_detuning)
 
         if not self.shutter_open:
-            t = self.update_blue_456_shutter(t,"open")
+            if power_456 != 0:
+                t = self.update_blue_456_shutter(t,"open")
             # Turn off AOMs while waiting for shutter to fully open
             self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
             if power_1064 != 0:
@@ -1099,7 +1100,8 @@ class RydLasers:
         self.pulse_1064_aom_off(t)
 
         if close_shutter:
-            t = self.update_blue_456_shutter(t,"close")
+            if power_456 != 0:
+                t = self.update_blue_456_shutter(t,"close")
             self.pulse_456_aom_on(t, 1)
             # self.pulse_1064_aom_on(t,1)
 
