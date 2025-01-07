@@ -1504,11 +1504,21 @@ class RydSequence(TweezerSequence):
 
         t = self.do_mot(t, dur=0.5)
         self.RydLasers_obj.pulse_1064_aom_on(0.1, 1)
+        self.TweezerLaser_obj.aom_off(0.1)
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
 
         t += 1e-3
+                # Apply repump pulse
+        t, t_aom_start = self.D2Lasers_obj.do_pulse(
+            t,
+            shot_globals.ryd_456_duration,
+            ShutterConfig.OPTICAL_PUMPING_REPUMP,
+            0,
+            shot_globals.ryd_456_repump_power,
+            close_all_shutters=True,
+        )
         t = self.RydLasers_obj.do_456_pulse(
-            t, # synchronize with repump pulse
+            t_aom_start, # synchronize with repump pulse
             dur=shot_globals.ryd_456_duration,
             power_456=shot_globals.ryd_456_power,
             close_shutter=True  # Close shutter after pulse to prevent any residual light
@@ -1525,7 +1535,22 @@ class RydSequence(TweezerSequence):
             close_all_shutters=False,
         )
 
+        self.RydLasers_obj.pulse_1064_aom_off(t)
+
+        t+= 1e-1
+        # Background image
+        t = self.do_molasses_dipole_trap_imaging(
+            t,
+            ta_power=shot_globals.dp_img_ta_power,
+            ta_detuning = shot_globals.dp_img_ta_detuning,
+            repump_power=shot_globals.dp_img_repump_power,
+            do_repump=True,
+            exposure_time=shot_globals.dp_img_exposure_time,
+            close_all_shutters=False,
+        )
         t = self.reset_mot(t)
+
+        return t
 
 
     def _do_456_check_sequence(self, t):
@@ -1902,7 +1927,7 @@ if __name__ == "__main__":
         sequence_objects.append(RydSequence_obj)
         t = RydSequence_obj._do_456_check_sequence(t)
 
-    elif shot_globals._do_dipole_trap_sequence:
+    elif shot_globals.do_dipole_trap_check:
         RydSequence_obj = RydSequence(t)
         sequence_objects.append(RydSequence_obj)
         t = RydSequence_obj._do_dipole_trap_sequence(t)
