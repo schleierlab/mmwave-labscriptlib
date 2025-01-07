@@ -314,6 +314,7 @@ class MOTSequence:
         self,
         t,
         ta_power=1,
+        ta_detuning = 0,
         repump_power=1,
         do_repump=True,
         exposure_time=shot_globals.bm_exposure_time,
@@ -339,7 +340,7 @@ class MOTSequence:
         _ = self.BField_obj.ramp_bias_field(t, bias_field_vector=(0, 0, 0))
 
         # Ramp to imaging frequencies
-        self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
+        self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, ta_detuning)
         self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
         t += D2Lasers.CONST_TA_VCO_RAMP_TIME
 
@@ -1499,6 +1500,34 @@ class RydSequence(TweezerSequence):
         super(RydSequence, self).__init__(t)
         self.RydLasers_obj = RydLasers(t)
 
+    def _do_dipole_trap_sequence(self, t):
+
+        t = self.do_mot(t, dur=0.5)
+        self.RydLasers_obj.pulse_1064_aom_on(0.1, 1)
+        t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
+
+        t += 1e-3
+        t = self.RydLasers_obj.do_456_pulse(
+            t, # synchronize with repump pulse
+            dur=shot_globals.ryd_456_duration,
+            power_456=shot_globals.ryd_456_power,
+            close_shutter=True  # Close shutter after pulse to prevent any residual light
+        )
+
+        t += shot_globals.dp_img_tof_imaging_delay
+        t = self.do_molasses_dipole_trap_imaging(
+            t,
+            ta_power=shot_globals.dp_img_ta_power,
+            ta_detuning = shot_globals.dp_img_ta_detuning,
+            repump_power=shot_globals.dp_img_repump_power,
+            do_repump=True,
+            exposure_time=shot_globals.dp_img_exposure_time,
+            close_all_shutters=False,
+        )
+
+        t = self.reset_mot(t)
+
+
     def _do_456_check_sequence(self, t):
         """Perform a Rydberg excitation check sequence.
 
@@ -1872,6 +1901,11 @@ if __name__ == "__main__":
         RydSequence_obj = RydSequence(t)
         sequence_objects.append(RydSequence_obj)
         t = RydSequence_obj._do_456_check_sequence(t)
+
+    elif shot_globals._do_dipole_trap_sequence:
+        RydSequence_obj = RydSequence(t)
+        sequence_objects.append(RydSequence_obj)
+        t = RydSequence_obj._do_dipole_trap_sequence(t)
 
     # if shot_globals.do_tweezer_check_fifo:
     #     t = do_tweezer_check_fifo(t)

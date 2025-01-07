@@ -779,8 +779,6 @@ class Microwave:
         t += dur/2
         devices.uwave_absorp_switch.go_low(t)
 
-        t_1st_end = t
-
         t += dur_between_pulse
         devices.uwave_absorp_switch.go_high(t)
 
@@ -788,7 +786,7 @@ class Microwave:
         devices.uwave_absorp_switch.go_low(t)
         self.uwave_absorp_switch_on = False
 
-        return t, t_1st_end
+        return t
 
     def do_sweep(self, t, start_freq, end_freq, dur):
         """Perform a frequency sweep of the microwave signal.
@@ -1093,7 +1091,53 @@ class RydLasers:
             self.shutter_open = False
             return t
 
+    def do_456_pulse(self, t, dur, power_456, close_shutter=False):
+        """Perform a Rydberg excitation pulse with specified parameters.
 
+        Executes a laser pulse by configuring the shutter and AOM powers for both 456nm and 1064nm lasers.
+        The servo AOMs remain unchanged during the pulse.
+
+        # TODO: Check that this explanation is clear, @Sam, @Lin, @Michelle.
+        Note that this routine is a little different from the D2Lasers do_pulse routine.
+        In D2Lasers do_pulse, there is automatic time added if shutters need to be changed,
+        so the input t is not necessarily the start time of the pulse. In contrast, here, t
+        is the start time of the pulse, and the shutter is opened in time for the
+        start of the pulse.
+
+        Args:
+            t (float): Start time for the aom part of the pulse
+            dur (float): Duration of the pulse
+            power_456 (float): Power level for the 456nm beam (0 to 1)
+            power_1064 (float): Power level for the 1064nm beam (0 to 1)
+            close_shutter (bool, optional): Whether to close shutter after pulse. Defaults to False.
+
+        Returns:
+            tuple[float]: (End time after pulse and shutter operations)
+        """
+        # t = self.do_456_freq_sweep(t, shot_globals.ryd_456_detuning)
+
+        if not self.shutter_open:
+            if power_456 != 0:
+                t = self.update_blue_456_shutter(t,"open")
+            # Turn off AOMs while waiting for shutter to fully open
+            self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
+
+        # Turn on AOMs with specified powers
+        if power_456 != 0:
+            self.pulse_456_aom_on(t, power_456)
+
+
+        t += dur
+
+        # Turn off AOMs at the end of the pulse
+        self.pulse_456_aom_off(t)
+
+        if close_shutter:
+            if power_456 != 0:
+                t = self.update_blue_456_shutter(t,"close")
+            self.pulse_456_aom_on(t, 1)
+
+        return t
 
 
 
