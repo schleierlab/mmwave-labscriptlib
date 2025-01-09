@@ -1512,21 +1512,24 @@ class RydSequence(TweezerSequence):
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
 
         t += 1e-3
-        #Apply repump pulse
-        t, t_aom_start = self.D2Lasers_obj.do_pulse(
-            t,
-            shot_globals.ryd_456_duration,
-            ShutterConfig.OPTICAL_PUMPING_REPUMP,
-            0,
-            shot_globals.ryd_456_repump_power,
-            close_all_shutters=True,
-        )
-        t = self.RydLasers_obj.do_456_pulse(
-            t_aom_start, # synchronize with repump pulse
-            dur=shot_globals.ryd_456_duration,
-            power_456=shot_globals.ryd_456_power,
-            close_shutter=True  # Close shutter after pulse to prevent any residual light
-        )
+        if shot_globals.do_blue_kill:
+            #Apply repump pulse
+            t, t_aom_start = self.D2Lasers_obj.do_pulse(
+                t,
+                shot_globals.ryd_456_duration,
+                ShutterConfig.OPTICAL_PUMPING_REPUMP,
+                0,
+                shot_globals.ryd_456_repump_power,
+                close_all_shutters=True,
+            )
+            t = self.RydLasers_obj.do_456_pulse(
+                t_aom_start, # synchronize with repump pulse
+                dur=shot_globals.ryd_456_duration,
+                power_456=shot_globals.ryd_456_power,
+                close_shutter=True  # Close shutter after pulse to prevent any residual light
+            )
+        else:
+            t += shot_globals.ryd_456_duration
 
         t += shot_globals.dp_img_tof_imaging_delay
         t = self.do_molasses_dipole_trap_imaging(
