@@ -1503,12 +1503,16 @@ class RydSequence(TweezerSequence):
     def _do_dipole_trap_sequence(self, t):
 
         t = self.do_mot(t, dur=0.5)
-        self.RydLasers_obj.pulse_1064_aom_on(0.1, 1)
-        self.TweezerLaser_obj.aom_off(0.1)
+        if shot_globals.do_dipole_trap:
+            self.RydLasers_obj.pulse_1064_aom_on(0.1, 1)
+        else:
+            self.RydLasers_obj.pulse_1064_aom_off(0.1)
+        if not shot_globals.do_tweezers:
+            self.TweezerLaser_obj.aom_off(0.1)
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
 
         t += 1e-3
-                # Apply repump pulse
+        #Apply repump pulse
         t, t_aom_start = self.D2Lasers_obj.do_pulse(
             t,
             shot_globals.ryd_456_duration,
@@ -1535,7 +1539,7 @@ class RydSequence(TweezerSequence):
             close_all_shutters=False,
         )
 
-        self.RydLasers_obj.pulse_1064_aom_off(t)
+        # self.RydLasers_obj.pulse_1064_aom_off(t)
 
         t+= 1e-1
         # Background image
