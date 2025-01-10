@@ -1528,6 +1528,13 @@ class RydSequence(TweezerSequence):
                 power_456=shot_globals.ryd_456_power,
                 close_shutter=True  # Close shutter after pulse to prevent any residual light
             )
+        elif shot_globals.do_ryd_2_photon:
+            t = self.RydLasers_obj.do_456_pulse(
+                t_aom_start, # synchronize with repump pulse
+                dur=shot_globals.ryd_456_duration,
+                power_456=shot_globals.ryd_456_power,
+                close_shutter=True  # Close shutter after pulse to prevent any residual light
+            )
         else:
             t += shot_globals.ryd_456_duration
 
