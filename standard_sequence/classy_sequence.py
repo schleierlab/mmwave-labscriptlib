@@ -1159,6 +1159,37 @@ class TweezerSequence(OpticalPumpingSequence):
 
         return t
 
+    def pump_then_rotate(self, t, B_field):
+        """Pumps to stretched state then rotates the field
+        Also lowers the trap, but doesn't raise it back.
+
+        Args:
+            t (float): Start time (modulo shutter handling)
+            B_field (tuple): Final B field. Must be in cartesian form
+        """
+
+        t, t_aom_off = self.pump_to_F4(
+            t, shot_globals.op_label, close_all_shutters=True
+        )
+
+        # Making sure the ramp ends right as the pumping is starting
+        t_start_ramp = (
+            t_aom_off - shot_globals.tw_ramp_dur - shot_globals.op_repump_time
+        )
+
+        # ramp down the tweezer power before optical pumping
+        _ = self.TweezerLaser_obj.ramp_power(
+            t_start_ramp, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power
+        )
+
+        t = self.BField_obj.ramp_bias_field(
+            t, # extra time to wait for 5e-3s extra time in optical pumping field
+            bias_field_vector=B_field,
+            # dur=shot_globals.mw_bias_ramp_dur,
+        )
+
+        return t
+
     def _do_tweezer_check_sequence(self, t):
         """Perform a basic tweezer loading and imaging check sequence.
 
@@ -1566,6 +1597,55 @@ class RydSequence(TweezerSequence):
 
         return t
 
+    def _do_ryd_check_sequence(self, t):
+        """Perform a Rydberg excitation check sequence.
+
+        Executes a sequence to verify Rydberg excitation:
+        1. Load atoms into tweezers
+        2. Take first image
+        3. Apply Rydberg excitation pulse
+        4. Take second image to check for atom loss
+        5. Reset MOT parameters
+
+        Args:
+            t (float): Start time for the sequence
+
+        Returns:
+            float: End time of the sequence
+        """
+        t = self.load_tweezers(t)
+        t = self.image_tweezers(t, shot_number=1)
+
+        t += 1e-3
+
+        B_field = (
+            self.BField_obj.convert_bias_fields_sph_to_cart(
+                shot_globals.ryd_bias_amp,
+                shot_globals.ryd_bias_phi,
+                shot_globals.ryd_bias_theta,
+            )
+        )
+
+        t = self.pump_then_rotate(t, B_field) # trap is lowered when optical pump happens
+
+        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
+        # Apply Rydberg pulse with both 456 and 1064 active
+        t = self.RydLasers_obj.do_rydberg_pulse(
+            t,
+            dur=shot_globals.ryd_456_duration,
+            power_456=shot_globals.ryd_456_power,
+            power_1064=shot_globals.ryd_1064_power,
+            close_shutter=True  # Close shutter after pulse to prevent any residual light
+        )
+
+        # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
+        t += 2e-3  # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
+        # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
+        t += shot_globals.img_wait_time_between_shots
+        t = self.image_tweezers(t, shot_number=2)
+        t = self.reset_mot(t)
+
+        return t
 
     def _do_456_check_sequence(self, t):
         """Perform a Rydberg excitation check sequence.
@@ -1935,6 +2015,11 @@ if __name__ == "__main__":
         TweezerSequence_obj = TweezerSequence(t)
         sequence_objects.append(TweezerSequence_obj)
         t = TweezerSequence_obj._do_tweezer_check_sequence(t)
+
+    elif shot_globals.do_ryd_tweezer_check:
+        RydSequence_obj = RydSequence(t)
+        sequence_objects.append(RydSequence_obj)
+        t = RydSequence_obj._do_ryd_check_sequence(t)
 
     elif shot_globals.do_456_check:
         RydSequence_obj = RydSequence(t)
