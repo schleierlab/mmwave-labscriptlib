@@ -7,7 +7,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>API Documentation &mdash; mmwave-labscript  documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
@@ -61,12 +61,16 @@
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.OpticalPumpingSequence.pump_to_F4"><code class="docutils literal notranslate"><span class="pre">OpticalPumpingSequence.pump_to_F4()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#standard_sequence.classy_sequence.RydSequence"><code class="docutils literal notranslate"><span class="pre">RydSequence</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#standard_sequence.classy_sequence.RydSequence"><code class="docutils literal notranslate"><span class="pre">RydSequence</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.RydSequence.pulsed_rydberg_excitation"><code class="docutils literal notranslate"><span class="pre">RydSequence.pulsed_rydberg_excitation()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#standard_sequence.classy_sequence.ScienceSequence"><code class="docutils literal notranslate"><span class="pre">ScienceSequence</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#standard_sequence.classy_sequence.TweezerSequence"><code class="docutils literal notranslate"><span class="pre">TweezerSequence</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.TweezerSequence.do_tweezer_imaging"><code class="docutils literal notranslate"><span class="pre">TweezerSequence.do_tweezer_imaging()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.TweezerSequence.image_tweezers"><code class="docutils literal notranslate"><span class="pre">TweezerSequence.image_tweezers()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.TweezerSequence.load_tweezers"><code class="docutils literal notranslate"><span class="pre">TweezerSequence.load_tweezers()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.TweezerSequence.pump_then_rotate"><code class="docutils literal notranslate"><span class="pre">TweezerSequence.pump_then_rotate()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.TweezerSequence.ramp_to_imaging_parameters"><code class="docutils literal notranslate"><span class="pre">TweezerSequence.ramp_to_imaging_parameters()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.TweezerSequence.rearrange_to_dense"><code class="docutils literal notranslate"><span class="pre">TweezerSequence.rearrange_to_dense()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#standard_sequence.classy_sequence.TweezerSequence.tweezer_modulation"><code class="docutils literal notranslate"><span class="pre">TweezerSequence.tweezer_modulation()</span></code></a></li>
@@ -139,7 +143,7 @@ configurations.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.MOTSequence.do_molasses_dipole_trap_imaging">
-<span class="sig-name descname"><span class="pre">do_molasses_dipole_trap_imaging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ta_power</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repump_power</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_repump</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exposure_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">labscriptlib.shot_globals.shot_globals.bm_exposure_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close_all_shutters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#MOTSequence.do_molasses_dipole_trap_imaging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.MOTSequence.do_molasses_dipole_trap_imaging" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">do_molasses_dipole_trap_imaging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ta_power</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ta_detuning</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repump_power</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_repump</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exposure_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">labscriptlib.shot_globals.shot_globals.bm_exposure_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close_all_shutters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#MOTSequence.do_molasses_dipole_trap_imaging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.MOTSequence.do_molasses_dipole_trap_imaging" title="Link to this definition"></a></dt>
 <dd><p>Capture an image of the molasses or the dipole trap.</p>
 <p>Configures imaging parameters and captures an image of the molasses or the
 dipole trap using the camera system.</p>
@@ -382,6 +386,11 @@ the sequence. Defaults to True.</p></li>
 <dt class="sig sig-object py" id="standard_sequence.classy_sequence.RydSequence">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">standard_sequence.classy_sequence.</span></span><span class="sig-name descname"><span class="pre">RydSequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#RydSequence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.RydSequence" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#standard_sequence.classy_sequence.TweezerSequence" title="standard_sequence.classy_sequence.TweezerSequence"><code class="xref py py-class docutils literal notranslate"><span class="pre">TweezerSequence</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="standard_sequence.classy_sequence.RydSequence.pulsed_rydberg_excitation">
+<span class="sig-name descname"><span class="pre">pulsed_rydberg_excitation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_pulses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pulse_dur</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pulse_wait_dur</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">power_456</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">power_1064</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">just_456</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close_shutter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#RydSequence.pulsed_rydberg_excitation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.RydSequence.pulsed_rydberg_excitation" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -470,6 +479,21 @@ camera readout and shutter operations.</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>AssertionError</strong> – If time-of-flight delay is too short</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="standard_sequence.classy_sequence.TweezerSequence.pump_then_rotate">
+<span class="sig-name descname"><span class="pre">pump_then_rotate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">B_field</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/standard_sequence/classy_sequence.html#TweezerSequence.pump_then_rotate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#standard_sequence.classy_sequence.TweezerSequence.pump_then_rotate" title="Link to this definition"></a></dt>
+<dd><p>Pumps to stretched state then rotates the field
+Also lowers the trap, but doesn’t raise it back.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t</strong> (<em>float</em>) – Start time (modulo shutter handling)</p></li>
+<li><p><strong>B_field</strong> (<em>tuple</em>) – Final B field. Must be in cartesian form</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
