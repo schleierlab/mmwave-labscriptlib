@@ -586,7 +586,7 @@ class TweezerLaser:
         """keep the AOM digital high for intensity servo"""
         self.aom_on(t, 1)
 
-    def aom_on(self, t, const):
+    def aom_on(self, t, const, digital_only = False):
         """Turn on the tweezer beam using AOM.
 
         Args:
@@ -595,10 +595,11 @@ class TweezerLaser:
         """
         """Turn on the tweezer beam using aom"""
         devices.tweezer_aom_digital.go_high(t)  # digital on
-        devices.tweezer_aom_analog.constant(t, const)  # analog on
-        self.tw_power = const
+        if not digital_only:
+            devices.tweezer_aom_analog.constant(t, const)  # analog on
+            self.tw_power = const
 
-    def aom_off(self, t):
+    def aom_off(self, t, digital_only = False):
         """Turn off the tweezer beam using AOM.
 
         Args:
@@ -606,8 +607,9 @@ class TweezerLaser:
         """
         """Turn off the tweezer beam using aom"""
         devices.tweezer_aom_digital.go_low(t)  # digital off
-        devices.tweezer_aom_analog.constant(t, 0)  # analog off
-        self.tw_power = 0
+        if not digital_only:
+            devices.tweezer_aom_analog.constant(t, 0)  # analog off
+            self.tw_power = 0
 
     def ramp_power(self, t, dur, final_power):
         """Ramp the tweezer power from current to final value.
@@ -961,7 +963,7 @@ class RydLasers:
         devices.servo_456_aom_analog.constant(t, 0)  # analog off
         self.power_456 = 0
 
-    def pulse_456_aom_on(self, t, const):
+    def pulse_456_aom_on(self, t, const, digital_only = False):
         """Turn on the 456nm laser pulse AOM.
 
         Args:
@@ -969,18 +971,20 @@ class RydLasers:
             const (float): Power level for the AOM
         """
         devices.pulse_456_aom_digital.go_high(t)  # digital on
-        devices.pulse_456_aom_analog.constant(t, const)  # analog to const
-        self.power_456 = const
+        if not digital_only:
+            devices.pulse_456_aom_analog.constant(t, const)  # analog to const
+            self.power_456 = const
 
-    def pulse_456_aom_off(self, t):
+    def pulse_456_aom_off(self, t, digital_only = False):
         """Turn off the 456nm laser pulse AOM.
 
         Args:
             t (float): Time to turn off the AOM
         """
         devices.pulse_456_aom_digital.go_low(t)  # digital off
-        devices.pulse_456_aom_analog.constant(t, 0)  # analog off
-        self.power_456 = 0
+        if not digital_only:
+            devices.pulse_456_aom_analog.constant(t, 0)  # analog off
+            self.power_456 = 0
 
     def servo_1064_aom_on(self, t, const):
         """Turn on the 1064nm laser servo AOM.
@@ -1003,7 +1007,7 @@ class RydLasers:
         devices.servo_1064_aom_analog.constant(t, 0)  # analog off
         self.power_1064 = 0
 
-    def pulse_1064_aom_on(self, t, const):
+    def pulse_1064_aom_on(self, t, const, digital_only = False):
         """Turn on the 1064nm laser pulse AOM.
 
         Args:
@@ -1011,18 +1015,20 @@ class RydLasers:
             const (float): Power level for the AOM
         """
         devices.pulse_1064_aom_digital.go_high(t)  # digital on
-        devices.pulse_1064_aom_analog.constant(t, const)  # analog to const
-        self.power_1064 = const
+        if not digital_only:
+            devices.pulse_1064_aom_analog.constant(t, const)  # analog to const
+            self.power_1064 = const
 
-    def pulse_1064_aom_off(self, t):
+    def pulse_1064_aom_off(self, t, digital_only = False):
         """Turn off the 1064nm laser pulse AOM.
 
         Args:
             t (float): Time to turn off the AOM
         """
         devices.pulse_1064_aom_digital.go_low(t)  # digital off
-        devices.pulse_1064_aom_analog.constant(t, 0)  # analog off
-        self.power_1064 = 0
+        if not digital_only:
+            devices.pulse_1064_aom_analog.constant(t, 0)  # analog off
+            self.power_1064 = 0
 
     def mirror_456_1_position(self, t):
         """Set the position of the first 456nm laser mirror.
@@ -1074,7 +1080,6 @@ class RydLasers:
         make sure to add the minium time for the shutter open and close
         before turn the aom back on for thermalization"""
         if config == "open":
-            # if the last shutter is closed and now needs to be opened, open it after CONST_MIN_SHUTTER_OFF_TIME
             if t - self.last_shutter_close_t < self.CONST_MIN_SHUTTER_OFF_TIME:
                 t = self.last_shutter_close_t + self.CONST_MIN_SHUTTER_OFF_TIME
             devices.blue_456_shutter.open(t) # shutter fully open
@@ -1082,7 +1087,6 @@ class RydLasers:
             self.shutter_open = True
             return t
         elif config == "close":
-            # if the last shutter is opened and now needs to be closed, close it after CONST_MIN_SHUTTER_ON_TIME
             if t - self.last_shutter_open_t  < self.CONST_MIN_SHUTTER_ON_TIME:
                 t = self.last_shutter_open_t + self.CONST_MIN_SHUTTER_ON_TIME
             self.last_shutter_close_t = t
@@ -1172,12 +1176,12 @@ class RydLasers:
             # Turn off AOMs while waiting for shutter to fully open
             self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
             if power_1064 != 0:
-                self.pulse_1064_aom_on(t- self.CONST_SHUTTER_TURN_ON_TIME, power_1064)
+                self.pulse_1064_aom_on(t , power_1064)
+                # self.pulse_1064_aom_on(t- self.CONST_SHUTTER_TURN_ON_TIME, power_1064)
 
         # Turn on AOMs with specified powers
         if power_456 != 0:
             self.pulse_456_aom_on(t, power_456)
-
 
         t += dur
 
@@ -1194,6 +1198,58 @@ class RydLasers:
         # t = self.do_456_freq_sweep(t, self.CONST_DEFAULT_DETUNING_456)
 
         return t
+
+    def do_rydberg_multipulses(self, t, n_pulses, pulse_dur, pulse_wait_dur, power_456, power_1064, just_456=False, close_shutter=False):
+
+        pulse_start_times = [t]
+        dur = n_pulses * pulse_dur + (n_pulses - 1) * pulse_wait_dur
+        print('total pulse dur:', dur)
+        t_end = self.do_rydberg_pulse(t, dur, power_456, power_1064, close_shutter = close_shutter)
+        print('1st pulse start time:', t)
+        t += pulse_dur # first pulse
+        print('2nd pulse start time:', t)
+
+        self.pulse_456_aom_off(t, digital_only=True)
+        for i in range(n_pulses - 1):
+            if just_456:
+                self.pulse_456_aom_off(t, digital_only=True)
+                print(i+1, ' pulse end time:', t)
+                t += pulse_wait_dur
+                self.pulse_456_aom_on(t, power_456, digital_only=True)
+            else:
+                self.pulse_456_aom_off(t, digital_only=True)
+                self.pulse_1064_aom_off(t, digital_only=True)
+                t += pulse_wait_dur
+                self.pulse_456_aom_on(t, power_456, digital_only=True)
+                self.pulse_1064_aom_on(t, power_1064, digital_only=True)
+            pulse_start_times.append(t)
+            print(i+2,' pulse start time:', t)
+            t += pulse_dur
+
+        return t_end, pulse_start_times
+
+
+        # pulse_start_times = [t]
+
+        # self.pulse_1064_aom_on(t, power_1064)
+        # self.pulse_456_aom_on(t, power_456)
+
+        # for i in range(n_pulses - 1):
+        #     if just_456:
+        #         self.do_456_pulse(t, pulse_dur, power_456, close_shutter=False)
+        #     else:
+        #         t = self.do_rydberg_pulse(t, pulse_dur, power_456, power_1064, close_shutter=False)
+        #     t += pulse_wait_dur
+        #     pulse_start_times.append(t)
+
+        # if just_456:
+        #     t = self.do_456_pulse(t, pulse_dur, power_456, close_shutter=close_shutter)
+        #     self.pulse_1064_aom_off(t)
+        # else:
+        #     t = self.do_rydberg_pulse(t, pulse_dur, power_456, power_1064, close_shutter=close_shutter)
+
+        # return t, pulse_start_times
+
 
 class UVLamps:
     """Controls for UV LED lamps used in the experiment.

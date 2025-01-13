@@ -1531,6 +1531,23 @@ class RydSequence(TweezerSequence):
         super(RydSequence, self).__init__(t)
         self.RydLasers_obj = RydLasers(t)
 
+    def pulsed_rydberg_excitation(self, t, n_pulses, pulse_dur, pulse_wait_dur, power_456, power_1064, just_456=False, close_shutter=False):
+        print('multipulse start time t = ',t)
+
+        t, pulse_times = self.RydLasers_obj.do_rydberg_multipulses(
+            t, n_pulses, pulse_dur, pulse_wait_dur,
+            power_456, power_1064,
+            just_456=just_456, close_shutter=close_shutter
+            )
+
+        print('multipulse end time t = ',t)
+
+        for p_t in pulse_times:
+            self.TweezerLaser_obj.aom_off(p_t, digital_only=True)
+            self.TweezerLaser_obj.aom_on(p_t+pulse_dur, 0.99, digital_only=True)
+
+        return t
+
     def _do_dipole_trap_sequence(self, t):
 
         t = self.do_mot(t, dur=0.5)
@@ -1628,7 +1645,7 @@ class RydSequence(TweezerSequence):
 
         t = self.pump_then_rotate(t, B_field) # trap is lowered when optical pump happens
 
-        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
+        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99) # ramp trap power back
         # Apply Rydberg pulse with both 456 and 1064 active
         t = self.RydLasers_obj.do_rydberg_pulse(
             t,
@@ -1637,6 +1654,55 @@ class RydSequence(TweezerSequence):
             power_1064=shot_globals.ryd_1064_power,
             close_shutter=True  # Close shutter after pulse to prevent any residual light
         )
+
+        # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
+        t += 2e-3  # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
+        # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
+        t += shot_globals.img_wait_time_between_shots
+        t = self.image_tweezers(t, shot_number=2)
+        t = self.reset_mot(t)
+
+        return t
+
+    def _do_ryd_multipulse_check_sequence(self, t):
+        """Perform a Rydberg pulse excitation check sequence.
+
+        Executes a sequence to verify Rydberg excitation:
+        1. Load atoms into tweezers
+        2. Take first image
+        3. Apply Rydberg excitation multipulses
+        4. Take second image to check for atom loss
+        5. Reset MOT parameters
+
+        Args:
+            t (float): Start time for the sequence
+
+        Returns:
+            float: End time of the sequence
+        """
+        t = self.load_tweezers(t)
+        t = self.image_tweezers(t, shot_number=1)
+
+        t += 1e-3
+
+        B_field = (
+            self.BField_obj.convert_bias_fields_sph_to_cart(
+                shot_globals.ryd_bias_amp,
+                shot_globals.ryd_bias_phi,
+                shot_globals.ryd_bias_theta,
+            )
+        )
+
+        t = self.pump_then_rotate(t, B_field) # trap is lowered when optical pump happens
+
+        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99) # ramp trap power back
+        t += 100e-6
+        # Apply Rydberg pulse with both 456 and 1064 active
+        t = self.pulsed_rydberg_excitation(
+            t, n_pulses = shot_globals.ryd_n_pulses,
+            pulse_dur = shot_globals.ryd_pulse_dur, pulse_wait_dur = shot_globals.ryd_pulse_wait_dur,
+            power_456 = shot_globals.ryd_456_power, power_1064 = shot_globals.ryd_1064_power,
+            just_456=True, close_shutter=True)
 
         # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
         t += 2e-3  # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
@@ -1726,7 +1792,7 @@ class RydSequence(TweezerSequence):
         # ramp down the tweezer power before optical pumping
         t = self.TweezerLaser_obj.ramp_power(
             t_start_ramp, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power
-        )
+        ) # this should not return t because then it would make the next step (field rampping) happens too early
 
 
         ryd_biasx_field, ryd_biasy_field, ryd_biasz_field = (
@@ -2020,6 +2086,11 @@ if __name__ == "__main__":
         RydSequence_obj = RydSequence(t)
         sequence_objects.append(RydSequence_obj)
         t = RydSequence_obj._do_ryd_check_sequence(t)
+
+    elif shot_globals.do_ryd_multipulse_check:
+        RydSequence_obj = RydSequence(t)
+        sequence_objects.append(RydSequence_obj)
+        t = RydSequence_obj._do_ryd_multipulse_check_sequence(t)
 
     elif shot_globals.do_456_check:
         RydSequence_obj = RydSequence(t)
