@@ -1534,24 +1534,6 @@ class RydSequence(TweezerSequence):
     def pulsed_rydberg_excitation(self, t, n_pulses, pulse_dur, pulse_wait_dur, power_456, power_1064, just_456=False, close_shutter=False):
         print('multipulse start time t = ', t)
 
-        print(f'{devices.pulse_1064_aom_analog=}')
-        # print(f'{devices.pulse_1064_aom_analog.minimum_clock_high_time=}')
-        print(f'{devices.pulse_1064_aom_analog.clock_limit=}')
-        print(f'{devices.pulse_1064_aom_analog.parent_device=}')
-        print(f'{devices.pulse_1064_aom_analog.parent_device.minimum_clock_high_time=}')
-        print(f'{devices.pulse_1064_aom_analog.parent_clock_line=}')
-        print(f'{devices.pulse_1064_aom_analog.parent_clock_line.minimum_clock_high_time=}')
-        # print(f'{devices.pulse_1064_aom_analog.parent_clock_line.parent_clock_line=}')  # same as parent_clock_line
-        print(f'{devices.pulse_1064_aom_analog.pseudoclock_device=}')
-        print(f'{devices.pulse_456_aom_digital=}')
-        # print(f'{devices.pulse_456_aom_digital.minimum_clock_high_time=}')
-        print(f'{devices.pulse_456_aom_digital.parent_device=}')
-        print(f'{devices.pulse_456_aom_digital.parent_device.minimum_clock_high_time=}')
-        print(f'{devices.pulse_456_aom_digital.parent_clock_line=}')
-        print(f'{devices.pulse_456_aom_digital.parent_clock_line.minimum_clock_high_time=}')
-        # print(f'{devices.pulse_456_aom_digital.parent_clock_line.parent_clock_line=}')
-        print(f'{devices.pulse_456_aom_digital.pseudoclock_device=}')
-
         t, pulse_times = self.RydLasers_obj.do_rydberg_multipulses(
             t, n_pulses, pulse_dur, pulse_wait_dur,
             power_456, power_1064,
