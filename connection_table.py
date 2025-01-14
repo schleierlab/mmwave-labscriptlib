@@ -9,7 +9,9 @@ import labscript_devices as labscript_devices
 import labscript_devices.FunctionRunner
 import labscript_devices.FunctionRunner.labscript_devices
 from labscript import AnalogOut, ClockLine, DigitalOut, Shutter
-from labscript_devices.PulseBlasterUSB import PulseBlasterUSB
+from labscript_devices.PulseBlasterESRPro500 import PulseBlasterESRPro500
+from labscript_devices.NI_DAQmx.models.NI_PXIe_6363 import NI_PXIe_6363
+
 from user_devices.DDS.AD9914 import AD9914
 
 # from user_devices.spcm.Spectrum import Spectrum
@@ -17,7 +19,6 @@ from user_devices.DDS.AD_DDS import AD_DDS
 
 # from user_devices.manta419b.manta419b import Manta419B
 from user_devices.kinetix.Kinetix import Kinetix
-from user_devices.NI_PXIe_6363 import NI_PXIe_6363
 from user_devices.NI_PXIe_6739 import NI_PXIe_6739
 from user_devices.spcm.Spectrum_bk import Spectrum
 
@@ -34,7 +35,7 @@ class LabDevices():
     def initialize(self):
         print('Initializing connection table')
 
-        pb = PulseBlasterUSB(name='pb', board_number=0)
+        pb = PulseBlasterESRPro500(name='pb', board_number=0)
 
         clockline_6363 = ClockLine(
             name='clockline_6363',
@@ -48,7 +49,6 @@ class LabDevices():
             MAX_name='ni_6363_0',
         )
 
-        # ClockLine(name="clockline_spectrum", pseudoclock=pb.pseudoclock, connection="flag 18")   #for testing spectrum card when directly connected to pulseblaster
         aom_delay = 0  # 630e-9 #delay time between the pulse and AOM
         aom_delays = (aom_delay, aom_delay)
 
@@ -59,8 +59,6 @@ class LabDevices():
             delay=aom_delays,
             open_state=1,
         )
-
-
         self.repump_aom_digital = Shutter(
             name='repump_aom_digital',
             parent_device=ni_6363_0,
@@ -520,5 +518,4 @@ devices = LabDevices()
 if __name__ == '__main__':
     devices.initialize()
     labscript.start()
-
     labscript.stop(1.0)
