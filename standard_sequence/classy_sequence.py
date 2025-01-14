@@ -1542,11 +1542,11 @@ class RydSequence(TweezerSequence):
 
         print('multipulse end time t = ',t)
 
-        for p_t in pulse_times:
-            self.TweezerLaser_obj.aom_off(p_t, digital_only=True)
-            self.TweezerLaser_obj.aom_on(p_t+pulse_dur, 0.99, digital_only=True)
-
-
+        # offset tweezer pulse times to match Rydberg pulse times; empirically determined workaround
+        pulse_times_anticipated = np.asarray(pulse_times) - 0.3e-6
+        for pulse_time in pulse_times_anticipated:
+            self.TweezerLaser_obj.aom_off(pulse_time, digital_only=True)
+            self.TweezerLaser_obj.aom_on(pulse_time + pulse_dur, 0.99, digital_only=True)
 
         return t
 
