@@ -269,9 +269,6 @@ class LabDevices():
         #     connection='port0/line26',
         # )
 
-
-
-
         clockline_6739 = ClockLine(name='clockline_6739', pseudoclock=pb.pseudoclock, connection='flag 17')
         ni_6739_0 = NI_PXIe_6739(
             name='ni_6739_0',

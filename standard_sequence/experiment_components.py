@@ -1199,32 +1199,76 @@ class RydLasers:
 
         return t
 
+    # def do_rydberg_multipulses(self, t, n_pulses, pulse_dur, pulse_wait_dur, power_456, power_1064, just_456=False, close_shutter=False):
+
+    #     pulse_start_times = [t]
+    #     dur = n_pulses * pulse_dur + (n_pulses - 1) * pulse_wait_dur
+    #     print('total pulse dur:', dur)
+    #     t_end = self.do_rydberg_pulse(t, dur, power_456, power_1064, close_shutter = close_shutter)
+    #     print('1st pulse start time:', t)
+    #     t += pulse_dur # first pulse
+    #
+    #     for i in range(n_pulses - 1):
+    #         if just_456:
+    #             self.pulse_456_aom_off(t, digital_only=True)
+    #             print(i+1, ' pulse end time:', t)
+    #             t += pulse_wait_dur
+    #             self.pulse_456_aom_on(t, power_456, digital_only=True)
+    #         else:
+    #             self.pulse_456_aom_off(t, digital_only=True)
+    #             self.pulse_1064_aom_off(t, digital_only=True)
+    #             t += pulse_wait_dur
+    #             self.pulse_456_aom_on(t, power_456, digital_only=True)
+    #             self.pulse_1064_aom_on(t, power_1064, digital_only=True)
+    #         pulse_start_times.append(t)
+    #         print(i+2,' pulse start time:', t)
+    #         t += pulse_dur
+
+    #     return t_end, pulse_start_times
+
+
     def do_rydberg_multipulses(self, t, n_pulses, pulse_dur, pulse_wait_dur, power_456, power_1064, just_456=False, close_shutter=False):
 
-        pulse_start_times = [t]
-        dur = n_pulses * pulse_dur + (n_pulses - 1) * pulse_wait_dur
-        print('total pulse dur:', dur)
-        t_end = self.do_rydberg_pulse(t, dur, power_456, power_1064, close_shutter = close_shutter)
-        print('1st pulse start time:', t)
-        t += pulse_dur # first pulse
-        print('2nd pulse start time:', t)
+        pulse_start_times = []
+        if not self.shutter_open:
+            if power_1064 != 0:
+                devices.pulse_1064_aom_analog.constant(t-1e-5, power_1064)
+            if power_456 != 0:
+                devices.pulse_456_aom_analog.constant(t-1e-5, power_456)
+                t = self.update_blue_456_shutter(t,"open")
+            # Turn off AOMs while waiting for shutter to fully open
+            self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME, digital_only=True)
+            if power_1064 != 0:
+                self.pulse_1064_aom_on(t , power_1064, digital_only=True)
+                # self.pulse_1064_aom_on(t- self.CONST_SHUTTER_TURN_ON_TIME, power_1064)
 
-        self.pulse_456_aom_off(t, digital_only=True)
-        for i in range(n_pulses - 1):
+        for i in range(n_pulses):
             if just_456:
-                self.pulse_456_aom_off(t, digital_only=True)
-                print(i+1, ' pulse end time:', t)
-                t += pulse_wait_dur
                 self.pulse_456_aom_on(t, power_456, digital_only=True)
+                print(i, ' pulse start time:', t)
+                t += pulse_dur
+                self.pulse_456_aom_off(t, digital_only=True)
+                t+= pulse_wait_dur
             else:
+                self.pulse_456_aom_on(t, power_456, digital_only=True)
+                self.pulse_1064_aom_on(t, power_1064, digital_only=True)
+                t += pulse_dur
                 self.pulse_456_aom_off(t, digital_only=True)
                 self.pulse_1064_aom_off(t, digital_only=True)
                 t += pulse_wait_dur
-                self.pulse_456_aom_on(t, power_456, digital_only=True)
-                self.pulse_1064_aom_on(t, power_1064, digital_only=True)
-            pulse_start_times.append(t)
-            print(i+2,' pulse start time:', t)
-            t += pulse_dur
+
+            pulse_start_times.append(t - pulse_wait_dur-pulse_dur)
+
+        if close_shutter:
+            if power_456 != 0:
+                t = self.update_blue_456_shutter(t,"close")
+            self.pulse_456_aom_on(t, 1)
+            # self.pulse_1064_aom_on(t,1)
+            t_end = t
+
+        self.pulse_1064_aom_off(t)
+
+        # print(pulse_start_times)
 
         return t_end, pulse_start_times
 
