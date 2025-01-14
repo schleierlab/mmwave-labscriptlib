@@ -1259,16 +1259,13 @@ class RydLasers:
 
             pulse_start_times.append(t - pulse_wait_dur-pulse_dur)
 
+        self.pulse_1064_aom_off(t)
         if close_shutter:
             if power_456 != 0:
                 t = self.update_blue_456_shutter(t,"close")
             self.pulse_456_aom_on(t, 1)
             # self.pulse_1064_aom_on(t,1)
             t_end = t
-
-        self.pulse_1064_aom_off(t)
-
-        # print(pulse_start_times)
 
         return t_end, pulse_start_times
 
