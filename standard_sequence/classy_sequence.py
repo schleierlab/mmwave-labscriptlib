@@ -1216,6 +1216,27 @@ class TweezerSequence(OpticalPumpingSequence):
 
         return t
 
+    def _do_tweezer_position_check_sequence(self, t):
+        """Perform a basic tweezer loading and imaging check sequence.
+
+        Executes a complete sequence to verify tweezer operation:
+        1. Load atoms into tweezers
+        2. Take first image
+        3. Wait specified time
+        4. Take second image
+        5. Reset MOT parameters
+
+        Args:
+            t (float): Start time for the sequence
+
+        Returns:
+            float: End time of the sequence
+        """
+        self.TweezerLaser_obj.aom_on(t, shot_globals.tw_power)
+        t += 1
+
+        return t
+
     def _tweezer_release_recapture_sequence(self, t):
         """Execute a release and recapture sequence.
 
@@ -2077,13 +2098,15 @@ if __name__ == "__main__":
     # if shot_globals.do_img_beam_alignment_check:
     #     t = do_img_beam_alignment_check(t)
 
-    # if shot_globals.do_tweezer_position_check:
-    #     t = do_tweezer_position_check(t)
-
     elif shot_globals.do_tweezer_check:
         TweezerSequence_obj = TweezerSequence(t)
         sequence_objects.append(TweezerSequence_obj)
         t = TweezerSequence_obj._do_tweezer_check_sequence(t)
+
+    elif shot_globals.do_tweezer_position_check:
+        TweezerSequence_obj = TweezerSequence(t)
+        sequence_objects.append(TweezerSequence_obj)
+        t = TweezerSequence_obj._do_tweezer_position_check_sequence(t)
 
     elif shot_globals.do_ryd_tweezer_check:
         RydSequence_obj = RydSequence(t)
