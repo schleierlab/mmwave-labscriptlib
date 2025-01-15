@@ -1230,11 +1230,17 @@ class RydLasers:
     def do_rydberg_multipulses(self, t, n_pulses, pulse_dur, pulse_wait_dur, power_456, power_1064, just_456=False, close_shutter=False):
 
         pulse_start_times = []
+
+        # turn analog on 10 us earlier than the digital
+        # workaround for timing limitation on pulseblaster due to labscript
+        # https://groups.google.com/g/labscriptsuite/c/QdW6gUGNwQ0
+        aom_analog_ctrl_anticipation = 1e-5
+
         if not self.shutter_open:
             if power_1064 != 0:
-                devices.pulse_1064_aom_analog.constant(t-1e-5, power_1064)
+                devices.pulse_1064_aom_analog.constant(t - aom_analog_ctrl_anticipation, power_1064)
             if power_456 != 0:
-                devices.pulse_456_aom_analog.constant(t-1e-5, power_456)
+                devices.pulse_456_aom_analog.constant(t - aom_analog_ctrl_anticipation, power_456)
                 t = self.update_blue_456_shutter(t,"open")
             # Turn off AOMs while waiting for shutter to fully open
             self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME, digital_only=True)
