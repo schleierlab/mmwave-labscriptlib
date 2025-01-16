@@ -1555,11 +1555,11 @@ class RydSequence(TweezerSequence):
     def pulsed_rydberg_excitation(self, t, n_pulses, pulse_dur, pulse_wait_dur, power_456, power_1064, just_456=False, close_shutter=False):
         # print('multipulse start time t = ', t)
 
-        t, pulse_times = self.RydLasers_obj.do_rydberg_multipulses(
-            t, n_pulses, pulse_dur, pulse_wait_dur,
-            power_456, power_1064,
-            just_456=just_456, close_shutter=close_shutter
-            )
+        # t, pulse_times = self.RydLasers_obj.do_rydberg_multipulses(
+        #     t, n_pulses, pulse_dur, pulse_wait_dur,
+        #     power_456, power_1064,
+        #     just_456=just_456, close_shutter=close_shutter
+        #     )
 
         # print('multipulse end time t = ',t)
 
@@ -1572,6 +1572,13 @@ class RydSequence(TweezerSequence):
         # turn off tweezer laser during the Rydberg pulse.
         # Make sure tweezers are indeed turned off when taking thermalization into account. This means we turn tweezer off for longer than the pulse time
         # For a single pulse
+        t, pulse_times = self.RydLasers_obj.do_rydberg_pulse_short(
+            t,
+            shot_globals.ryd_pulse_dur,
+            power_456 = shot_globals.ryd_456_power,
+            power_1064 = shot_globals.ryd_1064_power,
+            close_shutter=True)
+
         tweezer_switch_buffer = 2e-6
         pulse_times = np.array([pulse_times[0] - tweezer_switch_buffer, pulse_times[1] + tweezer_switch_buffer]) - 0.3e-6
         self.TweezerLaser_obj.aom_off(pulse_times[0], digital_only=True)
