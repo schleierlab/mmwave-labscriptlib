@@ -369,7 +369,7 @@
         <span class="k">assert</span> <span class="p">(</span>
             <span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_ta_detuning</span> <span class="o">!=</span> <span class="mi">0</span>
         <span class="p">),</span> <span class="s2">&quot;bright molasses detuning = 0. TA detuning should be non-zero for bright molasses.&quot;</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;molasses detuning is </span><span class="si">{</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">bm_ta_detuning</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># print(f&quot;molasses detuning is {shot_globals.bm_ta_detuning}&quot;)</span>
 
         <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ramp_to_molasses</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
@@ -603,7 +603,7 @@
         <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;mot&quot;</span><span class="p">:</span>
             <span class="c1"># Use the MOT beams for optical pumping</span>
             <span class="c1"># Do a repump pulse</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;I&#39;m using mot beams for optical pumping&quot;</span><span class="p">)</span>
+            <span class="c1"># print(&quot;I&#39;m using mot beams for optical pumping&quot;)</span>
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_bias_field</span><span class="p">(</span>
                 <span class="n">t</span><span class="p">,</span> <span class="n">bias_field_vector</span><span class="o">=</span><span class="p">(</span><span class="n">op_biasx_field</span><span class="p">,</span> <span class="n">op_biasy_field</span><span class="p">,</span> <span class="n">op_biasz_field</span><span class="p">)</span>
             <span class="p">)</span>
@@ -742,7 +742,7 @@
         <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;mot&quot;</span><span class="p">:</span>
             <span class="c1"># Use the MOT beams for optical depumping</span>
             <span class="c1"># ramp detuning to 4 -&gt; 4 for TA</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;I&#39;m using mot beams for depumping&quot;</span><span class="p">)</span>
+            <span class="c1"># print(&quot;I&#39;m using mot beams for depumping&quot;)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span><span class="o">.</span><span class="n">ramp_ta_freq</span><span class="p">(</span>
                 <span class="n">t</span><span class="p">,</span> <span class="n">D2Lasers</span><span class="o">.</span><span class="n">CONST_TA_VCO_RAMP_TIME</span><span class="p">,</span> <span class="n">CONST_TA_PUMPING_DETUNING</span>
             <span class="p">)</span>
@@ -1239,7 +1239,7 @@
         <span class="k">if</span> <span class="n">shot_number</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
             <span class="c1"># pulse for the second shots and wait for the first shot to finish the</span>
             <span class="c1"># first reading</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">kinetix_roi_row</span><span class="p">)</span>
+            <span class="c1"># print(shot_globals.kinetix_roi_row)</span>
             <span class="n">kinetix_readout_time</span> <span class="o">=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">kinetix_roi_row</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">4.7065e-6</span>
             <span class="c1"># need extra 7 ms for shutter to close on the second shot</span>
             <span class="c1"># TODO: is shot_globals.kinetix_extra_readout_time always zero? Delete if so.</span>
@@ -1346,6 +1346,27 @@
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_number</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reset_mot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="c1"># t = self.TweezerLaser_obj.stop_tweezers(t)</span>
+
+        <span class="k">return</span> <span class="n">t</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_do_tweezer_position_check_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform a basic tweezer loading and imaging check sequence.</span>
+
+<span class="sd">        Executes a complete sequence to verify tweezer operation:</span>
+<span class="sd">        1. Load atoms into tweezers</span>
+<span class="sd">        2. Take first image</span>
+<span class="sd">        3. Wait specified time</span>
+<span class="sd">        4. Take second image</span>
+<span class="sd">        5. Reset MOT parameters</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for the sequence</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">aom_on</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_power</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="mi">1</span>
 
         <span class="k">return</span> <span class="n">t</span>
 
@@ -1551,9 +1572,9 @@
         <span class="p">)</span>
 
         <span class="n">t</span> <span class="o">+=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_field_wait_dur</span>  <span class="c1"># 400e-6</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">ramp_power</span><span class="p">(</span>
-            <span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_dur</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_power</span>
-        <span class="p">)</span>
+        <span class="c1"># t = self.TweezerLaser_obj.ramp_power(</span>
+        <span class="c1">#     t, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power</span>
+        <span class="c1"># )</span>
         <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_mw_pulse</span><span class="p">:</span>
             <span class="c1"># self.TweezerLaser_obj.aom_off(t)</span>
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Microwave_obj</span><span class="o">.</span><span class="n">do_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">mw_time</span><span class="p">)</span>
@@ -1670,19 +1691,36 @@
 <div class="viewcode-block" id="RydSequence.pulsed_rydberg_excitation">
 <a class="viewcode-back" href="../../api.html#standard_sequence.classy_sequence.RydSequence.pulsed_rydberg_excitation">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">pulsed_rydberg_excitation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n_pulses</span><span class="p">,</span> <span class="n">pulse_dur</span><span class="p">,</span> <span class="n">pulse_wait_dur</span><span class="p">,</span> <span class="n">power_456</span><span class="p">,</span> <span class="n">power_1064</span><span class="p">,</span> <span class="n">just_456</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">close_shutter</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;multipulse start time t = &#39;</span><span class="p">,</span><span class="n">t</span><span class="p">)</span>
+        <span class="c1"># print(&#39;multipulse start time t = &#39;, t)</span>
 
-        <span class="n">t</span><span class="p">,</span> <span class="n">pulse_times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RydLasers_obj</span><span class="o">.</span><span class="n">do_rydberg_multipulses</span><span class="p">(</span>
-            <span class="n">t</span><span class="p">,</span> <span class="n">n_pulses</span><span class="p">,</span> <span class="n">pulse_dur</span><span class="p">,</span> <span class="n">pulse_wait_dur</span><span class="p">,</span>
-            <span class="n">power_456</span><span class="p">,</span> <span class="n">power_1064</span><span class="p">,</span>
-            <span class="n">just_456</span><span class="o">=</span><span class="n">just_456</span><span class="p">,</span> <span class="n">close_shutter</span><span class="o">=</span><span class="n">close_shutter</span>
-            <span class="p">)</span>
+        <span class="c1"># t, pulse_times = self.RydLasers_obj.do_rydberg_multipulses(</span>
+        <span class="c1">#     t, n_pulses, pulse_dur, pulse_wait_dur,</span>
+        <span class="c1">#     power_456, power_1064,</span>
+        <span class="c1">#     just_456=just_456, close_shutter=close_shutter</span>
+        <span class="c1">#     )</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;multipulse end time t = &#39;</span><span class="p">,</span><span class="n">t</span><span class="p">)</span>
+        <span class="c1"># print(&#39;multipulse end time t = &#39;,t)</span>
 
-        <span class="k">for</span> <span class="n">p_t</span> <span class="ow">in</span> <span class="n">pulse_times</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">aom_off</span><span class="p">(</span><span class="n">p_t</span><span class="p">,</span> <span class="n">digital_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">aom_on</span><span class="p">(</span><span class="n">p_t</span><span class="o">+</span><span class="n">pulse_dur</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">,</span> <span class="n">digital_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># offset tweezer pulse times to match Rydberg pulse times; empirically determined workaround</span>
+        <span class="c1"># pulse_times_anticipated = np.asarray(pulse_times) - 0.3e-6</span>
+        <span class="c1"># for pulse_time in pulse_times_anticipated:</span>
+        <span class="c1">#     self.TweezerLaser_obj.aom_off(pulse_time, digital_only=True)</span>
+        <span class="c1">#     self.TweezerLaser_obj.aom_on(pulse_time + pulse_dur, 0.99, digital_only=True)</span>
+
+        <span class="c1"># turn off tweezer laser during the Rydberg pulse.</span>
+        <span class="c1"># Make sure tweezers are indeed turned off when taking thermalization into account. This means we turn tweezer off for longer than the pulse time</span>
+        <span class="c1"># For a single pulse</span>
+        <span class="n">t</span><span class="p">,</span> <span class="n">pulse_times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RydLasers_obj</span><span class="o">.</span><span class="n">do_rydberg_pulse_short</span><span class="p">(</span>
+            <span class="n">t</span><span class="p">,</span>
+            <span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_pulse_dur</span><span class="p">,</span>
+            <span class="n">power_456</span> <span class="o">=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_456_power</span><span class="p">,</span>
+            <span class="n">power_1064</span> <span class="o">=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_1064_power</span><span class="p">,</span>
+            <span class="n">close_shutter</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">tweezer_switch_buffer</span> <span class="o">=</span> <span class="mf">2e-6</span>
+        <span class="n">pulse_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">pulse_times</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">tweezer_switch_buffer</span><span class="p">,</span> <span class="n">pulse_times</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">tweezer_switch_buffer</span><span class="p">])</span> <span class="o">-</span> <span class="mf">0.3e-6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">aom_off</span><span class="p">(</span><span class="n">pulse_times</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">digital_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">aom_on</span><span class="p">(</span><span class="n">pulse_times</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_power</span><span class="p">,</span> <span class="n">digital_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">t</span></div>
 
@@ -1786,13 +1824,71 @@
 
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">ramp_power</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_dur</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">)</span> <span class="c1"># ramp trap power back</span>
         <span class="c1"># Apply Rydberg pulse with both 456 and 1064 active</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RydLasers_obj</span><span class="o">.</span><span class="n">do_rydberg_pulse</span><span class="p">(</span>
+
+        <span class="n">t</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RydLasers_obj</span><span class="o">.</span><span class="n">do_rydberg_pulse</span><span class="p">(</span>
             <span class="n">t</span><span class="p">,</span>
             <span class="n">dur</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_456_duration</span><span class="p">,</span>
             <span class="n">power_456</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_456_power</span><span class="p">,</span>
             <span class="n">power_1064</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_1064_power</span><span class="p">,</span>
             <span class="n">close_shutter</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># Close shutter after pulse to prevent any residual light</span>
         <span class="p">)</span>
+
+        <span class="c1"># t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="mf">2e-3</span>  <span class="c1"># TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others</span>
+        <span class="c1"># that&#39;s why we add extra time here before imaging to prevent light leakage from optical pump beam</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">img_wait_time_between_shots</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_number</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reset_mot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">t</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_do_ryd_check_trap_off_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform a Rydberg excitation check sequence.</span>
+
+<span class="sd">        Executes a sequence to verify Rydberg excitation:</span>
+<span class="sd">        1. Load atoms into tweezers</span>
+<span class="sd">        2. Take first image</span>
+<span class="sd">        3. Apply Rydberg excitation pulse</span>
+<span class="sd">        4. Take second image to check for atom loss</span>
+<span class="sd">        5. Reset MOT parameters</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            t (float): Start time for the sequence</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: End time of the sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_tweezers</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">shot_number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">t</span> <span class="o">+=</span> <span class="mf">1e-3</span>
+
+        <span class="n">B_field</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">convert_bias_fields_sph_to_cart</span><span class="p">(</span>
+                <span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_bias_amp</span><span class="p">,</span>
+                <span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_bias_phi</span><span class="p">,</span>
+                <span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_bias_theta</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pump_then_rotate</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">B_field</span><span class="p">)</span> <span class="c1"># trap is lowered when optical pump happens</span>
+        <span class="c1"># self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="mf">100e-6</span>
+        <span class="c1"># Apply Rydberg pulse with both 456 and 1064 active</span>
+
+        <span class="n">t</span><span class="p">,</span> <span class="n">pulse_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RydLasers_obj</span><span class="o">.</span><span class="n">do_rydberg_pulse_short</span><span class="p">(</span>
+            <span class="n">t</span><span class="p">,</span>
+            <span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_pulse_dur</span><span class="p">,</span>
+            <span class="n">power_456</span> <span class="o">=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_456_power</span><span class="p">,</span>
+            <span class="n">power_1064</span> <span class="o">=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_1064_power</span><span class="p">,</span>
+            <span class="n">close_shutter</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># turn off tweezer laser during the Rydberg pulse</span>
+        <span class="n">tweezer_switch_buffer</span> <span class="o">=</span> <span class="mf">2e-6</span>
+        <span class="n">pulse_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">pulse_time</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">tweezer_switch_buffer</span><span class="p">,</span> <span class="n">pulse_time</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">tweezer_switch_buffer</span><span class="p">])</span> <span class="o">-</span> <span class="mf">0.3e-6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">aom_off</span><span class="p">(</span><span class="n">pulse_time</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">digital_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">aom_on</span><span class="p">(</span><span class="n">pulse_time</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_power</span><span class="p">,</span> <span class="n">digital_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">ramp_power</span><span class="p">(</span><span class="n">pulse_time</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_dur</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">)</span>
 
         <span class="c1"># t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)</span>
         <span class="n">t</span> <span class="o">+=</span> <span class="mf">2e-3</span>  <span class="c1"># TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others</span>
@@ -2217,18 +2313,25 @@
     <span class="c1"># if shot_globals.do_img_beam_alignment_check:</span>
     <span class="c1">#     t = do_img_beam_alignment_check(t)</span>
 
-    <span class="c1"># if shot_globals.do_tweezer_position_check:</span>
-    <span class="c1">#     t = do_tweezer_position_check(t)</span>
-
     <span class="k">elif</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_tweezer_check</span><span class="p">:</span>
         <span class="n">TweezerSequence_obj</span> <span class="o">=</span> <span class="n">TweezerSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="n">sequence_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">TweezerSequence_obj</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">TweezerSequence_obj</span><span class="o">.</span><span class="n">_do_tweezer_check_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
+    <span class="k">elif</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_tweezer_position_check</span><span class="p">:</span>
+        <span class="n">TweezerSequence_obj</span> <span class="o">=</span> <span class="n">TweezerSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">sequence_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">TweezerSequence_obj</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">TweezerSequence_obj</span><span class="o">.</span><span class="n">_do_tweezer_position_check_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
     <span class="k">elif</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_ryd_tweezer_check</span><span class="p">:</span>
         <span class="n">RydSequence_obj</span> <span class="o">=</span> <span class="n">RydSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="n">sequence_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">RydSequence_obj</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">RydSequence_obj</span><span class="o">.</span><span class="n">_do_ryd_check_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_ryd_tweezer_trap_off_check</span><span class="p">:</span>
+        <span class="n">RydSequence_obj</span> <span class="o">=</span> <span class="n">RydSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">sequence_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">RydSequence_obj</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">RydSequence_obj</span><span class="o">.</span><span class="n">_do_ryd_check_trap_off_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
     <span class="k">elif</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_ryd_multipulse_check</span><span class="p">:</span>
         <span class="n">RydSequence_obj</span> <span class="o">=</span> <span class="n">RydSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
