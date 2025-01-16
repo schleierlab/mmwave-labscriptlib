@@ -421,7 +421,7 @@ class D2Lasers:
             # NOTE: Adding this to t makes it so it doesn't cut the previous pulse
             # short, but rather shifts the time of the next pulse.
             t += self.CONST_SHUTTER_TURN_ON_TIME
-            print("shutter config changed, adding time to account for switching")
+            # print("shutter config changed, adding time to account for switching")
             # print("shutter config:", shutter_config, ", t:", t)
             t = self.update_shutters(t, shutter_config)
             # print("****shutter config:", shutter_config, ", t:", t)
@@ -447,7 +447,7 @@ class D2Lasers:
         # If doing close_all_shutters, have to make sure that we aren't opening any of the ones we just closed in the next pulse.
         # Otherwise they won't be able to open in time unless there's enough delay between pulses.
         if close_all_shutters:
-            print("closing all shutters")
+            # print("closing all shutters")
             t += self.CONST_SHUTTER_TURN_OFF_TIME
             t = self.update_shutters(t, ShutterConfig.NONE)
             self.ta_aom_on(t, 1)
@@ -554,7 +554,7 @@ class TweezerLaser:
         assert shot_globals.do_sequence_mode, "shot_globals.do_sequence_mode is False, running Fifo mode now. Set to True for sequence mode"
         spectrum_manager.start_card()
         t1 = spectrum_manager.start_tweezers(t)
-        print("tweezer start time:", t1)
+        # print("tweezer start time:", t1)
         self.aom_on(t, self.tw_power)
 
     def stop_tweezers(self, t):
@@ -565,16 +565,16 @@ class TweezerLaser:
         """
         # stop tweezers
         t2 = spectrum_manager.stop_tweezers(t)
-        print("tweezer stop time:", t2)
+        # print("tweezer stop time:", t2)
 
         # dummy segment, need this to stop tweezers due to spectrum card bug
         t1 = spectrum_manager.start_tweezers(t)
-        print("tweezer start time:", t1)
+        # print("tweezer start time:", t1)
         t += 2e-3
         t2 = spectrum_manager.stop_tweezers(t)
-        print("tweezer stop time:", t2)
+        # print("tweezer stop time:", t2)
         spectrum_manager.stop_card(t)
-        print("tweezers have been stopped... for good...")
+        # print("tweezers have been stopped... for good...")
         return t
 
     def intensity_servo_keep_on(self, t):
@@ -805,7 +805,7 @@ class Microwave:
         Returns:
             float: End time after the sweep is complete
         """
-        print("I'm doing microwave sweep")
+        # print("I'm doing microwave sweep")
         t += self.CONST_SPECTRUM_CARD_OFFSET
         devices.uwave_absorp_switch.go_high(t)
         self.uwave_absorp_switch_on = True
@@ -1183,7 +1183,9 @@ class RydLasers:
         if power_456 != 0:
             self.pulse_456_aom_on(t, power_456)
 
+        pulse_times = [t]
         t += dur
+        pulse_times.append(t)
 
         # Turn off AOMs at the end of the pulse
         self.pulse_456_aom_off(t)
@@ -1197,7 +1199,7 @@ class RydLasers:
 
         # t = self.do_456_freq_sweep(t, self.CONST_DEFAULT_DETUNING_456)
 
-        return t
+        return t #, pulse_times
 
     # def do_rydberg_multipulses(self, t, n_pulses, pulse_dur, pulse_wait_dur, power_456, power_1064, just_456=False, close_shutter=False):
 
@@ -1251,7 +1253,7 @@ class RydLasers:
         for i in range(n_pulses):
             if just_456:
                 self.pulse_456_aom_on(t, power_456, digital_only=True)
-                print(i, ' pulse start time:', t)
+                # print(i, ' pulse start time:', t)
                 t += pulse_dur
                 self.pulse_456_aom_off(t, digital_only=True)
                 t+= pulse_wait_dur
@@ -1275,27 +1277,44 @@ class RydLasers:
 
         return t_end, pulse_start_times
 
+    def do_rydberg_pulse_short(self, t, dur, power_456, power_1064, close_shutter=False):
+        '''
+        turn analog on 10 us earlier than the digital so there won't be pulseblaster related errors from the labscript
+        '''
 
-        # pulse_start_times = [t]
+        # turn analog on 10 us earlier than the digital
+        # workaround for timing limitation on pulseblaster due to labscript
+        # https://groups.google.com/g/labscriptsuite/c/QdW6gUGNwQ0
+        aom_analog_ctrl_anticipation = 1e-5
+        if not self.shutter_open:
+            if power_1064 != 0:
+                devices.pulse_1064_aom_analog.constant(t - aom_analog_ctrl_anticipation, power_1064)
+            if power_456 != 0:
+                devices.pulse_456_aom_analog.constant(t - aom_analog_ctrl_anticipation, power_456)
+                t = self.update_blue_456_shutter(t, "open")
 
-        # self.pulse_1064_aom_on(t, power_1064)
-        # self.pulse_456_aom_on(t, power_456)
+            # Turn off AOMs while waiting for shutter to fully open
+            self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME, digital_only=True)
 
-        # for i in range(n_pulses - 1):
-        #     if just_456:
-        #         self.do_456_pulse(t, pulse_dur, power_456, close_shutter=False)
-        #     else:
-        #         t = self.do_rydberg_pulse(t, pulse_dur, power_456, power_1064, close_shutter=False)
-        #     t += pulse_wait_dur
-        #     pulse_start_times.append(t)
+            if power_456!=0:
+                self.pulse_456_aom_on(t, power_456, digital_only=True)
+            if power_1064 !=0:
+                self.pulse_1064_aom_on(t, power_1064, digital_only=True)
 
-        # if just_456:
-        #     t = self.do_456_pulse(t, pulse_dur, power_456, close_shutter=close_shutter)
-        #     self.pulse_1064_aom_off(t)
-        # else:
-        #     t = self.do_rydberg_pulse(t, pulse_dur, power_456, power_1064, close_shutter=close_shutter)
+            print(f"t for aom on time {t}")
+            pulse_times = [t]
+            t += dur
+            pulse_times.append(t)
+            print(f"t for aom off time {t}")
+            self.pulse_456_aom_off(t, digital_only=True)
+            self.pulse_1064_aom_off(t, digital_only=True)
 
-        # return t, pulse_start_times
+        if close_shutter:
+            if power_456 != 0:
+                t = self.update_blue_456_shutter(t, "close")
+            # self.pulse_456_aom_on(t, 1, digital_only=True)
+
+        return t, pulse_times
 
 
 class UVLamps:
@@ -1437,7 +1456,7 @@ class BField:
             final=coil_voltage_mid,  # sligtly negative voltage to trigger the polarity change
             samplerate=1e5,
         )
-        print(f"feed_disable_ttl in coil {component}")
+        # print(f"feed_disable_ttl in coil {component}")
         feedback_disable_ttl.go_high(t)
         feedback_disable_ttl.go_low(t + self.CONST_COIL_FEEDBACK_OFF_TIME)
         self.current_outputs[component].constant(t, coil_voltage_mid)
@@ -1490,7 +1509,7 @@ class BField:
             t - self.CONST_BIPOLAR_COIL_FLIP_TIME * sign_flip_in_ramp
         )
 
-        print(coil_ramp_start_times)
+        # print(coil_ramp_start_times)
 
         for i in range(3):
             if sign_flip_in_ramp[i]:
@@ -1508,14 +1527,14 @@ class BField:
                     final=voltage_vector[i],
                     samplerate=1e5,
                 )
-        print(coil_ramp_start_times)
+        # print(coil_ramp_start_times)
         end_time = (
             np.min(coil_ramp_start_times)
             + dur
             + self.CONST_BIPOLAR_COIL_FLIP_TIME
         )
         self.t_last_change = end_time
-        print(coil_ramp_start_times)
+        # print(coil_ramp_start_times)
 
         # TODO: add the inverse function of bias_i_calib
         # otherwise, if only voltage vector is provided on input, the bias field will not be updated
