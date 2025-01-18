@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Literal
 
 root_path = r"X:\userlib\labscriptlib"
 import sys
@@ -458,7 +459,7 @@ class OpticalPumpingSequence(MOTSequence):
         """
         super(OpticalPumpingSequence, self).__init__(t)
 
-    def pump_to_F4(self, t, label, close_all_shutters=True):
+    def pump_to_F4(self, t, label: Literal['mot', 'sigma'], close_all_shutters=True):
         """Pump atoms from F=3 to F=4 hyperfine state.
 
         Uses either MOT beams or sigma-polarized light to pump atoms from the F=3
