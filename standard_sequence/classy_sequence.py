@@ -911,14 +911,6 @@ class OpticalPumpingSequence(MOTSequence):
             t, shot_globals.op_label, close_all_shutters=False,
         )
 
-        mw_biasx_field, mw_biasy_field, mw_biasz_field = (
-            self.BField_obj.convert_bias_fields_sph_to_cart(
-                shot_globals.mw_bias_amp,
-                shot_globals.mw_bias_phi,
-                shot_globals.mw_bias_theta,
-            )
-        )
-
         # [mw_biasx_field, mw_biasy_field, mw_biasz_field] = [
             #     shot_globals.mw_biasx_field,
             #     shot_globals.mw_biasy_field,
@@ -927,7 +919,10 @@ class OpticalPumpingSequence(MOTSequence):
 
         t = self.BField_obj.ramp_bias_field(
                 t_aom_off + 200e-6, #TODO: wait for 200e-6s extra time in optical pumping field, can be changed
-                bias_field_vector=(mw_biasx_field, mw_biasy_field, mw_biasz_field),
+                bias_field_vector=(shot_globals.mw_bias_amp,
+                                   shot_globals.mw_bias_phi,
+                                   shot_globals.mw_bias_theta),
+                polar = True
             )
 
         t += self.BField_obj.CONST_COIL_OFF_TIME
@@ -1160,7 +1155,7 @@ class TweezerSequence(OpticalPumpingSequence):
 
         return t
 
-    def pump_then_rotate(self, t, B_field):
+    def pump_then_rotate(self, t, B_field, polar = False):
         """Pumps to stretched state then rotates the field
         Also lowers the trap, but doesn't raise it back.
 
@@ -1186,7 +1181,7 @@ class TweezerSequence(OpticalPumpingSequence):
         t = self.BField_obj.ramp_bias_field(
             t, # extra time to wait for 5e-3s extra time in optical pumping field
             bias_field_vector=B_field,
-            # dur=shot_globals.mw_bias_ramp_dur,
+            polar = polar,
         )
 
         return t
@@ -1299,14 +1294,6 @@ class TweezerSequence(OpticalPumpingSequence):
         if shot_globals.do_depump_ta_pulse_after_pump:
             t_aom_off = self.depump_ta_pulse(t)
 
-        mw_biasx_field, mw_biasy_field, mw_biasz_field = (
-            self.BField_obj.convert_bias_fields_sph_to_cart(
-                shot_globals.mw_bias_amp,
-                shot_globals.mw_bias_phi,
-                shot_globals.mw_bias_theta,
-            )
-        )
-
         # [mw_biasx_field, mw_biasy_field, mw_biasz_field] = [
             #     shot_globals.mw_biasx_field,
             #     shot_globals.mw_biasy_field,
@@ -1315,8 +1302,11 @@ class TweezerSequence(OpticalPumpingSequence):
 
         t = self.BField_obj.ramp_bias_field(
                 t_aom_off,
-                bias_field_vector=(mw_biasx_field, mw_biasy_field, mw_biasz_field),
+                bias_field_vector=(shot_globals.mw_bias_amp,
+                                   shot_globals.mw_bias_phi,
+                                   shot_globals.mw_bias_theta),
                 dur=shot_globals.mw_bias_ramp_dur,
+                polar = True
             )
 
 
@@ -1419,14 +1409,6 @@ class TweezerSequence(OpticalPumpingSequence):
         if shot_globals.do_depump_ta_pulse_after_pump:
             t = self.depump_ta_pulse(t)
 
-        mw_biasx_field, mw_biasy_field, mw_biasz_field = (
-            self.BField_obj.convert_bias_fields_sph_to_cart(
-                shot_globals.mw_bias_amp,
-                shot_globals.mw_bias_phi,
-                shot_globals.mw_bias_theta,
-            )
-        )
-
         # [mw_biasx_field, mw_biasy_field, mw_biasz_field] = [
         #     shot_globals.mw_biasx_field,
         #     shot_globals.mw_biasy_field,
@@ -1435,8 +1417,11 @@ class TweezerSequence(OpticalPumpingSequence):
 
         t = self.BField_obj.ramp_bias_field(
             t, # extra time to wait for 5e-3s extra time in optical pumping field
-            bias_field_vector=(mw_biasx_field, mw_biasy_field, mw_biasz_field),
+            bias_field_vector=(shot_globals.mw_bias_amp,
+                                   shot_globals.mw_bias_phi,
+                                   shot_globals.mw_bias_theta),
             # dur=shot_globals.mw_bias_ramp_dur,
+            polar = True,
         )
 
         t += shot_globals.mw_field_wait_dur  # 400e-6
@@ -1892,18 +1877,13 @@ class RydSequence(TweezerSequence):
         ) # this should not return t because then it would make the next step (field rampping) happens too early
 
 
-        ryd_biasx_field, ryd_biasy_field, ryd_biasz_field = (
-            self.BField_obj.convert_bias_fields_sph_to_cart(
-                shot_globals.ryd_bias_amp,
-                shot_globals.ryd_bias_phi,
-                shot_globals.ryd_bias_theta,
-            )
-        )
-
         t = self.BField_obj.ramp_bias_field(
             t, # extra time to wait for 5e-3s extra time in optical pumping field
-            bias_field_vector=(ryd_biasx_field, ryd_biasy_field, ryd_biasz_field),
+            bias_field_vector=(shot_globals.ryd_bias_amp,
+                               shot_globals.ryd_bias_phi,
+                               shot_globals.ryd_bias_theta),
             # dur=shot_globals.mw_bias_ramp_dur,
+            polar = True,
         )
 
         t += 10e-3
@@ -1984,19 +1964,13 @@ class RydSequence(TweezerSequence):
             t_start_ramp, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power
         )
 
-
-        ryd_biasx_field, ryd_biasy_field, ryd_biasz_field = (
-            self.BField_obj.convert_bias_fields_sph_to_cart(
-                shot_globals.ryd_bias_amp,
-                shot_globals.ryd_bias_phi,
-                shot_globals.ryd_bias_theta,
-            )
-        )
-
         t = self.BField_obj.ramp_bias_field(
             t, # extra time to wait for 5e-3s extra time in optical pumping field
-            bias_field_vector=(ryd_biasx_field, ryd_biasy_field, ryd_biasz_field),
+            bias_field_vector=(shot_globals.mw_bias_amp,
+                               shot_globals.mw_bias_phi,
+                               shot_globals.mw_bias_theta),
             # dur=shot_globals.mw_bias_ramp_dur,
+            polar = True
         )
 
         t += 10e-3
@@ -2078,18 +2052,13 @@ class RydSequence(TweezerSequence):
         )
 
 
-        mw_biasx_field, mw_biasy_field, mw_biasz_field = (
-            self.BField_obj.convert_bias_fields_sph_to_cart(
-                shot_globals.mw_bias_amp,
-                shot_globals.mw_bias_phi,
-                shot_globals.mw_bias_theta,
-            )
-        )
-
         t = self.BField_obj.ramp_bias_field(
             t, # extra time to wait for 5e-3s extra time in optical pumping field
-            bias_field_vector=(mw_biasx_field, mw_biasy_field, mw_biasz_field),
+            bias_field_vector=(shot_globals.mw_bias_amp,
+                               shot_globals.mw_bias_phi,
+                               shot_globals.mw_bias_theta),
             # dur=shot_globals.mw_bias_ramp_dur,
+            polar = True
         )
 
         t += 10e-3

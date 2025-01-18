@@ -1476,7 +1476,7 @@ class BField:
         self.bias_voltages[component] = final_voltage
         return t
 
-    def ramp_bias_field(self, t, dur = 100e-6,  bias_field_vector=None, voltage_vector=None):
+    def ramp_bias_field(self, t, dur = 100e-6,  bias_field_vector=None, voltage_vector=None, polar = False):
         """Ramp the bias field to new values.
 
         Args:
@@ -1490,13 +1490,25 @@ class BField:
         """
         # bias_field_vector should be a tuple of the form (x,y,z)
         # Need to start the ramp earlier if the voltage changes sign
+        if polar:
+            field_vector = (
+                self.convert_bias_fields_sph_to_cart(
+                    bias_field_vector[0],
+                    bias_field_vector[1],
+                    bias_field_vector[2],
+                )
+            )
+        else:
+            field_vector = bias_field_vector
+
+
         dur = np.max([dur, self.CONST_COIL_RAMP_TIME])
-        if bias_field_vector is not None:
+        if field_vector is not None:
             voltage_vector = np.array(
                 [
-                    biasx_calib(bias_field_vector[0]),
-                    biasy_calib(bias_field_vector[1]),
-                    biasz_calib(bias_field_vector[2]),
+                    biasx_calib(field_vector[0]),
+                    biasy_calib(field_vector[1]),
+                    biasz_calib(field_vector[2]),
                 ]
             )
 
