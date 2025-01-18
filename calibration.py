@@ -13,6 +13,7 @@ if root_path not in sys.path:
 
 import numpy as np
 
+
 def ta_freq_calib(detuning_mhz):
     '''
     Yield the control voltage required to set the TA to a desired detuning
@@ -273,9 +274,9 @@ def biasy_calib(field):
 
 
 def biasz_calib(field):
-    V0 =  6.67996653e-01
+    V0 = -6.67996653e-01
     Vp = 1.06445681e+03
-    voltage = V0 +1/Vp*field
+    voltage = V0 + field / Vp
     return voltage
 
 
