@@ -1183,9 +1183,9 @@ class RydLasers:
         if power_456 != 0:
             self.pulse_456_aom_on(t, power_456)
 
-        pulse_times = [t]
+        t_aom_start = t
         t += dur
-        pulse_times.append(t)
+
 
         # Turn off AOMs at the end of the pulse
         self.pulse_456_aom_off(t)
@@ -1194,12 +1194,13 @@ class RydLasers:
         if close_shutter:
             if power_456 != 0:
                 t = self.update_blue_456_shutter(t,"close")
+                t += 1e-3
             self.pulse_456_aom_on(t, 1)
             # self.pulse_1064_aom_on(t,1)
 
         # t = self.do_456_freq_sweep(t, self.CONST_DEFAULT_DETUNING_456)
 
-        return t #, pulse_times
+        return t, t_aom_start
 
     # def do_rydberg_multipulses(self, t, n_pulses, pulse_dur, pulse_wait_dur, power_456, power_1064, just_456=False, close_shutter=False):
 

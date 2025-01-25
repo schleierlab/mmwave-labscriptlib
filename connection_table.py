@@ -17,7 +17,7 @@ from user_devices.DDS.AD9914 import AD9914
 # from user_devices.spcm.Spectrum import Spectrum
 from user_devices.DDS.AD_DDS import AD_DDS
 
-# from user_devices.manta419b.manta419b import Manta419B
+from user_devices.manta419b.manta419b import Manta419B
 from user_devices.kinetix.Kinetix import Kinetix
 from user_devices.NI_PXIe_6739 import NI_PXIe_6739
 from user_devices.spcm.Spectrum_bk import Spectrum
