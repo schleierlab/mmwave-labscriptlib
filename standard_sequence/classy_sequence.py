@@ -1735,8 +1735,10 @@ class RydSequence(TweezerSequence):
         tweezer_switch_buffer = 2e-6
         pulse_time = np.array([pulse_time[0] - tweezer_switch_buffer, pulse_time[1] + tweezer_switch_buffer]) - 0.3e-6
         self.TweezerLaser_obj.aom_off(pulse_time[0], digital_only=True)
-        self.TweezerLaser_obj.aom_on(pulse_time[1], shot_globals.tw_ramp_power, digital_only=True)
-        self.TweezerLaser_obj.ramp_power(pulse_time[1], shot_globals.tw_ramp_dur, 0.99)
+        self.TweezerLaser_obj.aom_on(pulse_time[1], 0.99, digital_only=False)
+        print(pulse_time)
+        # self.TweezerLaser_obj.aom_on(pulse_time[1], shot_globals.tw_ramp_power, digital_only=True)
+        # self.TweezerLaser_obj.ramp_power(pulse_time[1], shot_globals.tw_ramp_dur, 0.99)
 
         # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
         t += 2e-3  # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
