@@ -1637,10 +1637,9 @@ class EField:
                            devices.electrode_B3,
                            devices.electrode_B4,]
 
-        for voltage, electrode in zip(self.Efield_voltage, self.electrodes):
-            electrode.constant(t, voltage)
+        self.set_electric_field(t, self.Efield_voltage)
 
-    def convert_electrodes(voltage_dif_vector):
+    def convert_electrodes_voltages(self, voltage_dif_vector):
         """
         convert voltage difference into electrode voltages
         """
@@ -1665,7 +1664,7 @@ class EField:
         """
         print(type(voltage_dif_vector))
         print(voltage_dif_vector)
-        electrode_voltages = self.convert_electrodes(voltage_dif_vector)
+        electrode_voltages = self.convert_electrodes_voltages(voltage_dif_vector)
 
         for voltage, electrode in zip(electrode_voltages, self.electrodes):
             electrode.constant(t, voltage)

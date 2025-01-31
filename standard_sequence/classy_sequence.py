@@ -1723,13 +1723,13 @@ class RydSequence(TweezerSequence):
 
         t = self.pump_then_rotate(t, B_field) # trap is lowered when optical pump happens
 
-        # E_field_voltage = [shot_globals.ryd_Efield_Vx,
-        #                    shot_globals.ryd_Efield_Vy,
-        #                    shot_globals.ryd_Efield_Vz,]
-        # self.EField_obj.set_electric_field(t, E_field_voltage)
+        E_field_voltage = [shot_globals.ryd_Efield_Vx,
+                           shot_globals.ryd_Efield_Vy,
+                           shot_globals.ryd_Efield_Vz,]
+        self.EField_obj.set_electric_field(t, E_field_voltage)
 
-        t += 100e-6
-        t += 2e-3
+        # t += 100e-6
+        t += shot_globals.ryd_Bfield_stabilize_wait_time
         # Apply Rydberg pulse with both 456 and 1064 active
 
         t, pulse_time = self.RydLasers_obj.do_rydberg_pulse_short(
@@ -1748,10 +1748,10 @@ class RydSequence(TweezerSequence):
         # self.TweezerLaser_obj.aom_on(pulse_time[1], shot_globals.tw_ramp_power, digital_only=True)
         # self.TweezerLaser_obj.ramp_power(pulse_time[1], shot_globals.tw_ramp_dur, 0.99)
 
-        # zero_E_field_voltage = [shot_globals.zero_Efield_Vx,
-        #                         shot_globals.zero_Efield_Vy,
-        #                         shot_globals.zero_Efield_Vz,]
-        # self.EField_obj.set_electric_field(t, zero_E_field_voltage) # turn E field back to zero field
+        zero_E_field_voltage = [shot_globals.zero_Efield_Vx,
+                                shot_globals.zero_Efield_Vy,
+                                shot_globals.zero_Efield_Vz,]
+        self.EField_obj.set_electric_field(t, zero_E_field_voltage) # turn E field back to zero field
 
         # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
         t += 2e-3  # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
