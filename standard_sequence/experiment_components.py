@@ -1729,19 +1729,3 @@ class Camera:
                 "atoms",
                 exposure_time=exposure_time,
             )
-
-
-class EField:
-    """Controls for electric field generation and manipulation.
-
-    This class manages the electric field controls in the experiment, including
-    field generation, ramping, and manipulation for various experimental sequences.
-    """
-
-    def __init__(self, t):
-        """Initialize the electric field system.
-
-        Args:
-            t (float): Time to start the electric field
-        """
-        raise NotImplementedError
