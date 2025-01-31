@@ -1663,6 +1663,8 @@ class EField:
         """
         set electrodes to constant voltages. No ramp.
         """
+        print(type(voltage_dif_vector))
+        print(voltage_dif_vector)
         electrode_voltages = self.convert_electrodes(voltage_dif_vector)
 
         for voltage, electrode in zip(electrode_voltages, self.electrodes):
