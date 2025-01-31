@@ -299,7 +299,7 @@ class LabDevices():
         self.tweezer_aom_analog = AnalogOut(name='tweezer_aom_analog', parent_device=ni_6739_0, connection='ao8', limits=(0, 1))
         self.servo_1064_aom_analog = AnalogOut(name='notconnected_servo_1064_aom_analog', parent_device=ni_6739_0, connection='ao9', limits=(0, 1))
         self.servo_456_aom_analog = AnalogOut(name='notconnected_servo_456_aom_analog', parent_device=ni_6739_0, connection='ao10', limits=(0, 1))
-#mirror_1064_1_v
+
         #Mirror 1 is upstream mirror 2 is downstream
         self.mirror_456_1_v = AnalogOut(
             name='mirror_456_1_v',
@@ -363,9 +363,46 @@ class LabDevices():
 
         self.pulse_1064_aom_analog = AnalogOut(name='pulse_1064_aom_analog', parent_device=ni_6739_0, connection='ao17', limits=(0, 1))
 
-        # self.dummy = AnalogOut(name='dummy', parent_device=ni_6739_0, connection='ao17', limits=(0, 1))
+        # All 8 electrodes
+        self.electrode_T1 = AnalogOut(
+            name='electrode_T1',
+            parent_device=ni_6739_0,
+            connection='ao22')
 
+        self.electrode_T2 = AnalogOut(
+            name='electrode_T2',
+            parent_device=ni_6739_0,
+            connection='ao23')
 
+        self.electrode_T3 = AnalogOut(
+            name='electrode_T3',
+            parent_device=ni_6739_0,
+            connection='ao24')
+
+        self.electrode_T4 = AnalogOut(
+            name='electrode_T4',
+            parent_device=ni_6739_0,
+            connection='ao25')
+
+        self.electrode_B1 = AnalogOut(
+            name='electrode_B1',
+            parent_device=ni_6739_0,
+            connection='ao26')
+
+        self.electrode_B2 = AnalogOut(
+            name='electrode_B2',
+            parent_device=ni_6739_0,
+            connection='ao27')
+
+        self.electrode_B3 = AnalogOut(
+            name='electrode_B3',
+            parent_device=ni_6739_0,
+            connection='ao28')
+
+        self.electrode_B4 = AnalogOut(
+            name='electrode_B4',
+            parent_device=ni_6739_0,
+            connection='ao29')
 
         self.runner = labscript_devices.FunctionRunner.labscript_devices.FunctionRunner(
             name = 'runner')

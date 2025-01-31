@@ -1615,6 +1615,63 @@ class BField:
 
         return biasx_field, biasy_field, biasz_field
 
+class EField:
+    """Control for electric field generation and manipulation.
+
+    This class manages the 8 electrodes in the glass cell to zero electric field or generate requested field
+    """
+    def __init__(self, t):
+
+        self.Efield_voltage = [
+            shot_globals.zero_Efield_Vx,
+            shot_globals.zero_Efield_Vy,
+            shot_globals.zero_Efield_Vz
+        ]
+
+        self.electrodes = [devices.electrode_T1,
+                           devices.electrode_T2,
+                           devices.electrode_T3,
+                           devices.electrode_T4,
+                           devices.electrode_B1,
+                           devices.electrode_B2,
+                           devices.electrode_B3,
+                           devices.electrode_B4,]
+
+        for voltage, electrode in zip(self.Efield_voltage, self.electrodes):
+            electrode.constant(t, voltage)
+
+    def convert_electrodes(voltage_dif_vector):
+        """
+        convert voltage difference into electrode voltages
+        """
+        Vx = voltage_dif_vector[0]
+        Vy = voltage_dif_vector[1]
+        Vz = voltage_dif_vector[2]
+
+        electrode_voltages=[Vx + Vy,
+                            Vy,
+                            Vx + Vy + Vz,
+                            Vy + Vz,
+                            Vx,
+                            0,
+                            Vx + Vz,
+                            Vz]
+
+        return electrode_voltages
+
+    def set_electric_field(self, t, voltage_dif_vector):
+        """
+        set electrodes to constant voltages. No ramp.
+        """
+        electrode_voltages = self.convert_electrodes(voltage_dif_vector)
+
+        for voltage, electrode in zip(electrode_voltages, self.electrodes):
+            electrode.constant(t, voltage)
+
+        self.Efield_voltage = voltage_dif_vector
+
+
+
 
 class Camera:
     """Controls for experimental imaging cameras.

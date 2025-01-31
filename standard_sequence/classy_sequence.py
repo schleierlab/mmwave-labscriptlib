@@ -13,6 +13,7 @@ from connection_table import devices
 from labscriptlib.shot_globals import shot_globals
 from labscriptlib.standard_sequence.experiment_components import (
     BField,
+    EField,
     Camera,
     D2Lasers,
     Microwave,
@@ -61,6 +62,7 @@ class MOTSequence:
         # correct state/tuning to start loading the MOT
         self.D2Lasers_obj = D2Lasers(t)
         self.BField_obj = BField(t)
+        self.EField_obj = EField(t)
         self.Microwave_obj = Microwave(t)
         self.UVLamps_obj = UVLamps(t)
         self.Camera_obj = Camera(t)
