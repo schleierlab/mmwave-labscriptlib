@@ -84,6 +84,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">labscriptlib.shot_globals</span><span class="w"> </span><span class="kn">import</span> <span class="n">shot_globals</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">labscriptlib.standard_sequence.experiment_components</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">BField</span><span class="p">,</span>
+    <span class="n">EField</span><span class="p">,</span>
     <span class="n">Camera</span><span class="p">,</span>
     <span class="n">D2Lasers</span><span class="p">,</span>
     <span class="n">Microwave</span><span class="p">,</span>
@@ -134,6 +135,7 @@
         <span class="c1"># correct state/tuning to start loading the MOT</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">D2Lasers_obj</span> <span class="o">=</span> <span class="n">D2Lasers</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span> <span class="o">=</span> <span class="n">BField</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EField_obj</span> <span class="o">=</span> <span class="n">EField</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Microwave_obj</span> <span class="o">=</span> <span class="n">Microwave</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">UVLamps_obj</span> <span class="o">=</span> <span class="n">UVLamps</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Camera_obj</span> <span class="o">=</span> <span class="n">Camera</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
@@ -1859,8 +1861,14 @@
         <span class="p">)</span>
 
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pump_then_rotate</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">B_field</span><span class="p">)</span> <span class="c1"># trap is lowered when optical pump happens</span>
-        <span class="c1"># self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)</span>
-        <span class="n">t</span> <span class="o">+=</span> <span class="mf">100e-6</span>
+
+        <span class="n">E_field_voltage</span> <span class="o">=</span> <span class="p">[</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_Efield_Vx</span><span class="p">,</span>
+                           <span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_Efield_Vy</span><span class="p">,</span>
+                           <span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_Efield_Vz</span><span class="p">,]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EField_obj</span><span class="o">.</span><span class="n">set_electric_field</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">E_field_voltage</span><span class="p">)</span>
+
+        <span class="c1"># t += 100e-6</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_Bfield_stabilize_wait_time</span>
         <span class="c1"># Apply Rydberg pulse with both 456 and 1064 active</span>
 
         <span class="n">t</span><span class="p">,</span> <span class="n">pulse_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RydLasers_obj</span><span class="o">.</span><span class="n">do_rydberg_pulse_short</span><span class="p">(</span>
@@ -1874,8 +1882,15 @@
         <span class="n">tweezer_switch_buffer</span> <span class="o">=</span> <span class="mf">2e-6</span>
         <span class="n">pulse_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">pulse_time</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">tweezer_switch_buffer</span><span class="p">,</span> <span class="n">pulse_time</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">tweezer_switch_buffer</span><span class="p">])</span> <span class="o">-</span> <span class="mf">0.3e-6</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">aom_off</span><span class="p">(</span><span class="n">pulse_time</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">digital_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">aom_on</span><span class="p">(</span><span class="n">pulse_time</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_power</span><span class="p">,</span> <span class="n">digital_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">ramp_power</span><span class="p">(</span><span class="n">pulse_time</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_dur</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">aom_on</span><span class="p">(</span><span class="n">pulse_time</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mf">0.99</span><span class="p">,</span> <span class="n">digital_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">pulse_time</span><span class="p">)</span>
+        <span class="c1"># self.TweezerLaser_obj.aom_on(pulse_time[1], shot_globals.tw_ramp_power, digital_only=True)</span>
+        <span class="c1"># self.TweezerLaser_obj.ramp_power(pulse_time[1], shot_globals.tw_ramp_dur, 0.99)</span>
+
+        <span class="n">zero_E_field_voltage</span> <span class="o">=</span> <span class="p">[</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">zero_Efield_Vx</span><span class="p">,</span>
+                                <span class="n">shot_globals</span><span class="o">.</span><span class="n">zero_Efield_Vy</span><span class="p">,</span>
+                                <span class="n">shot_globals</span><span class="o">.</span><span class="n">zero_Efield_Vz</span><span class="p">,]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EField_obj</span><span class="o">.</span><span class="n">set_electric_field</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">zero_E_field_voltage</span><span class="p">)</span> <span class="c1"># turn E field back to zero field</span>
 
         <span class="c1"># t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)</span>
         <span class="n">t</span> <span class="o">+=</span> <span class="mf">2e-3</span>  <span class="c1"># TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others</span>
