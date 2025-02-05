@@ -1985,7 +1985,7 @@ class RydSequence(TweezerSequence):
 
         return t
 
-# It's not yet tested!
+#TODO: It's not yet tested!
     def _do_1064_light_shift_check_sequence(self, t):
         """Perform a Rydberg excitation check sequence.
 

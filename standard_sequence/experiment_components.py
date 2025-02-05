@@ -750,7 +750,7 @@ class Microwave:
 
         return t
 
-    # This function is not tested yet
+    # TODO: This function is not tested yet
     def do_ramsey_pulse(self, t, dur, dur_between_pulse):
         """Generate a single-frequency microwave pulse.
 
