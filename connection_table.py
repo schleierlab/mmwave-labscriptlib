@@ -412,12 +412,7 @@ class LabDevices():
         # Cameras
         #==============================================================================
 
-        # self.manta419b_mot = Manta419B(
-        #     'manta419b_mot',
-        #     parent_device=ni_6363_0,
-        #     connection="port0/line2",
-        #     BIAS_port=54321,
-        # )
+32
 
         # self.manta419b_tweezer = Manta419B(
         #     'manta419b_tweezer',

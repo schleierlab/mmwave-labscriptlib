@@ -750,6 +750,7 @@ class Microwave:
 
         return t
 
+    # This function is not tested yet
     def do_ramsey_pulse(self, t, dur, dur_between_pulse):
         """Generate a single-frequency microwave pulse.
 
@@ -1201,33 +1202,6 @@ class RydLasers:
         # t = self.do_456_freq_sweep(t, self.CONST_DEFAULT_DETUNING_456)
 
         return t, t_aom_start
-
-    # def do_rydberg_multipulses(self, t, n_pulses, pulse_dur, pulse_wait_dur, power_456, power_1064, just_456=False, close_shutter=False):
-
-    #     pulse_start_times = [t]
-    #     dur = n_pulses * pulse_dur + (n_pulses - 1) * pulse_wait_dur
-    #     print('total pulse dur:', dur)
-    #     t_end = self.do_rydberg_pulse(t, dur, power_456, power_1064, close_shutter = close_shutter)
-    #     print('1st pulse start time:', t)
-    #     t += pulse_dur # first pulse
-    #
-    #     for i in range(n_pulses - 1):
-    #         if just_456:
-    #             self.pulse_456_aom_off(t, digital_only=True)
-    #             print(i+1, ' pulse end time:', t)
-    #             t += pulse_wait_dur
-    #             self.pulse_456_aom_on(t, power_456, digital_only=True)
-    #         else:
-    #             self.pulse_456_aom_off(t, digital_only=True)
-    #             self.pulse_1064_aom_off(t, digital_only=True)
-    #             t += pulse_wait_dur
-    #             self.pulse_456_aom_on(t, power_456, digital_only=True)
-    #             self.pulse_1064_aom_on(t, power_1064, digital_only=True)
-    #         pulse_start_times.append(t)
-    #         print(i+2,' pulse start time:', t)
-    #         t += pulse_dur
-
-    #     return t_end, pulse_start_times
 
 
     def do_rydberg_multipulses(self, t, n_pulses, pulse_dur, pulse_wait_dur, power_456, power_1064, just_456=False, close_shutter=False):

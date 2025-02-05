@@ -1854,15 +1854,12 @@ class RydSequence(TweezerSequence):
         t += 3e-3
 
 
-
-        B_field = (
-            self.BField_obj.convert_bias_fields_sph_to_cart(
-                shot_globals.ryd_bias_amp,
-                shot_globals.ryd_bias_phi,
-                shot_globals.ryd_bias_theta,
-            )
-        )
-        self.pump_then_rotate(t, B_field)
+        _ = self.pump_then_rotate(
+            t,
+            (shot_globals.ryd_bias_amp,
+             shot_globals.ryd_bias_phi,
+             shot_globals.ryd_bias_theta),
+             polar=True) # trap is lowered when optical pump happens
 
         t += 10e-3
 
