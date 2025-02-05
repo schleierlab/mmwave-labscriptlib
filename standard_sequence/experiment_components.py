@@ -1485,6 +1485,7 @@ class BField:
             dur (float, optional): Duration of the ramp. Defaults to 100e-6 s
             bias_field_vector (tuple, optional): Target bias field values in Gauss
             voltage_vector (tuple, optional): Target voltage values for coils
+            polar (boolean): using the spherical coordinate for the magnetic fields or cartiesain
 
         Returns:
             float: End time of the ramp
