@@ -13,6 +13,7 @@ if root_path not in sys.path:
 
 import numpy as np
 
+
 def ta_freq_calib(detuning_mhz):
     '''
     Yield the control voltage required to set the TA to a desired detuning
@@ -250,11 +251,11 @@ def generate_repump_freq_calib_coeff():
     print(repr(coeff))
 
 def spec_freq_calib(mw_detuning):
-        """ convert microwave detuning to spectrum card frequency """
-        uwave_clock = 9.192631770e3  # clock frequency 4,0 -> 5,0 in unit of MHz
-        local_oscillator_freq_mhz = 9486  # in unit of MHz MKU LO 8-13 PLL setting
-        spec_freq = (local_oscillator_freq_mhz -uwave_clock -mw_detuning)*1e6 # in unit of Hz
-        return spec_freq
+    """ convert microwave detuning to spectrum card frequency """
+    uwave_clock = 9.192631770e3  # clock frequency 4,0 -> 5,0 in unit of MHz
+    local_oscillator_freq_mhz = 9486  # in unit of MHz MKU LO 8-13 PLL setting
+    spec_freq = (local_oscillator_freq_mhz -uwave_clock -mw_detuning)*1e6 # in unit of Hz
+    return spec_freq
 
 
 def biasx_calib(field):
@@ -273,9 +274,9 @@ def biasy_calib(field):
 
 
 def biasz_calib(field):
-    V0 =  6.67996653e-01
+    V0 = -6.67996653e-01
     Vp = 1.06445681e+03
-    voltage = V0 +1/Vp*field
+    voltage = V0 + field / Vp
     return voltage
 
 

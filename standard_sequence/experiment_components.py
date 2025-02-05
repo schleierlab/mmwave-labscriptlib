@@ -421,7 +421,7 @@ class D2Lasers:
             # NOTE: Adding this to t makes it so it doesn't cut the previous pulse
             # short, but rather shifts the time of the next pulse.
             t += self.CONST_SHUTTER_TURN_ON_TIME
-            print("shutter config changed, adding time to account for switching")
+            # print("shutter config changed, adding time to account for switching")
             # print("shutter config:", shutter_config, ", t:", t)
             t = self.update_shutters(t, shutter_config)
             # print("****shutter config:", shutter_config, ", t:", t)
@@ -447,7 +447,7 @@ class D2Lasers:
         # If doing close_all_shutters, have to make sure that we aren't opening any of the ones we just closed in the next pulse.
         # Otherwise they won't be able to open in time unless there's enough delay between pulses.
         if close_all_shutters:
-            print("closing all shutters")
+            # print("closing all shutters")
             t += self.CONST_SHUTTER_TURN_OFF_TIME
             t = self.update_shutters(t, ShutterConfig.NONE)
             self.ta_aom_on(t, 1)
@@ -554,7 +554,7 @@ class TweezerLaser:
         assert shot_globals.do_sequence_mode, "shot_globals.do_sequence_mode is False, running Fifo mode now. Set to True for sequence mode"
         spectrum_manager.start_card()
         t1 = spectrum_manager.start_tweezers(t)
-        print("tweezer start time:", t1)
+        # print("tweezer start time:", t1)
         self.aom_on(t, self.tw_power)
 
     def stop_tweezers(self, t):
@@ -565,16 +565,16 @@ class TweezerLaser:
         """
         # stop tweezers
         t2 = spectrum_manager.stop_tweezers(t)
-        print("tweezer stop time:", t2)
+        # print("tweezer stop time:", t2)
 
         # dummy segment, need this to stop tweezers due to spectrum card bug
         t1 = spectrum_manager.start_tweezers(t)
-        print("tweezer start time:", t1)
+        # print("tweezer start time:", t1)
         t += 2e-3
         t2 = spectrum_manager.stop_tweezers(t)
-        print("tweezer stop time:", t2)
+        # print("tweezer stop time:", t2)
         spectrum_manager.stop_card(t)
-        print("tweezers have been stopped... for good...")
+        # print("tweezers have been stopped... for good...")
         return t
 
     def intensity_servo_keep_on(self, t):
@@ -586,7 +586,7 @@ class TweezerLaser:
         """keep the AOM digital high for intensity servo"""
         self.aom_on(t, 1)
 
-    def aom_on(self, t, const):
+    def aom_on(self, t, const, digital_only = False):
         """Turn on the tweezer beam using AOM.
 
         Args:
@@ -595,10 +595,11 @@ class TweezerLaser:
         """
         """Turn on the tweezer beam using aom"""
         devices.tweezer_aom_digital.go_high(t)  # digital on
-        devices.tweezer_aom_analog.constant(t, const)  # analog on
-        self.tw_power = const
+        if not digital_only:
+            devices.tweezer_aom_analog.constant(t, const)  # analog on
+            self.tw_power = const
 
-    def aom_off(self, t):
+    def aom_off(self, t, digital_only = False):
         """Turn off the tweezer beam using AOM.
 
         Args:
@@ -606,8 +607,9 @@ class TweezerLaser:
         """
         """Turn off the tweezer beam using aom"""
         devices.tweezer_aom_digital.go_low(t)  # digital off
-        devices.tweezer_aom_analog.constant(t, 0)  # analog off
-        self.tw_power = 0
+        if not digital_only:
+            devices.tweezer_aom_analog.constant(t, 0)  # analog off
+            self.tw_power = 0
 
     def ramp_power(self, t, dur, final_power):
         """Ramp the tweezer power from current to final value.
@@ -748,6 +750,47 @@ class Microwave:
 
         return t
 
+    # TODO: This function is not tested yet
+    def do_ramsey_pulse(self, t, dur, dur_between_pulse):
+        """Generate a single-frequency microwave pulse.
+
+        Produces a microwave pulse at the current detuning frequency with specified duration.
+        Handles timing offsets and switch control automatically.
+
+        Args:
+            t (float): Start time for the pulse
+            dur (float): Duration of the pulse
+
+        Returns:
+            float: End time after the pulse is complete
+        """
+        t += self.CONST_SPECTRUM_CARD_OFFSET
+        devices.uwave_absorp_switch.go_high(t)
+        self.uwave_absorp_switch_on = True
+
+        total_dur = dur + dur_between_pulse
+        devices.spectrum_uwave.single_freq(
+            t - self.CONST_SPECTRUM_CARD_OFFSET,
+            duration=total_dur,
+            freq=spec_freq_calib(self.mw_detuning),
+            amplitude=0.99,  # the amplitude can not be 1 due to the bug in spectrum card server
+            phase=0,  # initial phase = 0
+            ch=0,  # using channel 0
+            loops=1,  # doing 1 loop
+        )
+
+        t += dur/2
+        devices.uwave_absorp_switch.go_low(t)
+
+        t += dur_between_pulse
+        devices.uwave_absorp_switch.go_high(t)
+
+        t += dur/2
+        devices.uwave_absorp_switch.go_low(t)
+        self.uwave_absorp_switch_on = False
+
+        return t
+
     def do_sweep(self, t, start_freq, end_freq, dur):
         """Perform a frequency sweep of the microwave signal.
 
@@ -763,7 +806,7 @@ class Microwave:
         Returns:
             float: End time after the sweep is complete
         """
-        print("I'm doing microwave sweep")
+        # print("I'm doing microwave sweep")
         t += self.CONST_SPECTRUM_CARD_OFFSET
         devices.uwave_absorp_switch.go_high(t)
         self.uwave_absorp_switch_on = True
@@ -823,6 +866,10 @@ class RydLasers:
         3.6e-3  # minimum time for shutter to be on
     )
 
+    CONST_MIN_FREQ_STEP = 2 # MHz
+    CONST_MIN_T_STEP = 100e-6 # 10us
+    CONST_DEFAULT_DETUNING_456 = 600 #MHz
+
 
     def __init__(self, t):
         """Initialize the Rydberg laser system.
@@ -836,7 +883,8 @@ class RydLasers:
         self.servo_456_intensity_keep_on(t)
         self.servo_1064_intensity_keep_on(t)
         # Initialize 456nm laser detuning
-        self.detuning_456 = shot_globals.ryd_456_detuning
+        # the initial detuning every ramp start and end to
+        self.detuning_456 = shot_globals.ryd_456_detuning #self.CONST_DEFAULT_DETUNING_456 #MHz
         devices.dds1.synthesize(t, freq = self.detuning_456, amp = 0.5, ph = 0)
         # Initialize shutter state
         self.shutter_open = False
@@ -845,6 +893,37 @@ class RydLasers:
         self.mirror_456_2_position(t)
         self.mirror_1064_1_position(t)
         self.mirror_1064_2_position(t)
+        self.last_shutter_close_t = 0
+        self.last_shutter_open_t = 0
+
+    def do_456_freq_sweep(self, t, end_freq):
+        """Perform a frequency sweep of 456nm laser.
+
+        Generates a linear frequency sweep between specified start and end frequencies.
+        Controls switches and timing for proper sweep execution.
+
+        Args:
+            t (float): Start time for the sweep
+            start_freq (float): Starting frequency for the sweep
+            end_freq (float): Ending frequency for the sweep
+            dur (float): Duration of the sweep
+
+        Returns:
+            float: End time after the sweep is complete
+        """
+        start_freq = self.detuning_456
+        if start_freq == end_freq:
+            return t
+
+        num_steps = 4 #int(np.abs(start_freq - end_freq)/self.CONST_MIN_FREQ_STEP)
+        dur = num_steps*self.CONST_MIN_T_STEP
+        t_step = np.linspace(t - dur, t, num_steps)
+        freq_step = np.linspace(start_freq, end_freq, num_steps)
+        for i in np.arange(num_steps):
+            devices.dds1.synthesize(t_step[i], freq = freq_step[i], amp = 0.7, ph = 0)
+
+        self.detuning_456 = end_freq
+        return t
 
     def servo_456_intensity_keep_on(self, t):
         """Maintain the 456nm laser intensity servo in active state.
@@ -885,7 +964,7 @@ class RydLasers:
         devices.servo_456_aom_analog.constant(t, 0)  # analog off
         self.power_456 = 0
 
-    def pulse_456_aom_on(self, t, const):
+    def pulse_456_aom_on(self, t, const, digital_only = False):
         """Turn on the 456nm laser pulse AOM.
 
         Args:
@@ -893,18 +972,20 @@ class RydLasers:
             const (float): Power level for the AOM
         """
         devices.pulse_456_aom_digital.go_high(t)  # digital on
-        devices.pulse_456_aom_analog.constant(t, const)  # analog to const
-        self.power_456 = const
+        if not digital_only:
+            devices.pulse_456_aom_analog.constant(t, const)  # analog to const
+            self.power_456 = const
 
-    def pulse_456_aom_off(self, t):
+    def pulse_456_aom_off(self, t, digital_only = False):
         """Turn off the 456nm laser pulse AOM.
 
         Args:
             t (float): Time to turn off the AOM
         """
         devices.pulse_456_aom_digital.go_low(t)  # digital off
-        devices.pulse_456_aom_analog.constant(t, 0)  # analog off
-        self.power_456 = 0
+        if not digital_only:
+            devices.pulse_456_aom_analog.constant(t, 0)  # analog off
+            self.power_456 = 0
 
     def servo_1064_aom_on(self, t, const):
         """Turn on the 1064nm laser servo AOM.
@@ -927,7 +1008,7 @@ class RydLasers:
         devices.servo_1064_aom_analog.constant(t, 0)  # analog off
         self.power_1064 = 0
 
-    def pulse_1064_aom_on(self, t, const):
+    def pulse_1064_aom_on(self, t, const, digital_only = False):
         """Turn on the 1064nm laser pulse AOM.
 
         Args:
@@ -935,18 +1016,20 @@ class RydLasers:
             const (float): Power level for the AOM
         """
         devices.pulse_1064_aom_digital.go_high(t)  # digital on
-        devices.pulse_1064_aom_analog.constant(t, const)  # analog to const
-        self.power_1064 = const
+        if not digital_only:
+            devices.pulse_1064_aom_analog.constant(t, const)  # analog to const
+            self.power_1064 = const
 
-    def pulse_1064_aom_off(self, t):
+    def pulse_1064_aom_off(self, t, digital_only = False):
         """Turn off the 1064nm laser pulse AOM.
 
         Args:
             t (float): Time to turn off the AOM
         """
         devices.pulse_1064_aom_digital.go_low(t)  # digital off
-        devices.pulse_1064_aom_analog.constant(t, 0)  # analog off
-        self.power_1064 = 0
+        if not digital_only:
+            devices.pulse_1064_aom_analog.constant(t, 0)  # analog off
+            self.power_1064 = 0
 
     def mirror_456_1_position(self, t):
         """Set the position of the first 456nm laser mirror.
@@ -992,6 +1075,76 @@ class RydLasers:
         )
         devices.mirror_1064_2_v.constant(t, shot_globals.ryd_1064_mirror_2_v)
 
+    def update_blue_456_shutter(self, t, config):
+        """ perform the shutter update for the 456nm laser
+        This help tracks when the last time the shutter is closed and open
+        make sure to add the minium time for the shutter open and close
+        before turn the aom back on for thermalization"""
+        if config == "open":
+            if t - self.last_shutter_close_t < self.CONST_MIN_SHUTTER_OFF_TIME:
+                t = self.last_shutter_close_t + self.CONST_MIN_SHUTTER_OFF_TIME
+            devices.blue_456_shutter.open(t) # shutter fully open
+            self.last_shutter_open_t = t
+            self.shutter_open = True
+            return t
+        elif config == "close":
+            if t - self.last_shutter_open_t  < self.CONST_MIN_SHUTTER_ON_TIME:
+                t = self.last_shutter_open_t + self.CONST_MIN_SHUTTER_ON_TIME
+            self.last_shutter_close_t = t
+            devices.blue_456_shutter.close(t) #shutter start to close
+            t += self.CONST_SHUTTER_TURN_OFF_TIME
+            self.shutter_open = False
+            return t
+
+    def do_456_pulse(self, t, dur, power_456, close_shutter=False):
+        """Perform a Rydberg excitation pulse with specified parameters.
+
+        Executes a laser pulse by configuring the shutter and AOM powers for both 456nm and 1064nm lasers.
+        The servo AOMs remain unchanged during the pulse.
+
+        # TODO: Check that this explanation is clear, @Sam, @Lin, @Michelle.
+        Note that this routine is a little different from the D2Lasers do_pulse routine.
+        In D2Lasers do_pulse, there is automatic time added if shutters need to be changed,
+        so the input t is not necessarily the start time of the pulse. In contrast, here, t
+        is the start time of the pulse, and the shutter is opened in time for the
+        start of the pulse.
+
+        Args:
+            t (float): Start time for the aom part of the pulse
+            dur (float): Duration of the pulse
+            power_456 (float): Power level for the 456nm beam (0 to 1)
+            power_1064 (float): Power level for the 1064nm beam (0 to 1)
+            close_shutter (bool, optional): Whether to close shutter after pulse. Defaults to False.
+
+        Returns:
+            tuple[float]: (End time after pulse and shutter operations)
+        """
+        # t = self.do_456_freq_sweep(t, shot_globals.ryd_456_detuning)
+
+        if not self.shutter_open:
+            if power_456 != 0:
+                t = self.update_blue_456_shutter(t,"open")
+            # Turn off AOMs while waiting for shutter to fully open
+            self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
+
+        # Turn on AOMs with specified powers
+        if power_456 != 0:
+            self.pulse_456_aom_on(t, power_456)
+
+
+        t += dur
+
+        # Turn off AOMs at the end of the pulse
+        self.pulse_456_aom_off(t)
+
+        if close_shutter:
+            if power_456 != 0:
+                t = self.update_blue_456_shutter(t,"close")
+            self.pulse_456_aom_on(t, 1)
+
+        return t
+
+
 
     def do_rydberg_pulse(self, t, dur, power_456, power_1064, close_shutter=False):
         """Perform a Rydberg excitation pulse with specified parameters.
@@ -1016,32 +1169,128 @@ class RydLasers:
         Returns:
             tuple[float]: (End time after pulse and shutter operations)
         """
+        # t = self.do_456_freq_sweep(t, shot_globals.ryd_456_detuning)
+
         if not self.shutter_open:
-            devices.blue_456_shutter.open(t) # shutter fully open
-            self.shutter_open = True
+            if power_456 != 0:
+                t = self.update_blue_456_shutter(t,"open")
             # Turn off AOMs while waiting for shutter to fully open
             self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
-            self.pulse_1064_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
+            if power_1064 != 0:
+                self.pulse_1064_aom_on(t , power_1064)
+                # self.pulse_1064_aom_on(t- self.CONST_SHUTTER_TURN_ON_TIME, power_1064)
 
         # Turn on AOMs with specified powers
         if power_456 != 0:
             self.pulse_456_aom_on(t, power_456)
-        if power_1064 != 0:
-            self.pulse_1064_aom_on(t, power_1064)
 
+        t_aom_start = t
         t += dur
+
 
         # Turn off AOMs at the end of the pulse
         self.pulse_456_aom_off(t)
         self.pulse_1064_aom_off(t)
 
         if close_shutter:
-            devices.blue_456_shutter.close(t) #shutter start to close
-            t += self.CONST_SHUTTER_TURN_OFF_TIME
-            self.shutter_open = False
+            if power_456 != 0:
+                t = self.update_blue_456_shutter(t,"close")
+                t += 1e-3
             self.pulse_456_aom_on(t, 1)
+            # self.pulse_1064_aom_on(t,1)
 
-        return t
+        # t = self.do_456_freq_sweep(t, self.CONST_DEFAULT_DETUNING_456)
+
+        return t, t_aom_start
+
+
+    def do_rydberg_multipulses(self, t, n_pulses, pulse_dur, pulse_wait_dur, power_456, power_1064, just_456=False, close_shutter=False):
+
+        pulse_start_times = []
+
+        # turn analog on 10 us earlier than the digital
+        # workaround for timing limitation on pulseblaster due to labscript
+        # https://groups.google.com/g/labscriptsuite/c/QdW6gUGNwQ0
+        aom_analog_ctrl_anticipation = 1e-5
+
+        if not self.shutter_open:
+            if power_1064 != 0:
+                devices.pulse_1064_aom_analog.constant(t - aom_analog_ctrl_anticipation, power_1064)
+            if power_456 != 0:
+                devices.pulse_456_aom_analog.constant(t - aom_analog_ctrl_anticipation, power_456)
+                t = self.update_blue_456_shutter(t,"open")
+            # Turn off AOMs while waiting for shutter to fully open
+            self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME, digital_only=True)
+            if power_1064 != 0:
+                self.pulse_1064_aom_on(t , power_1064, digital_only=True)
+                # self.pulse_1064_aom_on(t- self.CONST_SHUTTER_TURN_ON_TIME, power_1064)
+
+        for i in range(n_pulses):
+            if just_456:
+                self.pulse_456_aom_on(t, power_456, digital_only=True)
+                # print(i, ' pulse start time:', t)
+                t += pulse_dur
+                self.pulse_456_aom_off(t, digital_only=True)
+                t+= pulse_wait_dur
+            else:
+                self.pulse_456_aom_on(t, power_456, digital_only=True)
+                self.pulse_1064_aom_on(t, power_1064, digital_only=True)
+                t += pulse_dur
+                self.pulse_456_aom_off(t, digital_only=True)
+                self.pulse_1064_aom_off(t, digital_only=True)
+                t += pulse_wait_dur
+
+            pulse_start_times.append(t - pulse_wait_dur-pulse_dur)
+
+        self.pulse_1064_aom_off(t)
+        if close_shutter:
+            if power_456 != 0:
+                t = self.update_blue_456_shutter(t,"close")
+            self.pulse_456_aom_on(t, 1)
+            # self.pulse_1064_aom_on(t,1)
+            t_end = t
+
+        return t_end, pulse_start_times
+
+    def do_rydberg_pulse_short(self, t, dur, power_456, power_1064, close_shutter=False):
+        '''
+        turn analog on 10 us earlier than the digital so there won't be pulseblaster related errors from the labscript
+        '''
+
+        # turn analog on 10 us earlier than the digital
+        # workaround for timing limitation on pulseblaster due to labscript
+        # https://groups.google.com/g/labscriptsuite/c/QdW6gUGNwQ0
+        aom_analog_ctrl_anticipation = 1e-5
+        if not self.shutter_open:
+            if power_1064 != 0:
+                devices.pulse_1064_aom_analog.constant(t - aom_analog_ctrl_anticipation, power_1064)
+            if power_456 != 0:
+                devices.pulse_456_aom_analog.constant(t - aom_analog_ctrl_anticipation, power_456)
+                t = self.update_blue_456_shutter(t, "open")
+
+            # Turn off AOMs while waiting for shutter to fully open
+            self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME, digital_only=True)
+
+            if power_456!=0:
+                self.pulse_456_aom_on(t, power_456, digital_only=True)
+            if power_1064 !=0:
+                self.pulse_1064_aom_on(t, power_1064, digital_only=True)
+
+            print(f"t for aom on time {t}")
+            pulse_times = [t]
+            t += dur
+            pulse_times.append(t)
+            print(f"t for aom off time {t}")
+            self.pulse_456_aom_off(t, digital_only=True)
+            self.pulse_1064_aom_off(t, digital_only=True)
+
+        if close_shutter:
+            if power_456 != 0:
+                t = self.update_blue_456_shutter(t, "close")
+            # self.pulse_456_aom_on(t, 1, digital_only=True)
+
+        return t, pulse_times
+
 
 class UVLamps:
     """Controls for UV LED lamps used in the experiment.
@@ -1182,7 +1431,7 @@ class BField:
             final=coil_voltage_mid,  # sligtly negative voltage to trigger the polarity change
             samplerate=1e5,
         )
-        print(f"feed_disable_ttl in coil {component}")
+        # print(f"feed_disable_ttl in coil {component}")
         feedback_disable_ttl.go_high(t)
         feedback_disable_ttl.go_low(t + self.CONST_COIL_FEEDBACK_OFF_TIME)
         self.current_outputs[component].constant(t, coil_voltage_mid)
@@ -1202,7 +1451,7 @@ class BField:
         self.bias_voltages[component] = final_voltage
         return t
 
-    def ramp_bias_field(self, t, dur = 100e-6,  bias_field_vector=None, voltage_vector=None):
+    def ramp_bias_field(self, t, dur = 100e-6,  bias_field_vector=None, voltage_vector=None, polar = False):
         """Ramp the bias field to new values.
 
         Args:
@@ -1210,19 +1459,32 @@ class BField:
             dur (float, optional): Duration of the ramp. Defaults to 100e-6 s
             bias_field_vector (tuple, optional): Target bias field values in Gauss
             voltage_vector (tuple, optional): Target voltage values for coils
+            polar (boolean): using the spherical coordinate for the magnetic fields or cartiesain
 
         Returns:
             float: End time of the ramp
         """
         # bias_field_vector should be a tuple of the form (x,y,z)
         # Need to start the ramp earlier if the voltage changes sign
+        if polar:
+            field_vector = (
+                self.convert_bias_fields_sph_to_cart(
+                    bias_field_vector[0],
+                    bias_field_vector[1],
+                    bias_field_vector[2],
+                )
+            )
+        else:
+            field_vector = bias_field_vector
+
+
         dur = np.max([dur, self.CONST_COIL_RAMP_TIME])
-        if bias_field_vector is not None:
+        if field_vector is not None:
             voltage_vector = np.array(
                 [
-                    biasx_calib(bias_field_vector[0]),
-                    biasy_calib(bias_field_vector[1]),
-                    biasz_calib(bias_field_vector[2]),
+                    biasx_calib(field_vector[0]),
+                    biasy_calib(field_vector[1]),
+                    biasz_calib(field_vector[2]),
                 ]
             )
 
@@ -1235,7 +1497,7 @@ class BField:
             t - self.CONST_BIPOLAR_COIL_FLIP_TIME * sign_flip_in_ramp
         )
 
-        print(coil_ramp_start_times)
+        # print(coil_ramp_start_times)
 
         for i in range(3):
             if sign_flip_in_ramp[i]:
@@ -1253,14 +1515,14 @@ class BField:
                     final=voltage_vector[i],
                     samplerate=1e5,
                 )
-        print(coil_ramp_start_times)
+        # print(coil_ramp_start_times)
         end_time = (
             np.min(coil_ramp_start_times)
             + dur
             + self.CONST_BIPOLAR_COIL_FLIP_TIME
         )
         self.t_last_change = end_time
-        print(coil_ramp_start_times)
+        # print(coil_ramp_start_times)
 
         # TODO: add the inverse function of bias_i_calib
         # otherwise, if only voltage vector is provided on input, the bias field will not be updated
@@ -1328,6 +1590,64 @@ class BField:
 
         return biasx_field, biasy_field, biasz_field
 
+class EField:
+    """Control for electric field generation and manipulation.
+
+    This class manages the 8 electrodes in the glass cell to zero electric field or generate requested field
+    """
+    def __init__(self, t):
+
+        self.Efield_voltage = [
+            shot_globals.zero_Efield_Vx,
+            shot_globals.zero_Efield_Vy,
+            shot_globals.zero_Efield_Vz
+        ]
+
+        self.electrodes = [devices.electrode_T1,
+                           devices.electrode_T2,
+                           devices.electrode_T3,
+                           devices.electrode_T4,
+                           devices.electrode_B1,
+                           devices.electrode_B2,
+                           devices.electrode_B3,
+                           devices.electrode_B4,]
+
+        self.set_electric_field(t, self.Efield_voltage)
+
+    def convert_electrodes_voltages(self, voltage_diff_vector):
+        """
+        convert voltage difference into electrode voltages
+        """
+        Vx = voltage_diff_vector[0]
+        Vy = voltage_diff_vector[1]
+        Vz = voltage_diff_vector[2]
+
+        electrode_voltages=[Vx + Vy,
+                            Vy,
+                            Vx + Vy + Vz,
+                            Vy + Vz,
+                            Vx,
+                            0,
+                            Vx + Vz,
+                            Vz]
+
+        return electrode_voltages
+
+    def set_electric_field(self, t, voltage_diff_vector):
+        """
+        set electrodes to constant voltages. No ramp.
+        """
+        print(type(voltage_diff_vector))
+        print(voltage_diff_vector)
+        electrode_voltages = self.convert_electrodes_voltages(voltage_diff_vector)
+
+        for voltage, electrode in zip(electrode_voltages, self.electrodes):
+            electrode.constant(t, voltage)
+
+        self.Efield_voltage = voltage_diff_vector
+
+
+
 
 class Camera:
     """Controls for experimental imaging cameras.
@@ -1385,19 +1705,3 @@ class Camera:
                 "atoms",
                 exposure_time=exposure_time,
             )
-
-
-class EField:
-    """Controls for electric field generation and manipulation.
-
-    This class manages the electric field controls in the experiment, including
-    field generation, ramping, and manipulation for various experimental sequences.
-    """
-
-    def __init__(self, t):
-        """Initialize the electric field system.
-
-        Args:
-            t (float): Time to start the electric field
-        """
-        raise NotImplementedError
