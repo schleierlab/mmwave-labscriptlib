@@ -1658,18 +1658,18 @@ class EField:
 
         return electrode_voltages
 
-    def set_electric_field(self, t, voltage_dif_vector):
+    def set_electric_field(self, t, voltage_diff_vector):
         """
         set electrodes to constant voltages. No ramp.
         """
-        print(type(voltage_dif_vector))
-        print(voltage_dif_vector)
-        electrode_voltages = self.convert_electrodes_voltages(voltage_dif_vector)
+        print(type(voltage_diff_vector))
+        print(voltage_diff_vector)
+        electrode_voltages = self.convert_electrodes_voltages(voltage_diff_vector)
 
         for voltage, electrode in zip(electrode_voltages, self.electrodes):
             electrode.constant(t, voltage)
 
-        self.Efield_voltage = voltage_dif_vector
+        self.Efield_voltage = voltage_diff_vector
 
 
 
