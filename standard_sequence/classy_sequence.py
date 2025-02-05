@@ -1909,7 +1909,7 @@ class RydSequence(TweezerSequence):
                 shot_globals.ryd_bias_theta,
             )
         )
-        self.pump_then_rotate(self, t, B_field)
+        self.pump_then_rotate(t, B_field)
 
         t += 10e-3
 
@@ -1924,7 +1924,7 @@ class RydSequence(TweezerSequence):
         # )
         # Apply Rydberg pulse with only 456 active
 
-        t = self.RydLasers_obj.do_rydberg_pulse(
+        t, _ = self.RydLasers_obj.do_rydberg_pulse(
             t, #t_aom_start synchronize with repump pulse
             dur=shot_globals.ryd_456_duration,
             power_456=shot_globals.ryd_456_power,
