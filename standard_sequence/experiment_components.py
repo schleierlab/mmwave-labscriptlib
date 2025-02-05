@@ -1639,13 +1639,13 @@ class EField:
 
         self.set_electric_field(t, self.Efield_voltage)
 
-    def convert_electrodes_voltages(self, voltage_dif_vector):
+    def convert_electrodes_voltages(self, voltage_diff_vector):
         """
         convert voltage difference into electrode voltages
         """
-        Vx = voltage_dif_vector[0]
-        Vy = voltage_dif_vector[1]
-        Vz = voltage_dif_vector[2]
+        Vx = voltage_diff_vector[0]
+        Vy = voltage_diff_vector[1]
+        Vz = voltage_diff_vector[2]
 
         electrode_voltages=[Vx + Vy,
                             Vy,
