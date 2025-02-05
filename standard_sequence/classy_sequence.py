@@ -1877,30 +1877,7 @@ class RydSequence(TweezerSequence):
 
         t += 3e-3
 
-        # t, t_aom_off = self.pump_to_F4(
-        #     t, shot_globals.op_label, close_all_shutters=True
-        # )
-        # t += 5e-3
 
-        # # Making sure the ramp ends right as the pumping is starting
-        # t_start_ramp = (
-        #     t_aom_off - shot_globals.tw_ramp_dur - shot_globals.op_repump_time
-        # )
-
-        # # ramp down the tweezer power before optical pumping
-        # _ = self.TweezerLaser_obj.ramp_power(
-        #     t_start_ramp, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power
-        # ) # this should not return t because then it would make the next step (field rampping) happens too early
-
-
-        # t = self.BField_obj.ramp_bias_field(
-        #     t, # extra time to wait for 5e-3s extra time in optical pumping field
-        #     bias_field_vector=(shot_globals.ryd_bias_amp,
-        #                        shot_globals.ryd_bias_phi,
-        #                        shot_globals.ryd_bias_theta),
-        #     # dur=shot_globals.mw_bias_ramp_dur,
-        #     polar = True,
-        # )
 
         B_field = (
             self.BField_obj.convert_bias_fields_sph_to_cart(
@@ -1913,16 +1890,7 @@ class RydSequence(TweezerSequence):
 
         t += 10e-3
 
-        # Apply repump pulse
-        # t, t_aom_start = self.D2Lasers_obj.do_pulse(
-        #     t,
-        #     shot_globals.ryd_456_duration,
-        #     ShutterConfig.OPTICAL_PUMPING_REPUMP,
-        #     0,
-        #     shot_globals.ryd_456_repump_power,
-        #     close_all_shutters=True,
-        # )
-        # Apply Rydberg pulse with only 456 active
+
 
         t, _ = self.RydLasers_obj.do_rydberg_pulse(
             t, #t_aom_start synchronize with repump pulse
