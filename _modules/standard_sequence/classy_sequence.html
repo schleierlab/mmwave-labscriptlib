@@ -2016,30 +2016,39 @@
 
         <span class="n">t</span> <span class="o">+=</span> <span class="mf">3e-3</span>
 
-        <span class="n">t</span><span class="p">,</span> <span class="n">t_aom_off</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pump_to_F4</span><span class="p">(</span>
-            <span class="n">t</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_label</span><span class="p">,</span> <span class="n">close_all_shutters</span><span class="o">=</span><span class="kc">True</span>
+        <span class="c1"># t, t_aom_off = self.pump_to_F4(</span>
+        <span class="c1">#     t, shot_globals.op_label, close_all_shutters=True</span>
+        <span class="c1"># )</span>
+        <span class="c1"># t += 5e-3</span>
+
+        <span class="c1"># # Making sure the ramp ends right as the pumping is starting</span>
+        <span class="c1"># t_start_ramp = (</span>
+        <span class="c1">#     t_aom_off - shot_globals.tw_ramp_dur - shot_globals.op_repump_time</span>
+        <span class="c1"># )</span>
+
+        <span class="c1"># # ramp down the tweezer power before optical pumping</span>
+        <span class="c1"># _ = self.TweezerLaser_obj.ramp_power(</span>
+        <span class="c1">#     t_start_ramp, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power</span>
+        <span class="c1"># ) # this should not return t because then it would make the next step (field rampping) happens too early</span>
+
+
+        <span class="c1"># t = self.BField_obj.ramp_bias_field(</span>
+        <span class="c1">#     t, # extra time to wait for 5e-3s extra time in optical pumping field</span>
+        <span class="c1">#     bias_field_vector=(shot_globals.ryd_bias_amp,</span>
+        <span class="c1">#                        shot_globals.ryd_bias_phi,</span>
+        <span class="c1">#                        shot_globals.ryd_bias_theta),</span>
+        <span class="c1">#     # dur=shot_globals.mw_bias_ramp_dur,</span>
+        <span class="c1">#     polar = True,</span>
+        <span class="c1"># )</span>
+
+        <span class="n">B_field</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">convert_bias_fields_sph_to_cart</span><span class="p">(</span>
+                <span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_bias_amp</span><span class="p">,</span>
+                <span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_bias_phi</span><span class="p">,</span>
+                <span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_bias_theta</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="p">)</span>
-        <span class="n">t</span> <span class="o">+=</span> <span class="mf">5e-3</span>
-
-        <span class="c1"># Making sure the ramp ends right as the pumping is starting</span>
-        <span class="n">t_start_ramp</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">t_aom_off</span> <span class="o">-</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_dur</span> <span class="o">-</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">op_repump_time</span>
-        <span class="p">)</span>
-
-        <span class="c1"># ramp down the tweezer power before optical pumping</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TweezerLaser_obj</span><span class="o">.</span><span class="n">ramp_power</span><span class="p">(</span>
-            <span class="n">t_start_ramp</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_dur</span><span class="p">,</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">tw_ramp_power</span>
-        <span class="p">)</span> <span class="c1"># this should not return t because then it would make the next step (field rampping) happens too early</span>
-
-
-        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">ramp_bias_field</span><span class="p">(</span>
-            <span class="n">t</span><span class="p">,</span> <span class="c1"># extra time to wait for 5e-3s extra time in optical pumping field</span>
-            <span class="n">bias_field_vector</span><span class="o">=</span><span class="p">(</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_bias_amp</span><span class="p">,</span>
-                               <span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_bias_phi</span><span class="p">,</span>
-                               <span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_bias_theta</span><span class="p">),</span>
-            <span class="c1"># dur=shot_globals.mw_bias_ramp_dur,</span>
-            <span class="n">polar</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pump_then_rotate</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">B_field</span><span class="p">)</span>
 
         <span class="n">t</span> <span class="o">+=</span> <span class="mf">10e-3</span>
 
@@ -2054,7 +2063,7 @@
         <span class="c1"># )</span>
         <span class="c1"># Apply Rydberg pulse with only 456 active</span>
 
-        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RydLasers_obj</span><span class="o">.</span><span class="n">do_rydberg_pulse</span><span class="p">(</span>
+        <span class="n">t</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RydLasers_obj</span><span class="o">.</span><span class="n">do_rydberg_pulse</span><span class="p">(</span>
             <span class="n">t</span><span class="p">,</span> <span class="c1">#t_aom_start synchronize with repump pulse</span>
             <span class="n">dur</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_456_duration</span><span class="p">,</span>
             <span class="n">power_456</span><span class="o">=</span><span class="n">shot_globals</span><span class="o">.</span><span class="n">ryd_456_power</span><span class="p">,</span>
