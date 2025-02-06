@@ -527,7 +527,7 @@ class OpticalPumpingSequence(MOTSequence):
             # Use the sigma+ beam for optical pumping
 
             _ = self.BField_obj.ramp_bias_field(
-                t, bias_field_vector=(op_biasx_field, op_biasy_field, op_biasz_field)
+                t, bias_field_vector = op_total_field
             )
             # ramp detuning to 4 -> 4, 3 -> 4
             self.D2Lasers_obj.ramp_ta_freq(
@@ -1227,8 +1227,10 @@ class TweezerSequence(OpticalPumpingSequence):
         Returns:
             float: End time of the sequence
         """
+
+        t += 1e-5
         self.TweezerLaser_obj.aom_on(t, shot_globals.tw_power)
-        t += 1
+        t += 10
 
         return t
 

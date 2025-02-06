@@ -412,8 +412,6 @@ class LabDevices():
         # Cameras
         #==============================================================================
 
-32
-
         # self.manta419b_tweezer = Manta419B(
         #     'manta419b_tweezer',
         #     parent_device=ni_6363_0,
