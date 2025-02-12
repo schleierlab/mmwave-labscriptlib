@@ -184,7 +184,7 @@ class MOTSequence:
 
         print("MOT coils = ", self.BField_obj.mot_coils_on)
         # MOT loading time 500 ms
-        mot_load_dur = 0.5
+        mot_load_dur = shot_globals.mot_load_dur #0.5
 
         t = self.do_mot(t, mot_load_dur)
 
@@ -421,7 +421,7 @@ class MOTSequence:
         Returns:
             float: End time of the sequence
         """
-        mot_load_dur = 0.5
+        mot_load_dur = shot_globals.mot_load_dur
 
         t = self.do_mot(t, mot_load_dur)
 
@@ -1609,7 +1609,7 @@ class RydSequence(TweezerSequence):
             close_all_shutters=False,
         )
 
-        # self.RydLasers_obj.pulse_1064_aom_off(t)
+        self.RydLasers_obj.pulse_1064_aom_off(t)
 
         t+= 1e-1
         # Background image
