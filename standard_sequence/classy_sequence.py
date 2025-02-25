@@ -1212,9 +1212,9 @@ class TweezerSequence(OpticalPumpingSequence):
         return t
 
     def _do_tweezer_position_check_sequence(self, t):
-        """Perform a basic tweezer loading and imaging check sequence.
+        """Perform a basic tweezer position check sequence.
 
-        Executes a complete sequence to verify tweezer operation:
+        Executes a complete sequence to verify tweezer position on manta tweezer camera:
         1. Load atoms into tweezers
         2. Take first image
         3. Wait specified time
@@ -1227,10 +1227,23 @@ class TweezerSequence(OpticalPumpingSequence):
         Returns:
             float: End time of the sequence
         """
-
+        check_with_vimba = False
         t += 1e-5
         self.TweezerLaser_obj.aom_on(t, shot_globals.tw_power)
-        t += 10
+
+        if check_with_vimba:
+            t+= 10
+        else:
+            t +=1e-3
+            t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
+
+            #taking background images
+            t += 1e-1
+            self.TweezerLaser_obj.aom_off(t)
+            t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
+            t += 1e-2
+
+        t += 1
 
         return t
 
