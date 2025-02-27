@@ -1201,6 +1201,7 @@ class TweezerSequence(OpticalPumpingSequence):
         Returns:
             float: End time of the sequence
         """
+        devices.servo_1064_aom_digital.go_high(t) # added for Nolan's alignment on IPG
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
         # TODO: add tweezer modulation here, or in a separate sequence?
@@ -1227,7 +1228,8 @@ class TweezerSequence(OpticalPumpingSequence):
         Returns:
             float: End time of the sequence
         """
-        check_with_vimba = False
+        check_with_vimba = True
+        # devices.servo_1064_aom_digital.go_high(t) # added for Nolan's alignment on IPG
         t += 1e-5
         self.TweezerLaser_obj.aom_on(t, shot_globals.tw_power)
 
