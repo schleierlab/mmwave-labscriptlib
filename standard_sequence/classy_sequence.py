@@ -755,7 +755,7 @@ class OpticalPumpingSequence(MOTSequence):
         """
         raise NotImplementedError
 
-    def _optical_pump_molasses_sequence(self, t, reset_mot=False):
+    def _do_optical_pump_in_molasses_sequence(self, t, reset_mot=False):
         """Execute a complete optical pumping sequence in molasses.
 
         Performs a sequence of: MOT loading, molasses cooling, optical pumping to F=4,
@@ -775,7 +775,11 @@ class OpticalPumpingSequence(MOTSequence):
         t = self.do_mot(t, mot_load_dur)
         t = self.do_molasses(t, shot_globals.bm_time)
 
-        t = self.pump_to_F4(t)
+        if shot_globals.do_op:
+            t = self.pump_to_F4(t)
+
+        if shot_globals.do_killing_pulse:
+            t, _ = self.kill_F4(t)
 
         t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
 
@@ -2112,6 +2116,11 @@ if __name__ == "__main__":
         MOTSeq_obj = MOTSequence(t)
         sequence_objects.append(MOTSeq_obj)
         t = MOTSeq_obj._do_molasses_tof_sequence(t, reset_mot=True)
+
+    elif shot_globals.do_optical_pump_in_molasses_check:
+        OPSeq_obj = OpticalPumpingSequence(t)
+        sequence_objects.append(OPSeq_obj)
+        t = OPSeq_obj._do_optical_pump_in_molasses_sequence(t, reset_mot=True)
 
     elif shot_globals.do_pump_debug_in_molasses:
         OPSeq_obj = OpticalPumpingSequence(t)
