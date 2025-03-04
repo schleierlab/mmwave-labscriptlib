@@ -542,6 +542,10 @@ class OpticalPumpingSequence(MOTSequence):
             # We added op_ramp_delay because in the case of tweezer microwave, we can wait for the bias field to stabilize
             # but we can't do this for molasses because we need small time of flight to detect signal
             t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
+            self.D2Lasers_obj.ta_aom_off(t)
+            self.D2Lasers_obj.repump_aom_off(t)
+            t = self.D2Lasers_obj.update_shutters(t, ShutterConfig.OPTICAL_PUMPING_FULL)
+            t += D2Lasers.CONST_MIN_SHUTTER_ON_TIME
 
             t, t_aom_start = self.D2Lasers_obj.do_pulse(
                 t,
@@ -921,7 +925,7 @@ class OpticalPumpingSequence(MOTSequence):
             # ]
 
         t = self.BField_obj.ramp_bias_field(
-                t_aom_off + 200e-6, #TODO: wait for 200e-6s extra time in optical pumping field, can be changed
+                t_aom_off + 5e-3, #TODO: wait for 200e-6s extra time in optical pumping field, can be changed
                 bias_field_vector=(shot_globals.mw_bias_amp,
                                    shot_globals.mw_bias_phi,
                                    shot_globals.mw_bias_theta),
@@ -1035,7 +1039,7 @@ class TweezerSequence(OpticalPumpingSequence):
         Raises:
             AssertionError: If time-of-flight delay is too short
         """
-        t = self.do_mot(t, dur=0.5)
+        t = self.do_mot(t, dur = 0.0) #dur=0.5)
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
 
         # TODO: does making this delay longer make the background better when using UV?
@@ -1205,7 +1209,6 @@ class TweezerSequence(OpticalPumpingSequence):
         Returns:
             float: End time of the sequence
         """
-        devices.servo_1064_aom_digital.go_high(t) # added for Nolan's alignment on IPG
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
         # TODO: add tweezer modulation here, or in a separate sequence?
@@ -1233,7 +1236,6 @@ class TweezerSequence(OpticalPumpingSequence):
             float: End time of the sequence
         """
         check_with_vimba = True
-        # devices.servo_1064_aom_digital.go_high(t) # added for Nolan's alignment on IPG
         t += 1e-5
         self.TweezerLaser_obj.aom_on(t, shot_globals.tw_power)
 
@@ -1401,8 +1403,9 @@ class TweezerSequence(OpticalPumpingSequence):
         """
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
-
+        # _ = self.D2Lasers_obj.update_shutters(t, ShutterConfig.OPTICAL_PUMPING_FULL)
         t += 3e-3
+
 
         if shot_globals.do_depump_ta_pulse_before_pump:
             t = self.depump_ta_pulse(t)
@@ -1411,7 +1414,7 @@ class TweezerSequence(OpticalPumpingSequence):
             t, t_aom_off = self.pump_to_F4(
                 t, shot_globals.op_label, close_all_shutters=True
             )
-            t += 5e-3
+            # t += 5e-3
 
         # Making sure the ramp ends right as the pumping is starting
         t_start_ramp = (
@@ -2096,6 +2099,9 @@ if __name__ == "__main__":
     t = 0
     sequence_objects = []
     # Insert "stay on" statements for alignment here...
+    devices.servo_1064_aom_digital.go_high(t) # added for Nolan's alignment on IPG
+    devices.local_addr_1064_aom_digital.go_high(t)
+    devices.local_addr_1064_aom_analog.constant(t, 1)
 
     if shot_globals.do_mot_in_situ_check:
         MOTSeq_obj = MOTSequence(t)
