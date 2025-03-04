@@ -542,6 +542,8 @@ class OpticalPumpingSequence(MOTSequence):
             # We added op_ramp_delay because in the case of tweezer microwave, we can wait for the bias field to stabilize
             # but we can't do this for molasses because we need small time of flight to detect signal
             t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
+
+            # Turns on shutters early so that pumping pulse happens at the end of the shutter time window
             self.D2Lasers_obj.ta_aom_off(t)
             self.D2Lasers_obj.repump_aom_off(t)
             t = self.D2Lasers_obj.update_shutters(t, ShutterConfig.OPTICAL_PUMPING_FULL)
@@ -1403,7 +1405,6 @@ class TweezerSequence(OpticalPumpingSequence):
         """
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
-        # _ = self.D2Lasers_obj.update_shutters(t, ShutterConfig.OPTICAL_PUMPING_FULL)
         t += 3e-3
 
 
@@ -1478,7 +1479,8 @@ class TweezerSequence(OpticalPumpingSequence):
         else:
             t += shot_globals.op_killing_pulse_time
 
-        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
+        # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
+        t = self.TweezerLaser_obj.ramp_power(t_aom_off + 15e-3, shot_globals.tw_ramp_dur, 0.99)
         t += 2e-3  # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
         # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
         t += shot_globals.img_wait_time_between_shots
