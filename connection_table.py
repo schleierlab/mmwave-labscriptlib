@@ -9,15 +9,14 @@ import labscript_devices as labscript_devices
 import labscript_devices.FunctionRunner
 import labscript_devices.FunctionRunner.labscript_devices
 from labscript import AnalogOut, ClockLine, DigitalOut, Shutter
-from labscript_devices.PulseBlasterESRPro500 import PulseBlasterESRPro500
 from labscript_devices.NI_DAQmx.models.NI_PXIe_6363 import NI_PXIe_6363
-
+from labscript_devices.PulseBlasterESRPro500 import PulseBlasterESRPro500
 from user_devices.DDS.AD9914 import AD9914
 
 # from user_devices.spcm.Spectrum import Spectrum
 from user_devices.DDS.AD_DDS import AD_DDS
 
-from user_devices.manta419b.manta419b import Manta419B # Do not comment out this line
+# from user_devices.manta419b.manta419b import Manta419B
 from user_devices.kinetix.Kinetix import Kinetix
 from user_devices.NI_PXIe_6739 import NI_PXIe_6739
 from user_devices.spcm.Spectrum_bk import Spectrum
