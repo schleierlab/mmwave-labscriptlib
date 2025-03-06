@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import Literal
 
 root_path = r"X:\userlib\labscriptlib"
@@ -8,20 +9,20 @@ if root_path not in sys.path:
     sys.path.append(root_path)
 import labscript
 import numpy as np
-
-from connection_table import devices
 from labscriptlib.shot_globals import shot_globals
 from labscriptlib.standard_sequence.experiment_components import (
     BField,
-    EField,
     Camera,
     D2Lasers,
+    EField,
     Microwave,
     RydLasers,
     ShutterConfig,
     TweezerLaser,
     UVLamps,
 )
+
+from connection_table import devices
 
 spcm_sequence_mode = shot_globals.do_sequence_mode
 
@@ -86,8 +87,8 @@ class MOTSequence:
             # the uv duration should be determined for each dispenser current
             # generally, get superior loading in the 10s of milliseconds
 
-        # if using a long UV duration, want to make sure that the MOT doesn't finish
-        # loading leaving the UV is still on for imaging.
+        # possibly extend MOT loading to ensure
+        # that UV light is off by the time MOT loading is complete
         dur = max(dur, shot_globals.mot_uv_duration)
         t, _ = self.D2Lasers_obj.do_pulse(
             t,
@@ -183,8 +184,7 @@ class MOTSequence:
         print("Running _do_mot_in_situ_sequence")
 
         print("MOT coils = ", self.BField_obj.mot_coils_on)
-        # MOT loading time 500 ms
-        mot_load_dur = 0.5
+        mot_load_dur = shot_globals.mot_load_dur
 
         t = self.do_mot(t, mot_load_dur)
 
@@ -421,7 +421,7 @@ class MOTSequence:
         Returns:
             float: End time of the sequence
         """
-        mot_load_dur = 0.5
+        mot_load_dur = shot_globals.mot_load_dur
 
         t = self.do_mot(t, mot_load_dur)
 
@@ -483,8 +483,6 @@ class OpticalPumpingSequence(MOTSequence):
         if self.BField_obj.mot_coils_on:
             _ = self.BField_obj.switch_mot_coils(t)
 
-
-
         # Change the field orientation to be the same way as Adam Kaufman's thesis,
         # which is the major qunatization axis x always fixed to 2.8G
         # while we vary the angle and amplitude of an added-on field
@@ -500,8 +498,6 @@ class OpticalPumpingSequence(MOTSequence):
             )
 
         op_total_field = op_fixed_field + op_added_field
-
-
 
         if label == "mot":
             # Use the MOT beams for optical pumping
@@ -527,7 +523,7 @@ class OpticalPumpingSequence(MOTSequence):
             # Use the sigma+ beam for optical pumping
 
             _ = self.BField_obj.ramp_bias_field(
-                t, bias_field_vector=(op_biasx_field, op_biasy_field, op_biasz_field)
+                t, bias_field_vector = op_total_field
             )
             # ramp detuning to 4 -> 4, 3 -> 4
             self.D2Lasers_obj.ramp_ta_freq(
@@ -542,6 +538,13 @@ class OpticalPumpingSequence(MOTSequence):
             # We added op_ramp_delay because in the case of tweezer microwave, we can wait for the bias field to stabilize
             # but we can't do this for molasses because we need small time of flight to detect signal
             t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
+
+            # Turns on shutters early so that pumping pulse happens at the end of the shutter time window
+            # This is the "late OP" referenced in the lab notebook (2025 week 10)
+            self.D2Lasers_obj.ta_aom_off(t)
+            self.D2Lasers_obj.repump_aom_off(t)
+            t = self.D2Lasers_obj.update_shutters(t, ShutterConfig.OPTICAL_PUMPING_FULL)
+            t += D2Lasers.CONST_MIN_SHUTTER_ON_TIME
 
             t, t_aom_start = self.D2Lasers_obj.do_pulse(
                 t,
@@ -755,7 +758,7 @@ class OpticalPumpingSequence(MOTSequence):
         """
         raise NotImplementedError
 
-    def _optical_pump_molasses_sequence(self, t, reset_mot=False):
+    def _do_optical_pump_in_molasses_sequence(self, t, reset_mot=False):
         """Execute a complete optical pumping sequence in molasses.
 
         Performs a sequence of: MOT loading, molasses cooling, optical pumping to F=4,
@@ -775,7 +778,11 @@ class OpticalPumpingSequence(MOTSequence):
         t = self.do_mot(t, mot_load_dur)
         t = self.do_molasses(t, shot_globals.bm_time)
 
-        t = self.pump_to_F4(t)
+        if shot_globals.do_op:
+            t = self.pump_to_F4(t)
+
+        if shot_globals.do_killing_pulse:
+            t, _ = self.kill_F4(t)
 
         t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
 
@@ -1031,7 +1038,10 @@ class TweezerSequence(OpticalPumpingSequence):
         Raises:
             AssertionError: If time-of-flight delay is too short
         """
-        t = self.do_mot(t, dur=0.5)
+        # TODO this still spends some time loading the MOT;
+        # figure out whether we even need this here at all.
+        t = self.do_mot(t, dur=0)  # MOT loads between shots, don't need to spend extra time
+
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
 
         # TODO: does making this delay longer make the background better when using UV?
@@ -1211,23 +1221,37 @@ class TweezerSequence(OpticalPumpingSequence):
 
         return t
 
-    def _do_tweezer_position_check_sequence(self, t):
-        """Perform a basic tweezer loading and imaging check sequence.
+    def _do_tweezer_position_check_sequence(self, t, check_with_vimba=True):
+        """Perform a basic tweezer position check sequence.
 
-        Executes a complete sequence to verify tweezer operation:
-        1. Load atoms into tweezers
-        2. Take first image
-        3. Wait specified time
-        4. Take second image
-        5. Reset MOT parameters
+        There are two possibilities:
+        1. Run a complete sequence and examine the Manta camera image with Lyse
+        2. Run a dummy sequence that leaves the tweezers on (for 10 s)
 
         Args:
             t (float): Start time for the sequence
+            check_with_vimba (bool, defaults to True):
+                If enabled, run the dummy sequence (for use with monitoring
+                tweezer image in Vimba Viewer instead of Lyse)
 
         Returns:
             float: End time of the sequence
         """
+        t += 1e-5
         self.TweezerLaser_obj.aom_on(t, shot_globals.tw_power)
+
+        if check_with_vimba:
+            t += 10
+        else:
+            t += 1e-3
+            t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
+
+            # taking background images
+            t += 1e-1
+            self.TweezerLaser_obj.aom_off(t)
+            t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
+            t += 1e-2
+
         t += 1
 
         return t
@@ -1380,8 +1404,8 @@ class TweezerSequence(OpticalPumpingSequence):
         """
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
-
         t += 3e-3
+
 
         if shot_globals.do_depump_ta_pulse_before_pump:
             t = self.depump_ta_pulse(t)
@@ -1390,7 +1414,6 @@ class TweezerSequence(OpticalPumpingSequence):
             t, t_aom_off = self.pump_to_F4(
                 t, shot_globals.op_label, close_all_shutters=True
             )
-            t += 5e-3
 
         # Making sure the ramp ends right as the pumping is starting
         t_start_ramp = (
@@ -1454,7 +1477,12 @@ class TweezerSequence(OpticalPumpingSequence):
         else:
             t += shot_globals.op_killing_pulse_time
 
-        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
+
+        # hold the tweezers low for a constant length of time
+        # contrasts with following line (ramp up after the kill pulse)
+        t = self.TweezerLaser_obj.ramp_power(t_aom_off + 15e-3, shot_globals.tw_ramp_dur, 0.99)
+        # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
+
         t += 2e-3  # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
         # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
         t += shot_globals.img_wait_time_between_shots
@@ -1607,7 +1635,7 @@ class RydSequence(TweezerSequence):
             close_all_shutters=False,
         )
 
-        # self.RydLasers_obj.pulse_1064_aom_off(t)
+        self.RydLasers_obj.pulse_1064_aom_off(t)
 
         t+= 1e-1
         # Background image
@@ -2095,6 +2123,11 @@ if __name__ == "__main__":
         MOTSeq_obj = MOTSequence(t)
         sequence_objects.append(MOTSeq_obj)
         t = MOTSeq_obj._do_molasses_tof_sequence(t, reset_mot=True)
+
+    elif shot_globals.do_optical_pump_in_molasses_check:
+        OPSeq_obj = OpticalPumpingSequence(t)
+        sequence_objects.append(OPSeq_obj)
+        t = OPSeq_obj._do_optical_pump_in_molasses_sequence(t, reset_mot=True)
 
     elif shot_globals.do_pump_debug_in_molasses:
         OPSeq_obj = OpticalPumpingSequence(t)
