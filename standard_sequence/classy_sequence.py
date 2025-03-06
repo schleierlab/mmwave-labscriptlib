@@ -483,8 +483,6 @@ class OpticalPumpingSequence(MOTSequence):
         if self.BField_obj.mot_coils_on:
             _ = self.BField_obj.switch_mot_coils(t)
 
-
-
         # Change the field orientation to be the same way as Adam Kaufman's thesis,
         # which is the major qunatization axis x always fixed to 2.8G
         # while we vary the angle and amplitude of an added-on field
@@ -500,8 +498,6 @@ class OpticalPumpingSequence(MOTSequence):
             )
 
         op_total_field = op_fixed_field + op_added_field
-
-
 
         if label == "mot":
             # Use the MOT beams for optical pumping
@@ -2107,9 +2103,6 @@ if __name__ == "__main__":
     t = 0
     sequence_objects = []
     # Insert "stay on" statements for alignment here...
-    devices.servo_1064_aom_digital.go_high(t) # added for Nolan's alignment on IPG
-    devices.local_addr_1064_aom_digital.go_high(t)
-    devices.local_addr_1064_aom_analog.constant(t, 1)
 
     if shot_globals.do_mot_in_situ_check:
         MOTSeq_obj = MOTSequence(t)
