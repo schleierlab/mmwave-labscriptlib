@@ -579,8 +579,6 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">mot_coils_on</span><span class="p">:</span>
             <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BField_obj</span><span class="o">.</span><span class="n">switch_mot_coils</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
-
-
         <span class="c1"># Change the field orientation to be the same way as Adam Kaufman&#39;s thesis,</span>
         <span class="c1"># which is the major qunatization axis x always fixed to 2.8G</span>
         <span class="c1"># while we vary the angle and amplitude of an added-on field</span>
@@ -596,8 +594,6 @@
             <span class="p">)</span>
 
         <span class="n">op_total_field</span> <span class="o">=</span> <span class="n">op_fixed_field</span> <span class="o">+</span> <span class="n">op_added_field</span>
-
-
 
         <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;mot&quot;</span><span class="p">:</span>
             <span class="c1"># Use the MOT beams for optical pumping</span>
@@ -2250,9 +2246,6 @@
     <span class="n">t</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">sequence_objects</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="c1"># Insert &quot;stay on&quot; statements for alignment here...</span>
-    <span class="n">devices</span><span class="o">.</span><span class="n">servo_1064_aom_digital</span><span class="o">.</span><span class="n">go_high</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="c1"># added for Nolan&#39;s alignment on IPG</span>
-    <span class="n">devices</span><span class="o">.</span><span class="n">local_addr_1064_aom_digital</span><span class="o">.</span><span class="n">go_high</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-    <span class="n">devices</span><span class="o">.</span><span class="n">local_addr_1064_aom_analog</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">shot_globals</span><span class="o">.</span><span class="n">do_mot_in_situ_check</span><span class="p">:</span>
         <span class="n">MOTSeq_obj</span> <span class="o">=</span> <span class="n">MOTSequence</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
