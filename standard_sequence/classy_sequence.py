@@ -113,7 +113,11 @@ class MOTSequence:
         Returns:
             float: End time of the reset sequence
         """
-        # B fields
+
+        # extra delay accounts for
+        # TODO: consider methodically incorporating different notions of "start"
+        t += 10e-3
+
         if not self.BField_obj.mot_coils_on:
             t = self.BField_obj.switch_mot_coils(t)
 
@@ -129,7 +133,7 @@ class MOTSequence:
         t = self.D2Lasers_obj.reset_to_mot_freq(t)
         t = self.D2Lasers_obj.reset_to_mot_on(t)
 
-        t += 1e-2
+        t += 10e-3
 
         return t
 
@@ -967,7 +971,6 @@ class OpticalPumpingSequence(MOTSequence):
             do_repump=True,
             close_all_shutters=True,
         )
-        t += 1e-2
         if reset_mot:
             t = self.reset_mot(t)
 
