@@ -1342,7 +1342,7 @@ class BField:
     CONST_BIPOLAR_COIL_FLIP_TIME: ClassVar[float] = 10e-3
     CONST_COIL_FEEDBACK_OFF_TIME: ClassVar[float] = 4.5e-3
 
-    bias_voltages = list[float]
+    bias_voltages = tuple[float]
     mot_coils_on: bool
     mot_coils_on_current: float
     current_outputs = tuple[AnalogOut, AnalogOut, AnalogOut]
@@ -1355,11 +1355,11 @@ class BField:
         Args:
             t (float): Time to start the magnetic field
         """
-        self.bias_voltages = [
+        self.bias_voltages = (
             shot_globals.mot_x_coil_voltage,
             shot_globals.mot_y_coil_voltage,
             shot_globals.mot_z_coil_voltage,
-        ]
+        )
         self.mot_coils_on = shot_globals.mot_do_coil
         self.mot_coils_on_current = 10 / 6
 
@@ -1448,7 +1448,9 @@ class BField:
         t -= total_coil_flip_ramp_time  # subtract to the begining to set other coils
 
         # Update internal state
-        self.bias_voltages[component] = final_voltage
+        bias_voltages = [voltage for voltage in self.bias_voltages]
+        bias_voltages[component] = final_voltage
+        self.bias_voltages = tuple(bias_voltages)
         return t
 
     def ramp_bias_field(self, t, dur = 100e-6,  bias_field_vector=None, voltage_vector=None, polar = False):
@@ -1528,7 +1530,7 @@ class BField:
         # otherwise, if only voltage vector is provided on input, the bias field will not be updated
         # if bias_field_vector is not None:
 
-        self.bias_voltages = voltage_vector
+        self.bias_voltages = tuple(voltage_vector)
 
         return t + dur
 
