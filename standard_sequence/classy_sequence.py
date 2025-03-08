@@ -365,12 +365,20 @@ class MOTSequence:
 
         # TODO: ask Lin and Michelle and max() logic and if we always want it there
         self.Camera_obj.set_type(shot_globals.camera_type)
-        if self.Camera_obj.type == "MOT_manta" or "tweezer_manta":
-            exposure_time = max(exposure_time, 50e-6)
-        elif self.Camera_obj.type == "kinetix":
-            exposure_time = max(exposure_time, 1e-3)
-        else:
+        min_exposure_times = {
+            'MOT_manta': 50e-6,
+            'tweezer_manta': 50e-6,
+            'kinetix': 1e-3,
+        }
+        if self.Camera_obj.type not in min_exposure_times.keys():
             raise ValueError(f"Camera type {self.Camera_obj.type} not recognized")
+
+        min_exposure_time = min_exposure_times[self.Camera_obj.type]
+        if exposure_time < min_exposure_time:
+            raise ValueError(
+                f'Exposure time {exposure_time} shorter than '
+                f'minimum {min_exposure_time} for camera {self.Camera_obj.type}',
+            )
 
         # expose the camera
         self.Camera_obj.expose(t_aom_start, exposure_time)
