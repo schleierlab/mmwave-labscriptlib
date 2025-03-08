@@ -553,9 +553,9 @@ class OpticalPumpingSequence(MOTSequence):
 
             # Turns on shutters early so that pumping pulse happens at the end of the shutter time window
             # This is the "late OP" referenced in the lab notebook (2025 week 10)
-            self.D2Lasers_obj.ta_aom_off(t)
-            self.D2Lasers_obj.repump_aom_off(t)
             t = self.D2Lasers_obj.update_shutters(t, ShutterConfig.OPTICAL_PUMPING_FULL)
+            self.D2Lasers_obj.ta_aom_off(t - D2Lasers.CONST_SHUTTER_TURN_ON_TIME)
+            self.D2Lasers_obj.repump_aom_off(t - D2Lasers.CONST_SHUTTER_TURN_ON_TIME)
             t += D2Lasers.CONST_MIN_SHUTTER_ON_TIME
 
             t, t_aom_start = self.D2Lasers_obj.do_pulse(
