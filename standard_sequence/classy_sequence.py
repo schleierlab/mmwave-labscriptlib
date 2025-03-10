@@ -114,7 +114,7 @@ class MOTSequence:
             float: End time of the reset sequence
         """
 
-        # extra delay accounts for
+        # extra delay accounts for shutter closing of whatever comes before this.
         # TODO: consider methodically incorporating different notions of "start"
         t += 10e-3
 
@@ -363,7 +363,7 @@ class MOTSequence:
             close_all_shutters=close_all_shutters,
         )
 
-        # TODO: ask Lin and Michelle and max() logic and if we always want it there
+        # TODO: store the min exposure times with the camera object and eventually get rid of this
         self.Camera_obj.set_type(shot_globals.camera_type)
         min_exposure_times = {
             'MOT_manta': 50e-6,
@@ -553,6 +553,8 @@ class OpticalPumpingSequence(MOTSequence):
 
             # Turns on shutters early so that pumping pulse happens at the end of the shutter time window
             # This is the "late OP" referenced in the lab notebook (2025 week 10)
+            # We have to write it in this order so that the aom_off functions get passed the t the shutters are open
+            # open by, and then that they turn off the aoms CONST_SHUTTER_TURN_ON_TIME before that.
             t = self.D2Lasers_obj.update_shutters(t, ShutterConfig.OPTICAL_PUMPING_FULL)
             self.D2Lasers_obj.ta_aom_off(t - D2Lasers.CONST_SHUTTER_TURN_ON_TIME)
             self.D2Lasers_obj.repump_aom_off(t - D2Lasers.CONST_SHUTTER_TURN_ON_TIME)
