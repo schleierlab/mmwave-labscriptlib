@@ -113,7 +113,11 @@ class MOTSequence:
         Returns:
             float: End time of the reset sequence
         """
-        # B fields
+
+        # extra delay accounts for shutter closing of whatever comes before this.
+        # TODO: consider methodically incorporating different notions of "start"
+        t += 10e-3
+
         if not self.BField_obj.mot_coils_on:
             t = self.BField_obj.switch_mot_coils(t)
 
@@ -129,7 +133,7 @@ class MOTSequence:
         t = self.D2Lasers_obj.reset_to_mot_freq(t)
         t = self.D2Lasers_obj.reset_to_mot_on(t)
 
-        t += 1e-2
+        t += 10e-3
 
         return t
 
@@ -359,14 +363,22 @@ class MOTSequence:
             close_all_shutters=close_all_shutters,
         )
 
-        # TODO: ask Lin and Michelle and max() logic and if we always want it there
+        # TODO: store the min exposure times with the camera object and eventually get rid of this
         self.Camera_obj.set_type(shot_globals.camera_type)
-        if self.Camera_obj.type == "MOT_manta" or "tweezer_manta":
-            exposure_time = max(exposure_time, 50e-6)
-        elif self.Camera_obj.type == "kinetix":
-            exposure_time = max(exposure_time, 1e-3)
-        else:
+        min_exposure_times = {
+            'MOT_manta': 50e-6,
+            'tweezer_manta': 50e-6,
+            'kinetix': 1e-3,
+        }
+        if self.Camera_obj.type not in min_exposure_times.keys():
             raise ValueError(f"Camera type {self.Camera_obj.type} not recognized")
+
+        min_exposure_time = min_exposure_times[self.Camera_obj.type]
+        if exposure_time < min_exposure_time:
+            raise ValueError(
+                f'Exposure time {exposure_time} shorter than '
+                f'minimum {min_exposure_time} for camera {self.Camera_obj.type}',
+            )
 
         # expose the camera
         self.Camera_obj.expose(t_aom_start, exposure_time)
@@ -541,9 +553,11 @@ class OpticalPumpingSequence(MOTSequence):
 
             # Turns on shutters early so that pumping pulse happens at the end of the shutter time window
             # This is the "late OP" referenced in the lab notebook (2025 week 10)
-            self.D2Lasers_obj.ta_aom_off(t)
-            self.D2Lasers_obj.repump_aom_off(t)
+            # We have to write it in this order so that the aom_off functions get passed the t the shutters are open
+            # open by, and then that they turn off the aoms CONST_SHUTTER_TURN_ON_TIME before that.
             t = self.D2Lasers_obj.update_shutters(t, ShutterConfig.OPTICAL_PUMPING_FULL)
+            self.D2Lasers_obj.ta_aom_off(t - D2Lasers.CONST_SHUTTER_TURN_ON_TIME)
+            self.D2Lasers_obj.repump_aom_off(t - D2Lasers.CONST_SHUTTER_TURN_ON_TIME)
             t += D2Lasers.CONST_MIN_SHUTTER_ON_TIME
 
             t, t_aom_start = self.D2Lasers_obj.do_pulse(
@@ -967,7 +981,6 @@ class OpticalPumpingSequence(MOTSequence):
             do_repump=True,
             close_all_shutters=True,
         )
-        t += 1e-2
         if reset_mot:
             t = self.reset_mot(t)
 
@@ -1627,17 +1640,18 @@ class RydSequence(TweezerSequence):
         t += shot_globals.dp_img_tof_imaging_delay
         t = self.do_molasses_dipole_trap_imaging(
             t,
-            ta_power=shot_globals.dp_img_ta_power,
+            ta_power = shot_globals.dp_img_ta_power,
             ta_detuning = shot_globals.dp_img_ta_detuning,
-            repump_power=shot_globals.dp_img_repump_power,
+            repump_power = shot_globals.dp_img_repump_power,
             do_repump=True,
             exposure_time=shot_globals.dp_img_exposure_time,
-            close_all_shutters=False,
+            close_all_shutters=True,
         )
 
         self.RydLasers_obj.pulse_1064_aom_off(t)
 
-        t+= 1e-1
+        t += 100e-3
+
         # Background image
         t = self.do_molasses_dipole_trap_imaging(
             t,
@@ -1646,7 +1660,98 @@ class RydSequence(TweezerSequence):
             repump_power=shot_globals.dp_img_repump_power,
             do_repump=True,
             exposure_time=shot_globals.dp_img_exposure_time,
-            close_all_shutters=False,
+            close_all_shutters=True,
+        )
+        t = self.reset_mot(t)
+
+        return t
+
+    def _do_dipole_trap_F4_spec(self, t):
+
+        t = self.do_mot(t, dur=0.5)
+        if shot_globals.do_dipole_trap:
+            self.RydLasers_obj.pulse_1064_aom_on(0.1, 1)
+        else:
+            self.RydLasers_obj.pulse_1064_aom_off(0.1)
+        if not shot_globals.do_tweezers:
+            self.TweezerLaser_obj.aom_off(0.1)
+        t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
+
+        t += 1e-3
+
+        t, t_aom_off = self.pump_to_F4(
+            t, shot_globals.op_label, close_all_shutters=False,
+        )
+
+        if shot_globals.do_dipole_trap_B_calib:
+            t = self.BField_obj.ramp_bias_field(
+                    t_aom_off + 200e-6, #TODO: wait for 200e-6s extra time in optical pumping field, can be changed
+                    voltage_vector=(shot_globals.mw_y_coil_voltage,
+                                    shot_globals.mw_y_coil_voltage,
+                                    shot_globals.mw_z_coil_voltage),
+                    polar = False
+                )
+        else:
+            t = self.BField_obj.ramp_bias_field(
+                t_aom_off + 200e-6, #TODO: wait for 200e-6s extra time in optical pumping field, can be changed
+                bias_field_vector=(shot_globals.mw_bias_amp,
+                                   shot_globals.mw_bias_phi,
+                                   shot_globals.mw_bias_theta),
+                polar = True
+            )
+
+
+        t += shot_globals.mw_field_wait_dur
+        if shot_globals.drop_dp_during_mw:
+            self.RydLasers_obj.pulse_1064_aom_off(t)
+
+
+        if shot_globals.do_mw_pulse:
+            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+        elif shot_globals.do_mw_sweep:
+            mw_sweep_start = shot_globals.mw_detuning + shot_globals.mw_sweep_range / 2
+            mw_sweep_end = shot_globals.mw_detuning - shot_globals.mw_sweep_range / 2
+            t = self.Microwave_obj.do_sweep(
+                t, mw_sweep_start, mw_sweep_end, shot_globals.mw_sweep_duration
+            )
+
+        t+=10e-6
+
+        if shot_globals.drop_dp_during_mw:
+            self.RydLasers_obj.pulse_1064_aom_on(t, 1)
+
+
+        t += 3e-6 #TODO: wait for extra time before killing, can be changed
+        if shot_globals.do_killing_pulse:
+            t, _ = self.kill_F4(t, close_all_shutters=True)
+        # This is the only place required for the special value of imaging
+        # t += 1e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
+        # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
+
+        t += shot_globals.dp_img_tof_imaging_delay
+        t = self.do_molasses_dipole_trap_imaging(
+            t,
+            ta_power = shot_globals.dp_img_ta_power,
+            ta_detuning = shot_globals.dp_img_ta_detuning,
+            repump_power = shot_globals.dp_img_repump_power,
+            do_repump=True,
+            exposure_time=shot_globals.dp_img_exposure_time,
+            close_all_shutters=True,
+        )
+
+        self.RydLasers_obj.pulse_1064_aom_off(t)
+
+        t += 100e-3
+
+        # Background image
+        t = self.do_molasses_dipole_trap_imaging(
+            t,
+            ta_power=shot_globals.dp_img_ta_power,
+            ta_detuning = shot_globals.dp_img_ta_detuning,
+            repump_power=shot_globals.dp_img_repump_power,
+            do_repump=True,
+            exposure_time=shot_globals.dp_img_exposure_time,
+            close_all_shutters=True,
         )
         t = self.reset_mot(t)
 
@@ -2139,12 +2244,6 @@ if __name__ == "__main__":
         sequence_objects.append(OPSeq_obj)
         t = OPSeq_obj._do_F4_microwave_spec_molasses(t, reset_mot=True)
 
-    # if shot_globals.do_dipole_trap_tof_check:
-    #     t = do_dipole_trap_tof_check(t)
-
-    # if shot_globals.do_img_beam_alignment_check:
-    #     t = do_img_beam_alignment_check(t)
-
     elif shot_globals.do_tweezer_check:
         TweezerSequence_obj = TweezerSequence(t)
         sequence_objects.append(TweezerSequence_obj)
@@ -2154,6 +2253,11 @@ if __name__ == "__main__":
         TweezerSequence_obj = TweezerSequence(t)
         sequence_objects.append(TweezerSequence_obj)
         t = TweezerSequence_obj._do_tweezer_position_check_sequence(t)
+
+    elif shot_globals.do_F4_microwave_spec_dipole_trap or shot_globals.do_dipole_trap_B_calib:
+        RydSequence_obj = RydSequence(t)
+        sequence_objects.append(RydSequence_obj)
+        t = RydSequence_obj._do_dipole_trap_F4_spec(t)
 
     elif shot_globals.do_ryd_tweezer_check:
         RydSequence_obj = RydSequence(t)
