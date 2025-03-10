@@ -73,7 +73,13 @@ class MOTSequence:
             init_coil_ctrl_voltages,
             enable_mot_coils=shot_globals.mot_do_coil,
         )
-        self.EField_obj = EField(t)
+
+        init_electrode_voltage_diffs = (
+            shot_globals.zero_Efield_Vx,
+            shot_globals.zero_Efield_Vy,
+            shot_globals.zero_Efield_Vz,
+        )
+        self.EField_obj = EField(t, init_electrode_voltage_diffs)
         self.Microwave_obj = Microwave(t)
         self.UVLamps_obj = UVLamps(t)
         self.Camera_obj = Camera(t)

@@ -1598,46 +1598,62 @@ class BField:
 
         return biasx_field, biasy_field, biasz_field
 
+
 class EField:
     """Control for electric field generation and manipulation.
 
-    This class manages the 8 electrodes in the glass cell to zero electric field or generate requested field
+    This class manages the 8 electrodes in the glass cell.
+    For now, we work in a restricted 3D subspace of the full 8D state space
+    of the electrodes, as follows. The electrodes are roughly located at the
+    vertices of a cube; therefore, choose coordinates such that the vertices
+    are at the points {0, 1}^3 and label the electrodes as triples (b1, b2, b3)
+    where the b_i are drawn from {0, 1}. Then the electrode voltages are sum_i b_i v_i
+    where the v_i are the three degrees of freedom here.
     """
-    def __init__(self, t):
 
-        self.Efield_voltage = [
-            shot_globals.zero_Efield_Vx,
-            shot_globals.zero_Efield_Vy,
-            shot_globals.zero_Efield_Vz
-        ]
+    voltage_diffs: tuple[float, float, float]
 
-        self.electrodes = [devices.electrode_T1,
-                           devices.electrode_T2,
-                           devices.electrode_T3,
-                           devices.electrode_T4,
-                           devices.electrode_B1,
-                           devices.electrode_B2,
-                           devices.electrode_B3,
-                           devices.electrode_B4,]
+    def __init__(self, t, init_voltage_diffs: tuple[float, float, float]):
 
-        self.set_electric_field(t, self.Efield_voltage)
+        self.voltage_diffs = init_voltage_diffs
 
-    def convert_electrodes_voltages(self, voltage_diff_vector):
+        self.electrodes = (
+            devices.electrode_T1,
+            devices.electrode_T2,
+            devices.electrode_T3,
+            devices.electrode_T4,
+            devices.electrode_B1,
+            devices.electrode_B2,
+            devices.electrode_B3,
+            devices.electrode_B4,
+        )
+
+        self.set_electric_field(t, self.voltage_diffs)
+
+    def convert_electrodes_voltages(self, voltage_diff_vector: tuple[float, float, float]):
         """
-        convert voltage difference into electrode voltages
-        """
-        Vx = voltage_diff_vector[0]
-        Vy = voltage_diff_vector[1]
-        Vz = voltage_diff_vector[2]
+        Convert the voltage drop along the cube axes into individual electrode voltages.
 
-        electrode_voltages=[Vx + Vy,
-                            Vy,
-                            Vx + Vy + Vz,
-                            Vy + Vz,
-                            Vx,
-                            0,
-                            Vx + Vz,
-                            Vz]
+        Parameters
+        ----------
+        voltage_diff_vector: tuple, shape (3,)
+
+        Returns
+        -------
+        electrode_voltages: tuple, shape (8,)
+        """
+        vx, vy, vz = voltage_diff_vector
+
+        electrode_voltages = (
+            vx + vy,
+            vy,
+            vx + vy + vz,
+            vy + vz,
+            vx,
+            0,
+            vx + vz,
+            vz,
+        )
 
         return electrode_voltages
 
@@ -1652,8 +1668,7 @@ class EField:
         for voltage, electrode in zip(electrode_voltages, self.electrodes):
             electrode.constant(t, voltage)
 
-        self.Efield_voltage = voltage_diff_vector
-
+        self.voltage_diffs = tuple(voltage_diff_vector)
 
 
 
