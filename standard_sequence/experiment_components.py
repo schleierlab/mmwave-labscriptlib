@@ -849,7 +849,6 @@ class Microwave:
         return t
 
 
-
 class RydLasers:
     """Controls for Rydberg excitation lasers (456nm and 1064nm).
 
@@ -1342,25 +1341,32 @@ class BField:
     CONST_BIPOLAR_COIL_FLIP_TIME: ClassVar[float] = 10e-3
     CONST_COIL_FEEDBACK_OFF_TIME: ClassVar[float] = 4.5e-3
 
-    bias_voltages = tuple[float]
+    bias_voltages = tuple[float, float, float]
     mot_coils_on: bool
     mot_coils_on_current: float
     current_outputs = tuple[AnalogOut, AnalogOut, AnalogOut]
     feedback_disable_ttls = tuple[DigitalOut, DigitalOut, DigitalOut]
 
 
-    def __init__(self, t: float):
+    def __init__(
+            self,
+            t: float,
+            init_ctrl_voltages: tuple[float, float, float],
+            enable_mot_coils: bool,
+    ):
         """Initialize the magnetic field system.
 
-        Args:
-            t (float): Time to start the magnetic field
+        Parameters
+        ----------
+        t: float
+            Time to start the magnetic field
+        init_ctrl_voltages: tuple, shape (3,)
+            Initial coil control voltages.
+        enable_mot_coils: bool
+            Whether MOT coils are initially turned on.
         """
-        self.bias_voltages = (
-            shot_globals.mot_x_coil_voltage,
-            shot_globals.mot_y_coil_voltage,
-            shot_globals.mot_z_coil_voltage,
-        )
-        self.mot_coils_on = shot_globals.mot_do_coil
+        self.bias_voltages = init_ctrl_voltages
+        self.mot_coils_on = enable_mot_coils
         self.mot_coils_on_current = 10 / 6
 
         self.t_last_change = 0

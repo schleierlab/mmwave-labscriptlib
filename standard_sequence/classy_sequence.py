@@ -62,7 +62,17 @@ class MOTSequence:
         # Standard initialization for hardware objects puts everything in
         # correct state/tuning to start loading the MOT
         self.D2Lasers_obj = D2Lasers(t)
-        self.BField_obj = BField(t)
+
+        init_coil_ctrl_voltages = (
+            shot_globals.mot_x_coil_voltage,
+            shot_globals.mot_y_coil_voltage,
+            shot_globals.mot_z_coil_voltage,
+        )
+        self.BField_obj = BField(
+            t,
+            init_coil_ctrl_voltages,
+            enable_mot_coils=shot_globals.mot_do_coil,
+        )
         self.EField_obj = EField(t)
         self.Microwave_obj = Microwave(t)
         self.UVLamps_obj = UVLamps(t)
@@ -1574,6 +1584,7 @@ class TweezerSequence(OpticalPumpingSequence):
         t = self.reset_mot(t)
 
         return t
+
 
 class RydSequence(TweezerSequence):
     def __init__(self, t):
