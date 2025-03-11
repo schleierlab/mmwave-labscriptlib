@@ -17,7 +17,6 @@ from calibration import (
     ta_freq_calib,
 )
 from connection_table import devices
-from labscriptlib.shot_globals import shot_globals
 from spectrum_manager import spectrum_manager
 
 # from spectrum_manager_fifo import spectrum_manager_fifo
@@ -76,38 +75,41 @@ class ShutterConfig(Flag):
     OPTICAL_PUMPING_REPUMP = REPUMP | OPTICAL_PUMPING
 
     @classmethod
-    def select_imaging_shutters(cls, do_repump=True) -> ShutterConfig:
+    def select_imaging_shutters(cls, imaging_label, beam_choice: Literal['mot', 'img'], do_repump=True) -> ShutterConfig:
+        '''
+        Parameters
+        ----------
+        imaging_label:
+            TODO what does this do?
+        beam_choice: {'mot', 'img'}
+            Choice of beam for doing imaging
+        do_repump: bool
+            Whether to use repump beams in the imaging.
+
+        Returns
+        -------
+        ShutterConfig
+            shutter configuration necessary for imaging with the specified params
+        '''
         repump_config = cls.REPUMP if do_repump else cls.NONE
-        # print("Repump_config = ", repump_config)
-        label = shot_globals.imaging_label
 
         # TODO: change handling of labels to make full default and raise error when not one of the options
-        if shot_globals.do_mot_beams_during_imaging:
-            if label == "z":
-                shutter_config = cls.MOT_Z | cls.TA | repump_config
-            elif label == "xy":
-                shutter_config = cls.MOT_XY | cls.TA | repump_config
+        if beam_choice == 'mot':
+            if imaging_label == "z":
+                return cls.MOT_Z | cls.TA | repump_config
+            elif imaging_label == "xy":
+                return cls.MOT_XY | cls.TA | repump_config
             else:
-                shutter_config = cls.MOT_TA | repump_config
-
-        # If you're trying to do in-situ imaging, you want to image faster than switch shutters allows for,
-        # so you can't do imaging beam imaging
-        elif (
-            shot_globals.do_img_beams_during_imaging
-            and not shot_globals.do_molasses_in_situ_check
-        ):
-            if label == "z":
-                shutter_config = cls.IMG_Z | cls.TA | repump_config
-            elif label == "xy":
-                shutter_config = cls.IMG_XY | cls.TA | repump_config
+                return cls.MOT_TA | repump_config
+        elif beam_choice == 'img':
+            if imaging_label == "z":
+                return cls.IMG_Z | cls.TA | repump_config
+            elif imaging_label == "xy":
+                return cls.IMG_XY | cls.TA | repump_config
             else:
-                shutter_config = cls.IMG_TA | repump_config
-
+                return cls.IMG_TA | repump_config
         else:
-            shutter_config = cls.NONE
-
-        # print("Shutter config = ", shutter_config)
-        return shutter_config
+            return cls.NONE
 
 
 @dataclass
@@ -934,7 +936,7 @@ class RydLasers:
     CONST_DEFAULT_DETUNING_456 = 600 #MHz
 
 
-    def __init__(self, t, blue_pointing: PointingConfig, ir_pointing: PointingConfig):
+    def __init__(self, t, blue_pointing: PointingConfig, ir_pointing: PointingConfig, init_blue_detuning: float):
         """Initialize the Rydberg laser system.
 
         Args:
@@ -948,7 +950,7 @@ class RydLasers:
         self.servo_1064_intensity_keep_on(t)
         # Initialize 456nm laser detuning
         # the initial detuning every ramp start and end to
-        self.detuning_456 = shot_globals.ryd_456_detuning #self.CONST_DEFAULT_DETUNING_456 #MHz
+        self.detuning_456 = init_blue_detuning
         devices.dds1.synthesize(t, freq = self.detuning_456, amp = 0.5, ph = 0)
         # Initialize shutter state
         self.shutter_open = False
@@ -1180,8 +1182,6 @@ class RydLasers:
         Returns:
             tuple[float]: (End time after pulse and shutter operations)
         """
-        # t = self.do_456_freq_sweep(t, shot_globals.ryd_456_detuning)
-
         if not self.shutter_open:
             if power_456 != 0:
                 t = self.update_blue_456_shutter(t, "open")
@@ -1230,8 +1230,6 @@ class RydLasers:
         Returns:
             tuple[float]: (End time after pulse and shutter operations)
         """
-        # t = self.do_456_freq_sweep(t, shot_globals.ryd_456_detuning)
-
         if not self.shutter_open:
             if power_456 != 0:
                 t = self.update_blue_456_shutter(t, "open")

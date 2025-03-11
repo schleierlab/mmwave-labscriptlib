@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, assert_never
 
 import labscript
 import numpy as np
@@ -26,6 +26,22 @@ from connection_table import devices
 # TODO is this necessary?
 if __name__ == "__main__":
     devices.initialize()
+
+
+# TODO this logic should get moved into a shot_config object
+beam_choice: Literal['mot', 'img']
+if shot_globals.do_mot_beams_during_imaging:
+    beam_choice = 'mot'
+elif shot_globals.do.img_beams_during_imaging:
+    beam_choice = 'img'
+else:
+    assert_never(beam_choice)
+
+# TODO this logic can be moved once we figure out a good code structure for separate sequences
+# If you're trying to do in-situ imaging, you want to image faster than switch shutters allows for,
+# so you can't do imaging beam imaging
+if shot_globals.do_molasses_in_situ_check and beam_choice == 'mot':
+    raise ValueError
 
 
 # Sequence Classes
@@ -364,7 +380,9 @@ class MOTSequence:
         self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
         t += D2Lasers.CONST_TA_VCO_RAMP_TIME
 
-        shutter_config = ShutterConfig.select_imaging_shutters(do_repump=do_repump)
+        shutter_config = ShutterConfig.select_imaging_shutters(
+            imaging_label=shot_globals.imaging_label, beam_choice=beam_choice, do_repump=do_repump
+        )
 
         # full power ta and repump pulse
         t_pulse_end, t_aom_start = self.D2Lasers_obj.do_pulse(
@@ -1176,7 +1194,9 @@ class TweezerSequence(OpticalPumpingSequence):
         Returns:
             float: End time of the imaging sequence
         """
-        shutter_config = ShutterConfig.select_imaging_shutters(do_repump=True)
+        shutter_config = ShutterConfig.select_imaging_shutters(
+            imaging_label=shot_globals.imaging_label, beam_choice=beam_choice, do_repump=True
+        )
         t_pulse_end, t_aom_start = self.D2Lasers_obj.do_pulse(
             t,
             shot_globals.img_exposure_time,
@@ -1612,7 +1632,9 @@ class RydSequence(TweezerSequence):
             shot_globals.ryd_1064_mirror_2_h,
             shot_globals.ryd_1064_mirror_2_v,
         )
-        self.RydLasers_obj = RydLasers(t, blue_pointing, ir_pointing)
+        self.RydLasers_obj = RydLasers(
+            t, blue_pointing, ir_pointing, init_blue_detuning=shot_globals.ryd_456_detuning
+        )
 
     def pulsed_rydberg_excitation(self, t, n_pulses, pulse_dur, pulse_wait_dur, power_456, power_1064, just_456=False, close_shutter=False):
         print('multipulse start time t = ', t)
