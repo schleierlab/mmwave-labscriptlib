@@ -159,6 +159,10 @@ class D2Lasers:
         3.6e-3  # minimum time for shutter to be on
     )
 
+    # fixed parameters in the script
+    CONST_TA_PUMPING_DETUNING: ClassVar[float] = -251  # MHz 4->4 tansition
+    CONST_REPUMP_DEPUMPING_DETUNING: ClassVar[float] = -201.24  # MHz 3->3 transition
+
     mot_config: MOTConfig
 
     # TODO: consider removing this and passing directly to D2Lasers.parity_projection_pulse()
@@ -602,8 +606,7 @@ class TweezerLaser:
                 'Set to True for sequence mode',
             )
         spectrum_manager.start_card()
-        t1 = spectrum_manager.start_tweezers(t)
-        # print("tweezer start time:", t1)
+        spectrum_manager.start_tweezers(t)
         self.aom_on(t, self.tweezer_power)
 
     def stop_tweezers(self, t):
@@ -613,15 +616,12 @@ class TweezerLaser:
             t (float): Time to stop the tweezers
         """
         # stop tweezers
-        t2 = spectrum_manager.stop_tweezers(t)
-        # print("tweezer stop time:", t2)
+        spectrum_manager.stop_tweezers(t)
 
         # dummy segment, need this to stop tweezers due to spectrum card bug
-        t1 = spectrum_manager.start_tweezers(t)
-        # print("tweezer start time:", t1)
+        spectrum_manager.start_tweezers(t)
         t += 2e-3
-        t2 = spectrum_manager.stop_tweezers(t)
-        # print("tweezer stop time:", t2)
+        spectrum_manager.stop_tweezers(t)
         spectrum_manager.stop_card(t)
         # print("tweezers have been stopped... for good...")
         return t

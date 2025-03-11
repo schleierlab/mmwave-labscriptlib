@@ -2,11 +2,6 @@ from __future__ import annotations
 
 from typing import Literal
 
-root_path = r"X:\userlib\labscriptlib"
-import sys
-
-if root_path not in sys.path:
-    sys.path.append(root_path)
 import labscript
 import numpy as np
 from labscriptlib.shot_globals import shot_globals
@@ -27,26 +22,10 @@ from labscriptlib.standard_sequence.experiment_components import (
 
 from connection_table import devices
 
-spcm_sequence_mode = shot_globals.do_sequence_mode
 
 # TODO is this necessary?
 if __name__ == "__main__":
     devices.initialize()
-
-
-# fixed parameters in the script
-CONST_TA_PUMPING_DETUNING = -251  # MHz 4->4 tansition
-CONST_REPUMP_DEPUMPING_DETUNING = -201.24  # MHz 3->3 transition
-
-
-# lasers_852 =  D2Lasers()
-# lasers_852.pulse_imaging(t=300e-6, duration=100e-6)
-# lasers_852.pulse_ta(t=450e-6, duration=100e-6, hold_shutter_open = True)
-# pulser_ta(t=600e-6, duration=100e-6)
-
-
-# MOTconfig = {shutter1: True, shutter2: False, shutter3: True}
-# imagconfig = {shutter1: False, shutter2: True, }
 
 
 # Sequence Classes
@@ -480,11 +459,11 @@ class MOTSequence:
         t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
 
         # Turn off MOT for taking background images
-        t += 1e-1
+        t += 100e-3
 
         t = self.do_molasses_dipole_trap_imaging(t)
 
-        t += 1e-2
+        t += 10e-3
         if reset_mot:
             t = self.reset_mot(t)
 
@@ -613,7 +592,10 @@ class OpticalPumpingSequence(MOTSequence):
             self.D2Lasers_obj.ramp_ta_freq(
                 t_aom_start + shot_globals.op_ta_time,
                 D2Lasers.CONST_TA_VCO_RAMP_TIME,
-                CONST_TA_PUMPING_DETUNING/2, # move the detuning to -125 MHz relative to 4->5 transtion to avoid the leakage light on 4->4 transition doing depump, half way between 4->5 and 4->4
+                # move the detuning to -125 MHz relative to 4->5 transtion
+                # to avoid leakage light on the 4->4 transition doing depump.
+                # this is half way between 4->5 and 4->4
+                D2Lasers.CONST_TA_PUMPING_DETUNING/2,
             )
             # Close the shutters
             t = np.max([t, t_aom_start + shot_globals.op_ta_time + D2Lasers.CONST_TA_VCO_RAMP_TIME])#+= 1e-3
@@ -660,7 +642,10 @@ class OpticalPumpingSequence(MOTSequence):
         self.D2Lasers_obj.ramp_ta_freq(
             t_aom_start + shot_globals.op_depump_pulse_time,
             D2Lasers.CONST_TA_VCO_RAMP_TIME,
-            CONST_TA_PUMPING_DETUNING/2, # move the detuning to -125 MHz relative to 4->5 transtion to avoid the leakage light on 4->4 transition doing depump, half way between 4->5 and 4->4
+            # move the detuning to -125 MHz relative to 4->5 transtion
+            # to avoid leakage light on the 4->4 transition doing depump.
+            # this is half way between 4->5 and 4->4
+            D2Lasers.CONST_TA_PUMPING_DETUNING/2,
         )
 
         t = np.max([t, t_aom_start + shot_globals.op_depump_pulse_time + D2Lasers.CONST_TA_VCO_RAMP_TIME])#+= 1e-3
@@ -693,7 +678,7 @@ class OpticalPumpingSequence(MOTSequence):
             # ramp detuning to 4 -> 4 for TA
             # print("I'm using mot beams for depumping")
             self.D2Lasers_obj.ramp_ta_freq(
-                t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_TA_PUMPING_DETUNING
+                t, D2Lasers.CONST_TA_VCO_RAMP_TIME, D2Lasers.CONST_TA_PUMPING_DETUNING
             )
             t += D2Lasers.CONST_TA_VCO_RAMP_TIME
             # Do a TA pulse
@@ -2245,6 +2230,7 @@ class RydSequence(TweezerSequence):
         t = self.reset_mot(t)
 
         return t
+
 
 # Full Sequences, we'll see if we really want all these in a class or just separate sequence files?
 class ScienceSequence(RydSequence):
