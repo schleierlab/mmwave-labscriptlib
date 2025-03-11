@@ -18,6 +18,7 @@ from labscriptlib.standard_sequence.experiment_components import (
     Microwave,
     MOTConfig,
     ParityProjectionConfig,
+    PointingConfig,
     RydLasers,
     ShutterConfig,
     TweezerLaser,
@@ -1614,7 +1615,19 @@ class TweezerSequence(OpticalPumpingSequence):
 class RydSequence(TweezerSequence):
     def __init__(self, t):
         super(RydSequence, self).__init__(t)
-        self.RydLasers_obj = RydLasers(t)
+        blue_pointing = PointingConfig(
+            shot_globals.ryd_456_mirror_1_h,
+            shot_globals.ryd_456_mirror_1_v,
+            shot_globals.ryd_456_mirror_2_h,
+            shot_globals.ryd_456_mirror_2_v,
+        )
+        ir_pointing = PointingConfig(
+            shot_globals.ryd_1064_mirror_1_h,
+            shot_globals.ryd_1064_mirror_1_v,
+            shot_globals.ryd_1064_mirror_2_h,
+            shot_globals.ryd_1064_mirror_2_v,
+        )
+        self.RydLasers_obj = RydLasers(t, blue_pointing, ir_pointing)
 
     def pulsed_rydberg_excitation(self, t, n_pulses, pulse_dur, pulse_wait_dur, power_456, power_1064, just_456=False, close_shutter=False):
         print('multipulse start time t = ', t)

@@ -902,6 +902,17 @@ class Microwave:
         return t
 
 
+@dataclass
+class PointingConfig:
+    '''
+    Config class for beam pointing with four picomotors or two mirror mounts.
+    '''
+    upstream_h: float
+    upstream_v: float
+    downstream_h: float
+    downstream_v: float
+
+
 class RydLasers:
     """Controls for Rydberg excitation lasers (456nm and 1064nm).
 
@@ -923,7 +934,7 @@ class RydLasers:
     CONST_DEFAULT_DETUNING_456 = 600 #MHz
 
 
-    def __init__(self, t):
+    def __init__(self, t, blue_pointing: PointingConfig, ir_pointing: PointingConfig):
         """Initialize the Rydberg laser system.
 
         Args:
@@ -941,11 +952,16 @@ class RydLasers:
         devices.dds1.synthesize(t, freq = self.detuning_456, amp = 0.5, ph = 0)
         # Initialize shutter state
         self.shutter_open = False
+
+        self.blue_pointing = blue_pointing
+        self.ir_pointing = ir_pointing
+
         # Mirrors go to initial positions
         self.mirror_456_1_position(t)
         self.mirror_456_2_position(t)
         self.mirror_1064_1_position(t)
         self.mirror_1064_2_position(t)
+
         self.last_shutter_close_t = 0
         self.last_shutter_open_t = 0
 
@@ -1090,10 +1106,8 @@ class RydLasers:
         Args:
             t (float): Time to set the mirror position
         """
-        devices.mirror_456_1_h.constant(
-            t, shot_globals.ryd_456_mirror_1_h
-        )
-        devices.mirror_456_1_v.constant(t, shot_globals.ryd_456_mirror_1_v)
+        devices.mirror_456_1_h.constant(t, self.blue_pointing.upstream_h)
+        devices.mirror_456_1_v.constant(t, self.blue_pointing.upstream_v)
 
     def mirror_456_2_position(self, t):
         """Set the position of the second 456nm laser mirror.
@@ -1101,10 +1115,8 @@ class RydLasers:
         Args:
             t (float): Time to set the mirror position
         """
-        devices.mirror_456_2_h.constant(
-            t, shot_globals.ryd_456_mirror_2_h
-        )
-        devices.mirror_456_2_v.constant(t, shot_globals.ryd_456_mirror_2_v)
+        devices.mirror_456_2_h.constant(t, self.blue_pointing.downstream_h)
+        devices.mirror_456_2_v.constant(t, self.blue_pointing.downstream_v)
 
     def mirror_1064_1_position(self, t):
         """Set the position of the first 1064nm laser mirror.
@@ -1112,10 +1124,8 @@ class RydLasers:
         Args:
             t (float): Time to set the mirror position
         """
-        devices.mirror_1064_1_h.constant(
-            t, shot_globals.ryd_1064_mirror_1_h
-        )
-        devices.mirror_1064_1_v.constant(t, shot_globals.ryd_1064_mirror_1_v)
+        devices.mirror_1064_1_h.constant(t, self.ir_pointing.upstream_h)
+        devices.mirror_1064_1_v.constant(t, self.ir_pointing.upstream_v)
 
     def mirror_1064_2_position(self, t):
         """Set the position of the second 1064nm laser mirror.
@@ -1123,10 +1133,8 @@ class RydLasers:
         Args:
             t (float): Time to set the mirror position
         """
-        devices.mirror_1064_2_h.constant(
-            t, shot_globals.ryd_1064_mirror_2_h
-        )
-        devices.mirror_1064_2_v.constant(t, shot_globals.ryd_1064_mirror_2_v)
+        devices.mirror_1064_2_h.constant(t, self.ir_pointing.downstream_h)
+        devices.mirror_1064_2_v.constant(t, self.ir_pointing.downstream_v)
 
     def update_blue_456_shutter(self, t, config):
         """ perform the shutter update for the 456nm laser
@@ -1176,7 +1184,7 @@ class RydLasers:
 
         if not self.shutter_open:
             if power_456 != 0:
-                t = self.update_blue_456_shutter(t,"open")
+                t = self.update_blue_456_shutter(t, "open")
             # Turn off AOMs while waiting for shutter to fully open
             self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
 
@@ -1192,7 +1200,7 @@ class RydLasers:
 
         if close_shutter:
             if power_456 != 0:
-                t = self.update_blue_456_shutter(t,"close")
+                t = self.update_blue_456_shutter(t, "close")
             self.pulse_456_aom_on(t, 1)
 
         return t
@@ -1226,7 +1234,7 @@ class RydLasers:
 
         if not self.shutter_open:
             if power_456 != 0:
-                t = self.update_blue_456_shutter(t,"open")
+                t = self.update_blue_456_shutter(t, "open")
             # Turn off AOMs while waiting for shutter to fully open
             self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
             if power_1064 != 0:
@@ -1247,7 +1255,7 @@ class RydLasers:
 
         if close_shutter:
             if power_456 != 0:
-                t = self.update_blue_456_shutter(t,"close")
+                t = self.update_blue_456_shutter(t, "close")
                 t += 1e-3
             self.pulse_456_aom_on(t, 1)
             # self.pulse_1064_aom_on(t,1)
