@@ -930,7 +930,8 @@ class RydLasers:
             t (float): Time to start the Rydberg lasers
         """
         # Can't do any output from NI card until 12e-6
-        t += 12e-6 if t < 12e-6 else 0
+        t = max(t, 12e-6)
+
         # Keep the intensity servo on, regardless of BLACs settings
         self.servo_456_intensity_keep_on(t)
         self.servo_1064_intensity_keep_on(t)
