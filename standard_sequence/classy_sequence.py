@@ -16,6 +16,8 @@ from labscriptlib.standard_sequence.experiment_components import (
     D2Lasers,
     EField,
     Microwave,
+    MOTConfig,
+    ParityProjectionConfig,
     RydLasers,
     ShutterConfig,
     TweezerLaser,
@@ -61,7 +63,21 @@ class MOTSequence:
     def __init__(self, t):
         # Standard initialization for hardware objects puts everything in
         # correct state/tuning to start loading the MOT
-        self.D2Lasers_obj = D2Lasers(t)
+
+        mot_config = MOTConfig(
+            shot_globals.mot_ta_power,
+            shot_globals.mot_ta_detuning,
+            shot_globals.mot_repump_power,
+        )
+        pp_config = ParityProjectionConfig(
+            shot_globals.bm_parity_projection_ta_power,
+            shot_globals.bm_parity_projection_ta_detuning,
+        )
+        self.D2Lasers_obj = D2Lasers(
+            t,
+            mot_config,
+            pp_config,
+        )
 
         init_coil_ctrl_voltages = (
             shot_globals.mot_x_coil_voltage,

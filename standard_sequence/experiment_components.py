@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from enum import Flag, auto
 from typing import ClassVar, Literal
 
@@ -110,6 +111,20 @@ class ShutterConfig(Flag):
         return shutter_config
 
 
+@dataclass
+class MOTConfig:
+    ta_power: float
+    ta_detuning: float
+    repump_power: float
+    repump_detuning: float = 0
+
+
+@dataclass
+class ParityProjectionConfig:
+    ta_power: float
+    ta_detuning: float
+
+
 # Hardware control classes
 # -------------------------------------------------------------------------------
 class D2Lasers:
@@ -145,23 +160,46 @@ class D2Lasers:
         3.6e-3  # minimum time for shutter to be on
     )
 
+    mot_config: MOTConfig
+
+    # TODO: consider removing this and passing directly to D2Lasers.parity_projection_pulse()
+    parity_proj_config: ParityProjectionConfig
+
+    ta_freq: float
+    repump_freq: float
+    ta_power: float
+    repump_power: float
+    # TODO add remaining state variables
 
     # Can we put this somewhere nicer?
 
-    def __init__(self, t):
+    def __init__(
+            self,
+            t,
+            mot_config: MOTConfig,
+            pp_config: ParityProjectionConfig,
+    ):
         """Initialize the D2 laser system.
 
         Sets up initial frequencies and powers for MOT operation, initializes shutter
         configuration, and configures hardware devices.
 
-        Args:
-            t (float): Time to start the D2 laser system
+        Parameters
+        ----------
+        t: float
+            Time to start the D2 laser system
+        mot_config, pp_config: MOTConfig, ParityProjectionConfig
+            configuration for the MOT and parity projection pulses
         """
         # Tune to MOT frequency, full power
-        self.ta_freq = shot_globals.mot_ta_detuning
-        self.repump_freq = 0  # shot_globals.mot_repump_detuning
-        self.ta_power = shot_globals.mot_ta_power
-        self.repump_power = shot_globals.mot_repump_power
+        self.ta_freq = mot_config.ta_detuning
+        self.repump_freq = MOTConfig.repump_detuning
+        self.ta_power = mot_config.ta_power
+        self.repump_power = mot_config.repump_power
+
+        self.mot_config = mot_config
+        self.parity_proj_config = pp_config
+
         # update_shutters compares with self.shutter_config to decide what
         # changes to make. Do not call self.update_shutters(self.shutter_config),
         # nothing will happen.
@@ -466,9 +504,13 @@ class D2Lasers:
         Returns:
             float: End time after frequency ramps are complete
         """
-        self.ramp_repump_freq(t, duration=self.CONST_TA_VCO_RAMP_TIME, final=0)
+        self.ramp_repump_freq(
+            t,
+            duration=self.CONST_TA_VCO_RAMP_TIME,
+            final=self.mot_config.repump_detuning,
+        )
         self.ramp_ta_freq(
-            t, duration=self.CONST_TA_VCO_RAMP_TIME, final=shot_globals.mot_ta_detuning
+            t, duration=self.CONST_TA_VCO_RAMP_TIME, final=self.mot_config.ta_detuning
         )
         t += self.CONST_TA_VCO_RAMP_TIME
         return t
@@ -484,8 +526,8 @@ class D2Lasers:
         Returns:
             float: End time after reset operations are complete
         """
-        self.ta_aom_on(t, shot_globals.mot_ta_power)
-        self.repump_aom_on(t, shot_globals.mot_repump_power)
+        self.ta_aom_on(t, self.mot_config.ta_power)
+        self.repump_aom_on(t, self.mot_config.repump_power)
         t = self.update_shutters(t, ShutterConfig.MOT_FULL)
         t += self.CONST_SHUTTER_TURN_ON_TIME
 
@@ -508,14 +550,14 @@ class D2Lasers:
         self.ramp_ta_freq(
             t,
             duration=self.CONST_TA_VCO_RAMP_TIME,
-            final=shot_globals.bm_parity_projection_ta_detuning,
+            final=self.parity_proj_config.ta_detuning,
         )  # fixed the ramp duration for the parity projection
         t += self.CONST_TA_VCO_RAMP_TIME
         t, t_aom_start = self.do_pulse(
             t,
             dur,
             ShutterConfig.MOT_TA,
-            shot_globals.bm_parity_projection_ta_power,
+            self.parity_proj_config.ta_power,
             0,
             close_all_shutters=close_all_shutters,
         )
