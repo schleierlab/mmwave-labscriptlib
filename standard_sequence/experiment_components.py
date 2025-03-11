@@ -20,7 +20,6 @@ from connection_table import devices
 from labscriptlib.shot_globals import shot_globals
 from spectrum_manager import spectrum_manager
 
-# from shot_globals import shot_globals
 # from spectrum_manager_fifo import spectrum_manager_fifo
 
 
@@ -576,13 +575,17 @@ class TweezerLaser:
 
     CONST_TWEEZER_RAMPING_TIME: ClassVar[float] = 10e-3
 
-    def __init__(self, t):
+    tweezer_power: float
+    spectrum_mode: Literal['sequence', 'fifo']
+
+    def __init__(self, t, tweezer_power: float, spectrum_mode: Literal['sequence', 'fifo']):
         """Initialize the tweezer laser system.
 
         Args:
             t (float): Time to start the tweezers
         """
-        self.tw_power = shot_globals.tw_power
+        self.tweezer_power = tweezer_power
+        self.spectrum_mode = spectrum_mode
 
         # self.intensity_servo_keep_on(t)
         self.start_tweezers(t)
@@ -593,11 +596,15 @@ class TweezerLaser:
         Args:
             t (float): Time to start the tweezers
         """
-        assert shot_globals.do_sequence_mode, "shot_globals.do_sequence_mode is False, running Fifo mode now. Set to True for sequence mode"
+        if self.spectrum_mode != 'sequence':
+            raise ValueError(
+                'global `do_sequence_mode` is currently False, running Fifo mode now. '
+                'Set to True for sequence mode',
+            )
         spectrum_manager.start_card()
         t1 = spectrum_manager.start_tweezers(t)
         # print("tweezer start time:", t1)
-        self.aom_on(t, self.tw_power)
+        self.aom_on(t, self.tweezer_power)
 
     def stop_tweezers(self, t):
         """Safely stop and power down the optical tweezer system.
@@ -639,7 +646,7 @@ class TweezerLaser:
         devices.tweezer_aom_digital.go_high(t)  # digital on
         if not digital_only:
             devices.tweezer_aom_analog.constant(t, const)  # analog on
-            self.tw_power = const
+            self.tweezer_power = const
 
     def aom_off(self, t, digital_only = False):
         """Turn off the tweezer beam using AOM.
@@ -651,7 +658,7 @@ class TweezerLaser:
         devices.tweezer_aom_digital.go_low(t)  # digital off
         if not digital_only:
             devices.tweezer_aom_analog.constant(t, 0)  # analog off
-            self.tw_power = 0
+            self.tweezer_power = 0
 
     def ramp_power(self, t, dur, final_power):
         """Ramp the tweezer power from current to final value.
@@ -665,9 +672,9 @@ class TweezerLaser:
             float: End time of the ramp
         """
         devices.tweezer_aom_analog.ramp(
-            t, duration=dur, initial=self.tw_power, final=final_power, samplerate=1e5
+            t, duration=dur, initial=self.tweezer_power, final=final_power, samplerate=1e5
         )
-        self.tw_power = final_power
+        self.tweezer_power = final_power
         return t + dur
 
     def sine_mod_power(self, t, dur, amp, freq):
@@ -685,7 +692,7 @@ class TweezerLaser:
             amplitude=amp,
             angfreq=2 * np.pi * freq,
             phase=0,
-            dc_offset=self.tw_power,
+            dc_offset=self.tweezer_power,
             samplerate=1e5,
         )
 

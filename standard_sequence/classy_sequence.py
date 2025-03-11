@@ -1036,7 +1036,9 @@ class TweezerSequence(OpticalPumpingSequence):
             t (float): Initial time for the sequence
         """
         super(TweezerSequence, self).__init__(t)
-        self.TweezerLaser_obj = TweezerLaser(t)
+
+        spectrum_mode = 'sequence' if shot_globals.do_sequence_mode else 'fifo'
+        self.TweezerLaser_obj = TweezerLaser(t, shot_globals.tw_power, spectrum_mode)
 
     def ramp_to_imaging_parameters(self, t):
         """Configure laser parameters for imaging or additional cooling.
