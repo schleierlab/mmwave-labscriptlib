@@ -712,17 +712,21 @@ class Microwave:
     CONST_SPECTRUM_CARD_OFFSET: ClassVar[float] = 52.8e-6
     CONST_SPECTRUM_UWAVE_CABLE_ATTEN: ClassVar[float] = 4.4
 
-    def __init__(self, t):
+    def __init__(self, t, init_detuning):
         """Initialize the microwave system.
 
         Sets up the spectrum card configuration for microwave
         channels, including power levels, clock settings, and switch states.
 
-        Args:
-            t (float): Time to initialize the microwave system
+        Parameters
+        ----------
+        t: float
+            Time to initialize the microwave system
+        initial_detuning: float
+            Initial detuning of the microwave frequency from the cesium clock transition, in MHz
         """
 
-        self.mw_detuning = shot_globals.mw_detuning  # tune the microwave detuning here
+        self.mw_detuning = init_detuning
         self.uwave_dds_switch_on = True
         self.uwave_absorp_switch_on = False
         self.spectrum_uwave_power = -1

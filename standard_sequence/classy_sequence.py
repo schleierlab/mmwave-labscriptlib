@@ -96,7 +96,8 @@ class MOTSequence:
             shot_globals.zero_Efield_Vz,
         )
         self.EField_obj = EField(t, init_electrode_voltage_diffs)
-        self.Microwave_obj = Microwave(t)
+
+        self.Microwave_obj = Microwave(t, init_detuning=shot_globals.mw_detuning)
         self.UVLamps_obj = UVLamps(t)
         self.Camera_obj = Camera(t)
 
