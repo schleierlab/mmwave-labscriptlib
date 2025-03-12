@@ -1,7 +1,7 @@
 import re
 from importlib import resources as impresources
 from types import SimpleNamespace
-from typing import Any, TypedDict
+from typing import Any, Literal, TypedDict
 
 import h5py
 import yaml
@@ -111,6 +111,14 @@ class ShotGlobals(SimpleNamespace):
                 subgroup.attrs.update(defaults_values)
                 subgroup.create_group('units')
                 subgroup['units'].attrs.update(defaults_units)
+
+    def imaging_beam_choice(self) -> Literal['mot', 'img']:
+        # TODO we can remove this once we stop using two bools as globals
+        if shot_globals.do_mot_beams_during_imaging:
+            return 'mot'
+        elif shot_globals.do.img_beams_during_imaging:
+            return 'img'
+        raise ValueError
 
 
 shot_globals = ShotGlobals()
