@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import Literal, assert_never
+from dataclasses import dataclass
+from typing import Literal
+from typing_extensions import assert_never
 
 import labscript
 import numpy as np
@@ -15,7 +17,7 @@ from labscriptlib.standard_sequence.experiment_components import (
 )
 from labscriptlib.standard_sequence.mot import MOTSequence
 
-from connection_table import devices
+from labscriptlib.connection_table import devices
 
 
 # TODO is this necessary?

@@ -1,9 +1,3 @@
-root_path = r"X:\userlib\labscriptlib"
-import sys
-
-if root_path not in sys.path:
-    sys.path.append(root_path)
-
 import labscript
 import labscript_devices as labscript_devices
 import labscript_devices.FunctionRunner

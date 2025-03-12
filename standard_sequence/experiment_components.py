@@ -8,7 +8,7 @@ import labscript
 import numpy as np
 from labscript import AnalogOut, DigitalOut
 
-from calibration import (
+from labscriptlib.calibration import (
     biasx_calib,
     biasy_calib,
     biasz_calib,
@@ -16,8 +16,8 @@ from calibration import (
     spec_freq_calib,
     ta_freq_calib,
 )
-from connection_table import devices
-from spectrum_manager import spectrum_manager
+from labscriptlib.connection_table import devices
+from labscriptlib.spectrum_manager import spectrum_manager
 
 # from spectrum_manager_fifo import spectrum_manager_fifo
 
@@ -1721,8 +1721,6 @@ class EField:
         """
         set electrodes to constant voltages. No ramp.
         """
-        print(type(voltage_diff_vector))
-        print(voltage_diff_vector)
         electrode_voltages = self.convert_electrodes_voltages(voltage_diff_vector)
 
         for voltage, electrode in zip(electrode_voltages, self.electrodes):
