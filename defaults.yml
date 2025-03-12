@@ -1,0 +1,9 @@
+---
+group1:
+  param1:
+    value: 3
+    unit: MHz
+  param2:
+    value: 1.3
+    unit: V
+group2:

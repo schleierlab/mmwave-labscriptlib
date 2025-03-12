@@ -113,7 +113,7 @@ class ShutterConfig(Flag):
 
 
 @dataclass
-class MOTConfig:
+class D2Config:
     ta_power: float
     ta_detuning: float
     repump_power: float
@@ -165,7 +165,7 @@ class D2Lasers:
     CONST_TA_PUMPING_DETUNING: ClassVar[float] = -251  # MHz 4->4 tansition
     CONST_REPUMP_DEPUMPING_DETUNING: ClassVar[float] = -201.24  # MHz 3->3 transition
 
-    mot_config: MOTConfig
+    mot_config: D2Config
 
     # TODO: consider removing this and passing directly to D2Lasers.parity_projection_pulse()
     parity_proj_config: ParityProjectionConfig
@@ -181,7 +181,7 @@ class D2Lasers:
     def __init__(
             self,
             t,
-            mot_config: MOTConfig,
+            mot_config: D2Config,
             pp_config: ParityProjectionConfig,
     ):
         """Initialize the D2 laser system.
@@ -198,7 +198,7 @@ class D2Lasers:
         """
         # Tune to MOT frequency, full power
         self.ta_freq = mot_config.ta_detuning
-        self.repump_freq = MOTConfig.repump_detuning
+        self.repump_freq = D2Config.repump_detuning
         self.ta_power = mot_config.ta_power
         self.repump_power = mot_config.repump_power
 
@@ -1729,7 +1729,6 @@ class EField:
             electrode.constant(t, voltage)
 
         self.voltage_diffs = tuple(voltage_diff_vector)
-
 
 
 class Camera:

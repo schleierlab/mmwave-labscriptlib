@@ -412,12 +412,12 @@ class LabDevices():
         #==============================================================================
 
 
-        # self.manta419b_mot = Manta419B(
-        #     'manta419b_mot',
-        #     parent_device=ni_6363_0,
-        #     connection="port0/line2",
-        #     BIAS_port=54321,
-        # )
+        self.manta419b_mot = Manta419B(
+            'manta419b_mot',
+            parent_device=ni_6363_0,
+            connection="port0/line2",
+            BIAS_port=54321,
+        )
 
         # self.manta419b_tweezer = Manta419B(
         #     'manta419b_tweezer',
@@ -440,12 +440,12 @@ class LabDevices():
         #     BIAS_port=54323,
         # )
 
-        self.kinetix = Kinetix(
-            name='kinetix',
-            parent_device=ni_6363_0,
-            connection='port0/line15',
-            BIAS_port=27171,
-        )
+        # self.kinetix = Kinetix(
+        #     name='kinetix',
+        #     parent_device=ni_6363_0,
+        #     connection='port0/line15',
+        #     BIAS_port=27171,
+        # )
 
         #================================================================================
         # Spectrum Instrumentation Cards for microwaves
