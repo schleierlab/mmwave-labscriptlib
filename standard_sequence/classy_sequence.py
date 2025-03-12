@@ -4,10 +4,9 @@ import labscript
 
 from labscriptlib.connection_table import devices
 from labscriptlib.shot_globals import shot_globals
-from labscriptlib.standard_sequence.mot import MOTSequence
-from labscriptlib.standard_sequence.optical_pumping import OpticalPumpingSequence
-from labscriptlib.standard_sequence.rydberg import RydSequence
-from labscriptlib.standard_sequence.tweezers import TweezerSequence
+from labscriptlib.standard_sequences import (
+    MOTSequence, OpticalPumpingSequence, RydSequence, TweezerSequence
+)
 
 
 if __name__ == "__main__":

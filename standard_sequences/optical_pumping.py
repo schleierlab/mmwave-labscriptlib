@@ -1,10 +1,10 @@
 
 from typing import Literal
-from labscriptlib.standard_sequence.mot import MOTSequence
 import numpy as np
 
 from labscriptlib.shot_globals import shot_globals
 from labscriptlib.standard_sequence.experiment_components import D2Lasers, Microwave, ShutterConfig
+from .mot import MOTSequence
 
 
 class OpticalPumpingSequence(MOTSequence):

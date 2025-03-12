@@ -1,7 +1,7 @@
 
 from labscriptlib.shot_globals import shot_globals
 from labscriptlib.standard_sequence.experiment_components import D2Lasers, ShutterConfig, TweezerLaser
-from labscriptlib.standard_sequence.optical_pumping import OpticalPumpingSequence
+from .optical_pumping import OpticalPumpingSequence
 
 
 class TweezerSequence(OpticalPumpingSequence):
