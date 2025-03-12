@@ -4,8 +4,6 @@ from labscriptlib.standard_sequence.experiment_components import (
     Camera,
     D2Lasers,
     EField,
-    D2Config,
-    ParityProjectionConfig,
     ShutterConfig,
     UVLamps,
 )
@@ -13,23 +11,80 @@ from labscriptlib.standard_sequence.experiment_components import (
 
 @dataclass
 class MOTConfig:
-    # TODO rename these variables
-    mot_ta_power: float
-    mot_ta_detuning: float
-    mot_repump_power: float
-    bm_parity_projection_ta_power: float
-    bm_parity_projection_ta_detuning: float
-    mot_bias_coil_ctrl_voltages: tuple[float, float, float]
-    mot_do_coil: bool
-    zero_efield_voltages: tuple[float, float, float]
+    # D2 Laser parameters
+    ta_power: float  # Tapered Amplifier power
+    ta_detuning: float  # TA detuning in MHz
+    repump_power: float  # Repump laser power
+    repump_detuning: float = 0  # Repump detuning in MHz, defaults to 0
 
-    @property
-    def mot_d2_config(self) -> D2Config:
-        return D2Config(
-            self.mot_ta_power,
-            self.mot_ta_detuning,
-            self.mot_repump_power,
-            repump_detuning=0,
+    # Parity projection parameters
+    parity_projection_ta_power: float  # TA power during parity projection
+    parity_projection_ta_detuning: float  # TA detuning during parity projection
+
+    # Coil and field parameters
+    mot_bias_coil_ctrl_voltages: tuple[float, float, float]  # (x, y, z) coil voltages
+    mot_do_coil: bool  # Whether to enable MOT coils
+    zero_efield_voltages: tuple[float, float, float]  # (x, y, z) E-field zeroing voltages
+
+    # UV parameters
+    mot_do_uv: bool  # Whether to use UV enhancement
+    mot_uv_duration: float  # Duration of UV pulse
+    mot_load_dur: float  # Duration of MOT loading
+
+    # Imaging parameters
+    mot_exposure_time: float  # Exposure time for MOT imaging
+    mot_tof_imaging_delay: float  # Delay for time-of-flight imaging
+    imaging_label: str  # Label for imaging configuration
+    camera_type: str  # Type of camera to use
+
+    # Molasses parameters
+    bm_ta_power: float  # TA power for bright molasses
+    bm_ta_detuning: float  # TA detuning for bright molasses
+    bm_repump_power: float  # Repump power for bright molasses
+    bm_repump_detuning: float  # Repump detuning for bright molasses
+    bm_exposure_time: float  # Exposure time for bright molasses
+    bm_time: float  # Duration of bright molasses
+    bm_tof_imaging_delay: float  # Time-of-flight delay for bright molasses imaging
+    do_molasses_img_beam: bool  # Whether to use imaging beam for molasses
+    do_molasses_mot_beam: bool  # Whether to use MOT beam for molasses
+
+    @classmethod
+    def from_shot_globals(cls) -> "MOTConfig":
+        """Create MOTConfig instance from shot_globals parameters."""
+        from labscriptlib.shot_globals import shot_globals
+        return cls(
+            ta_power=shot_globals.mot_ta_power,
+            ta_detuning=shot_globals.mot_ta_detuning,
+            repump_power=shot_globals.mot_repump_power,
+            parity_projection_ta_power=shot_globals.bm_parity_projection_ta_power,
+            parity_projection_ta_detuning=shot_globals.bm_parity_projection_ta_detuning,
+            mot_bias_coil_ctrl_voltages=(
+                shot_globals.mot_x_coil_voltage,
+                shot_globals.mot_y_coil_voltage,
+                shot_globals.mot_z_coil_voltage,
+            ),
+            mot_do_coil=shot_globals.mot_do_coil,
+            zero_efield_voltages=(
+                shot_globals.zero_Efield_Vx,
+                shot_globals.zero_Efield_Vy,
+                shot_globals.zero_Efield_Vz,
+            ),
+            mot_do_uv=shot_globals.mot_do_uv,
+            mot_uv_duration=shot_globals.mot_uv_duration,
+            mot_exposure_time=shot_globals.mot_exposure_time,
+            mot_load_dur=shot_globals.mot_load_dur,
+            mot_tof_imaging_delay=shot_globals.mot_tof_imaging_delay,
+            imaging_label=shot_globals.imaging_label,
+            camera_type=shot_globals.camera_type,
+            bm_ta_power=shot_globals.bm_ta_power,
+            bm_ta_detuning=shot_globals.bm_ta_detuning,
+            bm_repump_power=shot_globals.bm_repump_power,
+            bm_repump_detuning=shot_globals.bm_repump_detuning,
+            bm_exposure_time=shot_globals.bm_exposure_time,
+            bm_time=shot_globals.bm_time,
+            bm_tof_imaging_delay=shot_globals.bm_tof_imaging_delay,
+            do_molasses_img_beam=shot_globals.do_molasses_img_beam,
+            do_molasses_mot_beam=shot_globals.do_molasses_mot_beam,
         )
 
 
@@ -44,42 +99,15 @@ class MOTSequence:
     def __init__(self, t):
         # Standard initialization for hardware objects puts everything in
         # correct state/tuning to start loading the MOT
+        self.config = MOTConfig.from_shot_globals()
 
-        config = MOTConfig()
-
-        mot_config = D2Config(
-            shot_globals.mot_ta_power,
-            shot_globals.mot_ta_detuning,
-            shot_globals.mot_repump_power,
-        )
-        pp_config = ParityProjectionConfig(
-            shot_globals.bm_parity_projection_ta_power,
-            shot_globals.bm_parity_projection_ta_detuning,
-        )
-        self.D2Lasers_obj = D2Lasers(
-            t,
-            mot_config,
-            pp_config,
-        )
-
-        init_coil_ctrl_voltages = (
-            shot_globals.mot_x_coil_voltage,
-            shot_globals.mot_y_coil_voltage,
-            shot_globals.mot_z_coil_voltage,
-        )
+        self.D2Lasers_obj = D2Lasers(t, self.config)
         self.BField_obj = BField(
             t,
-            init_coil_ctrl_voltages,
-            enable_mot_coils=shot_globals.mot_do_coil,
+            self.config.mot_bias_coil_ctrl_voltages,
+            enable_mot_coils=self.config.mot_do_coil,
         )
-
-        init_electrode_voltage_diffs = (
-            shot_globals.zero_Efield_Vx,
-            shot_globals.zero_Efield_Vy,
-            shot_globals.zero_Efield_Vz,
-        )
-        self.EField_obj = EField(t, init_electrode_voltage_diffs)
-
+        self.EField_obj = EField(t, self.config.zero_efield_voltages)
         self.UVLamps_obj = UVLamps(t)
         self.Camera_obj = Camera(t)
 
@@ -97,20 +125,20 @@ class MOTSequence:
         Returns:
             float: End time of the MOT sequence
         """
-        if shot_globals.mot_do_uv:
-            t = self.UVLamps_obj.uv_pulse(t, dur=shot_globals.mot_uv_duration)
+        if self.config.mot_do_uv:
+            t = self.UVLamps_obj.uv_pulse(t, dur=self.config.mot_uv_duration)
             # the uv duration should be determined for each dispenser current
             # generally, get superior loading in the 10s of milliseconds
 
         # possibly extend MOT loading to ensure
         # that UV light is off by the time MOT loading is complete
-        dur = max(dur, shot_globals.mot_uv_duration)
+        dur = max(dur, self.config.mot_uv_duration)
         t, _ = self.D2Lasers_obj.do_pulse(
             t,
             dur,
             ShutterConfig.MOT_FULL,
-            shot_globals.mot_ta_power,
-            shot_globals.mot_repump_power,
+            self.config.ta_power,
+            self.config.repump_power,
             close_all_shutters=close_all_shutters,
         )
 
@@ -128,7 +156,6 @@ class MOTSequence:
         Returns:
             float: End time of the reset sequence
         """
-
         # extra delay accounts for shutter closing of whatever comes before this.
         # TODO: consider methodically incorporating different notions of "start"
         t += 10e-3
@@ -136,13 +163,7 @@ class MOTSequence:
         if not self.BField_obj.mot_coils_on:
             t = self.BField_obj.switch_mot_coils(t)
 
-        mot_bias_voltages = (
-            shot_globals.mot_x_coil_voltage,
-            shot_globals.mot_y_coil_voltage,
-            shot_globals.mot_z_coil_voltage,
-        )
-
-        t = self.BField_obj.ramp_bias_field(t, voltage_vector=mot_bias_voltages)
+        t = self.BField_obj.ramp_bias_field(t, voltage_vector=self.config.mot_bias_coil_ctrl_voltages)
 
         # Reset laser frequency and configuration
         t = self.D2Lasers_obj.reset_to_mot_freq(t)
@@ -174,14 +195,14 @@ class MOTSequence:
             t = self.BField_obj.switch_mot_coils(t)
 
         self.Camera_obj.set_type("MOT_manta")
-        self.Camera_obj.expose(t, shot_globals.mot_exposure_time)
+        self.Camera_obj.expose(t, self.config.mot_exposure_time)
 
         t, _ = self.D2Lasers_obj.do_pulse(
             t,
-            shot_globals.mot_exposure_time,
+            self.config.mot_exposure_time,
             ShutterConfig.MOT_FULL,
-            shot_globals.mot_ta_power,
-            shot_globals.mot_repump_power,
+            self.config.ta_power,
+            self.config.repump_power,
             close_all_shutters=close_all_shutters,
         )
 
@@ -203,7 +224,7 @@ class MOTSequence:
         print("Running _do_mot_in_situ_sequence")
 
         print("MOT coils = ", self.BField_obj.mot_coils_on)
-        mot_load_dur = shot_globals.mot_load_dur
+        mot_load_dur = self.config.mot_load_dur
 
         t = self.do_mot(t, mot_load_dur)
 
@@ -245,7 +266,7 @@ class MOTSequence:
         t = self.do_mot(t, mot_load_dur)
 
         # assert shot_globals.mot_tof_imaging_delay > CONST_MIN_SHUTTER_OFF_TIME, "time of flight too short for shutter"
-        t += shot_globals.mot_tof_imaging_delay
+        t += self.config.mot_tof_imaging_delay
 
         t = self.image_mot(t)
         # Shutter does not need to be held open
@@ -276,8 +297,8 @@ class MOTSequence:
         """
         # detuning is ramped slowly here (duration = 1e-3) because atoms
         # see the light during the frequency ramp.
-        self.D2Lasers_obj.ramp_ta_freq(t, 1e-3, shot_globals.bm_ta_detuning)
-        self.D2Lasers_obj.ramp_repump_freq(t, 1e-3, shot_globals.bm_repump_detuning)
+        self.D2Lasers_obj.ramp_ta_freq(t, 1e-3, self.config.bm_ta_detuning)
+        self.D2Lasers_obj.ramp_repump_freq(t, 1e-3, self.config.bm_repump_detuning)
 
         self.BField_obj.switch_mot_coils(t)
         self.BField_obj.ramp_bias_field(t, bias_field_vector=(0, 0, 0))
@@ -299,47 +320,44 @@ class MOTSequence:
             float: End time of the molasses sequence
         """
         assert (
-            shot_globals.do_molasses_img_beam or shot_globals.do_molasses_mot_beam
+            self.config.do_molasses_img_beam or self.config.do_molasses_mot_beam
         ), "either do_molasses_img_beam or do_molasses_mot_beam has to be on"
         assert (
-            shot_globals.bm_ta_detuning != 0
+            self.config.bm_ta_detuning != 0
         ), "bright molasses detuning = 0. TA detuning should be non-zero for bright molasses."
-        # print(f"molasses detuning is {shot_globals.bm_ta_detuning}")
+        # print(f"molasses detuning is {self.config.bm_ta_detuning}")
 
         _ = self.ramp_to_molasses(t)
 
-        if shot_globals.do_molasses_mot_beam:
+        if self.config.do_molasses_mot_beam:
             t, _ = self.D2Lasers_obj.do_pulse(
                 t,
                 dur,
                 ShutterConfig.MOT_FULL,
-                shot_globals.bm_ta_power,
-                shot_globals.bm_repump_power,
+                self.config.bm_ta_power,
+                self.config.bm_repump_power,
                 close_all_shutters=close_all_shutters,
             )
 
-        if shot_globals.do_molasses_img_beam:
+        if self.config.do_molasses_img_beam:
             t, _ = self.D2Lasers_obj.do_pulse(
                 t,
                 dur,
                 ShutterConfig.IMG_FULL,
-                shot_globals.bm_ta_power,
-                shot_globals.bm_repump_power,
+                self.config.bm_ta_power,
+                self.config.bm_repump_power,
                 close_all_shutters=close_all_shutters,
             )
         return t
 
-    # Which arguments are actually necessary to pass or even set as a defualt?
-    # How many of them can just be set to globals?
-    # TODO: Maybe pass the shutter config into here? This would get rid of all the if statements?
     def do_molasses_dipole_trap_imaging(
         self,
         t,
         ta_power=1,
-        ta_detuning = 0,
+        ta_detuning=0,
         repump_power=1,
         do_repump=True,
-        exposure_time=shot_globals.bm_exposure_time,
+        exposure_time=None,
         close_all_shutters=False,
     ):
         """Capture an image of the molasses or the dipole trap.
@@ -351,13 +369,17 @@ class MOTSequence:
             t (float): Time to begin imaging
             ta_power (float, optional): Power of the TA beam
             repump_power (float, optional): Power of the repump beam
-            exposure (float, optional): Exposure time of the camera
+            exposure_time (float, optional): Exposure time of the camera
             do_repump (bool, optional): Whether to use the repump beam
             close_all_shutters (bool, optional): Whether to close all shutters after imaging
 
         Returns:
             float: End time of the imaging sequence
         """
+        # Use config exposure time if none provided
+        if exposure_time is None:
+            exposure_time = self.config.bm_exposure_time
+
         # zero the field
         _ = self.BField_obj.ramp_bias_field(t, bias_field_vector=(0, 0, 0))
 
@@ -367,7 +389,7 @@ class MOTSequence:
         t += D2Lasers.CONST_TA_VCO_RAMP_TIME
 
         shutter_config = ShutterConfig.select_imaging_shutters(
-            imaging_label=shot_globals.imaging_label, beam_choice=beam_choice, do_repump=do_repump
+            imaging_label=self.config.imaging_label, beam_choice=beam_choice, do_repump=do_repump
         )
 
         # full power ta and repump pulse
@@ -381,7 +403,7 @@ class MOTSequence:
         )
 
         # TODO: store the min exposure times with the camera object and eventually get rid of this
-        self.Camera_obj.set_type(shot_globals.camera_type)
+        self.Camera_obj.set_type(self.config.camera_type)
         min_exposure_times = {
             'MOT_manta': 50e-6,
             'tweezer_manta': 50e-6,
@@ -420,10 +442,10 @@ class MOTSequence:
             float: End time of the sequence
         """
         # MOT loading time 500 ms
-        mot_load_dur = 0.5
+        mot_load_dur = self.config.mot_load_dur
 
         t = self.do_mot(t, mot_load_dur)
-        t = self.do_molasses(t, shot_globals.bm_time)
+        t = self.do_molasses(t, self.config.bm_time)
         t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
 
         # Turn off MOT for taking background images
@@ -450,16 +472,16 @@ class MOTSequence:
         Returns:
             float: End time of the sequence
         """
-        mot_load_dur = shot_globals.mot_load_dur
+        mot_load_dur = self.config.mot_load_dur
 
         t = self.do_mot(t, mot_load_dur)
 
-        t = self.do_molasses(t, shot_globals.bm_time)
+        t = self.do_molasses(t, self.config.bm_time)
 
         assert (
-            shot_globals.bm_tof_imaging_delay > D2Lasers.CONST_MIN_SHUTTER_OFF_TIME
+            self.config.bm_tof_imaging_delay > D2Lasers.CONST_MIN_SHUTTER_OFF_TIME
         ), "time of flight too short for shutter"
-        t += shot_globals.bm_tof_imaging_delay
+        t += self.config.bm_tof_imaging_delay
         t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
 
         # Turn off MOT for taking background images
