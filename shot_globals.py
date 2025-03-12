@@ -1,10 +1,30 @@
+import re
+from importlib import resources as impresources
 from types import SimpleNamespace
 from typing import Any, TypedDict
 
 import h5py
+import yaml
 
 from labscript import compiler
 import runmanager
+
+import labscriptlib
+
+# pyyaml doesn't recognize all scientific notation numbers
+# fix from https://stackoverflow.com/a/30462009
+loader = yaml.SafeLoader
+loader.add_implicit_resolver(
+    u'tag:yaml.org,2002:float',
+    re.compile(u'''^(?:
+     [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
+    |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
+    |\\.[0-9_]+(?:[eE][-+][0-9]+)?
+    |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
+    |[-+]?\\.(?:inf|Inf|INF)
+    |\\.(?:nan|NaN|NAN))$''', re.X),
+    list(u'-+0123456789.'),
+)
 
 
 class ParameterSpec(TypedDict):
@@ -36,7 +56,11 @@ class ShotGlobals(SimpleNamespace):
         # across multiple shots
         if self._last_loaded_h5 != compiler.hdf5_filename:
             self._runmanager_globals = runmanager.get_shot_globals(compiler.hdf5_filename)
-            self._defaults: dict[str, dict[str, ParameterSpec]] = dict()
+
+            inp_file = impresources.files(labscriptlib) / 'defaults.yml'
+            # with open('defaults.yml', 'r') as f:
+            with inp_file.open('r') as f:
+                self._defaults: dict[str, dict[str, ParameterSpec]] = yaml.load(f, Loader=loader)
 
             flattened_defaults = dict()
             for _, groupvars in self._defaults.items():
@@ -46,7 +70,7 @@ class ShotGlobals(SimpleNamespace):
                     flattened_defaults[varname] = var['value']
 
             self._loaded_globals = flattened_defaults | self._runmanager_globals
-            self.save_to_h5()
+            self._save_defaults_to_h5(flattened_defaults)
             self._last_loaded_h5 = compiler.hdf5_filename
 
         try:
@@ -54,12 +78,13 @@ class ShotGlobals(SimpleNamespace):
         except KeyError:
             raise AttributeError(f'global {name} defined neither in defaults nor as a runmanager override')
 
-    def save_to_h5(self):
+    # pass in flattened defaults so we don't have to flatten a second time
+    def _save_defaults_to_h5(self, defaults_flattened):
         '''
         In the h5 file, create the following structure:
 
-        'shot_parameters' (attrs: {global1: value1, ...})
-            Group1 (attrs: {global1: runmanager_value1, ...})
+        'default_params' (attrs: {global1: value1, ...})
+            Group1 (attrs: {global1: value1, ...})
                 'units' (attrs: {global1: unit1, ...})
             Group2 (...)
                 'units' (...)
@@ -72,30 +97,20 @@ class ShotGlobals(SimpleNamespace):
         - group attrs
             The group attributes
         '''
-        with h5py.open(compiler.hdf5_filename, 'r+') as f:
-            f.create_group('shot_parameters')
-            params_h5group = f['shot_parameters']
+        with h5py.File(compiler.hdf5_filename, 'r+') as f:
+            f.create_group('default_params')
+            defaults_h5group = f['default_params']
 
-            for key, value in self._loaded_globals.items():
-                params_h5group.attrs[key] = value
+            defaults_h5group.attrs.update(defaults_flattened)
+            for groupname, groupvars in self._defaults.items():
+                defaults_h5group.create_group(groupname)
+                subgroup = defaults_h5group[groupname]
 
-            # runmgr groups + default groups
-            groupnames = set(self._defaults) | set(f['globals'])
-            for groupname in groupnames:
-                params_h5group.create_group(groupname)
-                paramsgroup_h5group = params_h5group[groupname]
-
-                paramsgroup_h5group.create_group('units')
-                units_h5group = paramsgroup_h5group['units']
-
-                if groupname in self._defaults:
-                    for varname, vardict in self._defaults[groupname].items():
-                        paramsgroup_h5group.attrs[varname] = vardict['value']
-                        units_h5group.attrs[varname] = vardict['unit']
-                if groupname in f['globals']:
-                    for varname in f['globals'][groupname].attrs:
-                        paramsgroup_h5group.attrs[varname] = f['globals'][groupname].attrs[varname]
-                        units_h5group.attrs[varname] = f['globals'][groupname]['units'].attrs[varname]
+                defaults_values = {varname: vardict['value'] for varname, vardict in groupvars.items()}
+                defaults_units = {varname: vardict['unit'] for varname, vardict in groupvars.items()}
+                subgroup.attrs.update(defaults_values)
+                subgroup.create_group('units')
+                subgroup['units'].attrs.update(defaults_units)
 
 
 shot_globals = ShotGlobals()
