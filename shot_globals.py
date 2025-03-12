@@ -2,7 +2,6 @@ from types import SimpleNamespace
 from typing import Any, TypedDict
 
 import h5py
-import yaml
 
 from labscript import compiler
 import runmanager
@@ -25,17 +24,6 @@ class ShotGlobals(SimpleNamespace):
         self._runmanager_globals = dict()
         self._defaults = dict()
         self._loaded_globals = dict()
-        self.from_yaml()
-
-    def from_yaml(self) -> None:
-        """Load default values from defaults.yml file."""
-        try:
-            with open('defaults.yml', 'r') as f:
-                self._defaults = yaml.safe_load(f)
-        except FileNotFoundError:
-            self._defaults = dict()
-        except yaml.YAMLError as e:
-            raise ValueError(f'Error parsing defaults.yml: {e}')
 
     def __getattr__(self, name: str) -> Any:
         '''
@@ -84,7 +72,7 @@ class ShotGlobals(SimpleNamespace):
         - group attrs
             The group attributes
         '''
-        with h5py.File(compiler.hdf5_filename, 'r+') as f:
+        with h5py.open(compiler.hdf5_filename, 'r+') as f:
             f.create_group('shot_parameters')
             params_h5group = f['shot_parameters']
 

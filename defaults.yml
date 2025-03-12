@@ -1,5 +1,5 @@
 ---
-mot_group:
+group1:
   param1:
     value: 3
     unit: MHz
@@ -7,9 +7,3 @@ mot_group:
     value: 1.3
     unit: V
 group2:
-  param1:
-    value: 50
-    unit: MHz
-  param2:
-    value: 120.3
-    unit: V

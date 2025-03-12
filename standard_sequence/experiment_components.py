@@ -19,7 +19,6 @@ from calibration import (
 from connection_table import devices
 from spectrum_manager import spectrum_manager
 
-
 # from spectrum_manager_fifo import spectrum_manager_fifo
 
 
@@ -113,6 +112,20 @@ class ShutterConfig(Flag):
             return cls.NONE
 
 
+@dataclass
+class D2Config:
+    ta_power: float
+    ta_detuning: float
+    repump_power: float
+    repump_detuning: float = 0
+
+
+@dataclass
+class ParityProjectionConfig:
+    ta_power: float
+    ta_detuning: float
+
+
 # Hardware control classes
 # -------------------------------------------------------------------------------
 class D2Lasers:
@@ -152,12 +165,24 @@ class D2Lasers:
     CONST_TA_PUMPING_DETUNING: ClassVar[float] = -251  # MHz 4->4 tansition
     CONST_REPUMP_DEPUMPING_DETUNING: ClassVar[float] = -201.24  # MHz 3->3 transition
 
-    
+    mot_config: D2Config
+
+    # TODO: consider removing this and passing directly to D2Lasers.parity_projection_pulse()
+    parity_proj_config: ParityProjectionConfig
+
+    ta_freq: float
+    repump_freq: float
+    ta_power: float
+    repump_power: float
+    # TODO add remaining state variables
+
+    # Can we put this somewhere nicer?
 
     def __init__(
             self,
             t,
-            config: MOTConfig,
+            mot_config: D2Config,
+            pp_config: ParityProjectionConfig,
     ):
         """Initialize the D2 laser system.
 
@@ -168,16 +193,17 @@ class D2Lasers:
         ----------
         t: float
             Time to start the D2 laser system
-        config: MOTConfig or other config class
-            Configuration for the MOT laser parameters
-            Must contain at minimum the state variables shown below
+        mot_config, pp_config: MOTConfig, ParityProjectionConfig
+            configuration for the MOT and parity projection pulses
         """
         # Tune to MOT frequency, full power
-        self.ta_freq = config.ta_detuning
-        self.repump_freq = config.repump_detuning
-        self.ta_power = config.ta_power
-        self.repump_power = config.repump_power
-        self.mot_config = config
+        self.ta_freq = mot_config.ta_detuning
+        self.repump_freq = D2Config.repump_detuning
+        self.ta_power = mot_config.ta_power
+        self.repump_power = mot_config.repump_power
+
+        self.mot_config = mot_config
+        self.parity_proj_config = pp_config
 
         # update_shutters compares with self.shutter_config to decide what
         # changes to make. Do not call self.update_shutters(self.shutter_config),
@@ -529,14 +555,14 @@ class D2Lasers:
         self.ramp_ta_freq(
             t,
             duration=self.CONST_TA_VCO_RAMP_TIME,
-            final=self.mot_config.parity_projection_ta_detuning,
+            final=self.parity_proj_config.ta_detuning,
         )  # fixed the ramp duration for the parity projection
         t += self.CONST_TA_VCO_RAMP_TIME
         t, t_aom_start = self.do_pulse(
             t,
             dur,
             ShutterConfig.MOT_TA,
-            self.mot_config.parity_projection_ta_power,
+            self.parity_proj_config.ta_power,
             0,
             close_all_shutters=close_all_shutters,
         )
@@ -876,6 +902,17 @@ class Microwave:
         devices.spectrum_uwave.stop()
 
         return t
+
+
+@dataclass
+class PointingConfig:
+    '''
+    Config class for beam pointing with four picomotors or two mirror mounts.
+    '''
+    upstream_h: float
+    upstream_v: float
+    downstream_h: float
+    downstream_v: float
 
 
 class RydLasers:
