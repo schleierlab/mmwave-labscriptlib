@@ -1,58 +1,17 @@
 ---
 MOT:
-  mot_do_coil:
-    value: True
-    unit: bool
-  mot_do_uv:
-    value: False
-    unit: bool
-  mot_exposure_time:
-    value: 1e-3
-    unit: s
-  mot_load_dur:
-    value: 0
-    unit: s
-  mot_repump_power:
-    value: 1
-    unit: V
-  mot_ta_detuning:
-    value: -24
-    unit: MHz
-  mot_ta_power:
-    value: 0.7
-    unit: V
-  mot_tof_imaging_delay:
-    value: 7e-3
-    unit: s
-  mot_uv_duration:
-    value: 200e-3
-    unit: s
-  mot_x_coil_voltage:
-    value: 0.75
-    unit: V
-  mot_y_coil_voltage:
-    value: -1.1
-    unit: V
-  mot_z_coil_voltage:
-    value: -1.1
-    unit: V
-  zero_Efield_Vx:
-    value: 0.1
-    unit: V
-  zero_Efield_Vy:
-    value: -0.18
-    unit: V
-  zero_Efield_Vz:
-    value: 0.14
-    unit: V
-test_group1:
-  test_g1_param1:
-    value: 3
-    unit: MHz
-  test_g1_param2:
-    value: 1.3
-    unit: V
-  test_g1_param3:
-    value: True
-    unit: bool
-test_group2: {}
+  mot_do_coil: { value: True, unit: bool }
+  mot_do_uv: { value: False, unit: bool }
+  mot_exposure_time: { value: 1e-3, unit: s }
+  mot_load_dur: { value: 0, unit: s }
+  mot_repump_power: { value: 1, unit: V }
+  mot_ta_detuning: { value: -24, unit: MHz }
+  mot_ta_power: { value: 0.7, unit: V }
+  mot_tof_imaging_delay: { value: 7e-3, unit: s }
+  mot_uv_duration: { value: 200e-3, unit: s }
+  mot_x_coil_voltage: { value: 0.75, unit: V }
+  mot_y_coil_voltage: { value: -1.1, unit: V }
+  mot_z_coil_voltage: { value: -1.1, unit: V }
+  zero_Efield_Vx: { value: 0.1, unit: V }
+  zero_Efield_Vy: { value: -0.18, unit: V }
+  zero_Efield_Vz: { value: 0.14, unit: V }
