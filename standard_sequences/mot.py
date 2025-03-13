@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
-from labscriptlib.shot_globals import shot_globals
-from labscriptlib.standard_sequence.experiment_components import (
+from labscriptlib.experiment_components import (
     BField,
     Camera,
     D2Config,
@@ -11,6 +10,7 @@ from labscriptlib.standard_sequence.experiment_components import (
     ShutterConfig,
     UVLamps,
 )
+from labscriptlib.shot_globals import shot_globals
 
 
 @dataclass

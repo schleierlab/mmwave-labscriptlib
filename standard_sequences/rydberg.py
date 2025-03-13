@@ -1,7 +1,7 @@
 import numpy as np
 
+from labscriptlib.experiment_components import PointingConfig, RydLasers, ShutterConfig
 from labscriptlib.shot_globals import shot_globals
-from labscriptlib.standard_sequence.experiment_components import PointingConfig, RydLasers, ShutterConfig
 
 from .tweezers import TweezerSequence
 

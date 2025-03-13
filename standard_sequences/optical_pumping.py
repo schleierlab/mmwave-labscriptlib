@@ -2,8 +2,8 @@
 from typing import Literal
 import numpy as np
 
+from labscriptlib.experiment_components import D2Lasers, Microwave, ShutterConfig
 from labscriptlib.shot_globals import shot_globals
-from labscriptlib.standard_sequence.experiment_components import D2Lasers, Microwave, ShutterConfig
 from .mot import MOTSequence
 
 
