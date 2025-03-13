@@ -3,12 +3,12 @@ import numpy as np
 from labscriptlib.experiment_components import PointingConfig, RydLasers, ShutterConfig
 from labscriptlib.shot_globals import shot_globals
 
-from .tweezers import TweezerSequence
+from .tweezers import TweezerOperations
 
 
-class RydSequence(TweezerSequence):
+class RydbergOperations(TweezerOperations):
     def __init__(self, t):
-        super(RydSequence, self).__init__(t)
+        super(RydbergOperations, self).__init__(t)
         blue_pointing = PointingConfig(
             shot_globals.ryd_456_mirror_1_h,
             shot_globals.ryd_456_mirror_1_v,

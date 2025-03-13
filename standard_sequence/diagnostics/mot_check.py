@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import labscript
 
 from labscriptlib.shot_globals import shot_globals
-from labscriptlib.standard_sequence.classy_sequence import MOTSequence
+from labscriptlib.standard_sequence.classy_sequence import MOTOperations
 
 
 
@@ -10,7 +10,7 @@ labscript.start()
 t = 0
 sequence_objects = []
 
-MOTSeq_obj = MOTSequence(t)
+MOTSeq_obj = MOTOperations(t)
 sequence_objects.append(MOTSeq_obj)
 t = MOTSeq_obj._do_mot_in_situ_sequence(t, reset_mot=True)
 

@@ -1,10 +1,10 @@
 
 from labscriptlib.experiment_components import D2Lasers, ShutterConfig, TweezerLaser
 from labscriptlib.shot_globals import shot_globals
-from .optical_pumping import OpticalPumpingSequence
+from .optical_pumping import OpticalPumpingOperations
 
 
-class TweezerSequence(OpticalPumpingSequence):
+class TweezerOperations(OpticalPumpingOperations):
     """Sequence for optical tweezer operations.
 
     This class manages sequences related to loading, manipulating, and imaging atoms
@@ -20,7 +20,7 @@ class TweezerSequence(OpticalPumpingSequence):
         Args:
             t (float): Initial time for the sequence
         """
-        super(TweezerSequence, self).__init__(t)
+        super(TweezerOperations, self).__init__(t)
 
         spectrum_mode = 'sequence' if shot_globals.do_sequence_mode else 'fifo'
         self.TweezerLaser_obj = TweezerLaser(t, shot_globals.tw_power, spectrum_mode)

@@ -35,7 +35,7 @@ class MOTConfig:
         )
 
 
-class MOTSequence:
+class MOTOperations:
     """Sequence for Magneto-Optical Trap (MOT) operations.
 
     This class manages the sequence of operations related to MOT loading, imaging,

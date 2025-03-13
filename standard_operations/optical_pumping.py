@@ -4,10 +4,10 @@ import numpy as np
 
 from labscriptlib.experiment_components import D2Lasers, Microwave, ShutterConfig
 from labscriptlib.shot_globals import shot_globals
-from .mot import MOTSequence
+from .mot import MOTOperations
 
 
-class OpticalPumpingSequence(MOTSequence):
+class OpticalPumpingOperations(MOTOperations):
     """Sequence for optical pumping operations.
 
     This class manages sequences related to optical pumping of atoms between different
@@ -21,7 +21,7 @@ class OpticalPumpingSequence(MOTSequence):
         Args:
             t (float): Initial time for the sequence
         """
-        super(OpticalPumpingSequence, self).__init__(t)
+        super(OpticalPumpingOperations, self).__init__(t)
         self.Microwave_obj = Microwave(t, init_detuning=shot_globals.mw_detuning)
 
     def pump_to_F4(self, t, label: Literal['mot', 'sigma'], close_all_shutters=True):
