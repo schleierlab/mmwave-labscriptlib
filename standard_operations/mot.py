@@ -296,13 +296,10 @@ class MOTOperations:
         Returns:
             float: End time of the molasses sequence
         """
-        assert shot_globals.do_molasses_img_beam or shot_globals.do_molasses_mot_beam, (
-            "either do_molasses_img_beam or do_molasses_mot_beam has to be on"
-        )
-        assert shot_globals.bm_ta_detuning != 0, (
-            "bright molasses detuning = 0. TA detuning should be non-zero for bright molasses."
-        )
-        # print(f"molasses detuning is {shot_globals.bm_ta_detuning}")
+        if not (shot_globals.do_molasses_img_beam or shot_globals.do_molasses_mot_beam):
+            raise ValueError("either do_molasses_img_beam or do_molasses_mot_beam has to be on")
+        if shot_globals.bm_ta_detuning == 0:
+            raise ValueError("bright molasses detuning = 0. TA detuning should be non-zero for bright molasses.")
 
         _ = self.ramp_to_molasses(t)
 
@@ -456,9 +453,8 @@ class MOTOperations:
 
         t = self.do_molasses(t, shot_globals.bm_time)
 
-        assert (
-            shot_globals.bm_tof_imaging_delay > D2Lasers.CONST_MIN_SHUTTER_OFF_TIME
-        ), "time of flight too short for shutter"
+        if shot_globals.bm_tof_imaging_delay <= D2Lasers.CONST_MIN_SHUTTER_OFF_TIME:
+            raise ValueError("time of flight too short for shutter")
         t += shot_globals.bm_tof_imaging_delay
         t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
 

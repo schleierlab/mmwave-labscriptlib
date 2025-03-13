@@ -39,15 +39,18 @@ class TweezerOperations(OpticalPumpingOperations):
             float: End time of the ramping sequence
 
         Raises:
-            AssertionError: If imaging TA or repump powers are set to zero
+            ValueError: If imaging TA or repump powers are set to zero
         """
         t = self.BField_obj.ramp_bias_field(t, bias_field_vector=(0, 0, 0))
         t = self.D2Lasers_obj.ramp_ta_freq(
             t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.img_ta_detuning
         )
         self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
-        assert shot_globals.img_ta_power != 0, "img_ta_power should not be zero"
-        assert shot_globals.img_repump_power != 0, "img_repump_power should not be zero"
+
+        if shot_globals.img_ta_power == 0:
+            raise ValueError("img_ta_power should not be zero")
+        if shot_globals.img_repump_power == 0:
+            raise ValueError("img_repump_power should not be zero")
 
         return t
 
@@ -68,7 +71,7 @@ class TweezerOperations(OpticalPumpingOperations):
             float: End time of the loading sequence
 
         Raises:
-            AssertionError: If time-of-flight delay is too short
+            ValueError: If time-of-flight delay is too short
         """
         # TODO this still spends some time loading the MOT;
         # figure out whether we even need this here at all.
@@ -107,9 +110,8 @@ class TweezerOperations(OpticalPumpingOperations):
                 close_all_shutters=True,
             )
 
-        assert (
-            shot_globals.img_tof_imaging_delay > D2Lasers.CONST_MIN_SHUTTER_OFF_TIME
-        ), "time of flight needs to be greater than CONST_MIN_SHUTTER_OFF_TIME"
+        if shot_globals.img_tof_imaging_delay <= D2Lasers.CONST_MIN_SHUTTER_OFF_TIME:
+            raise ValueError("time of flight needs to be greater than CONST_MIN_SHUTTER_OFF_TIME")
         t += shot_globals.img_tof_imaging_delay
 
         return t

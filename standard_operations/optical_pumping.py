@@ -122,9 +122,9 @@ class OpticalPumpingOperations(MOTOperations):
 
             t_aom_off = t_aom_start + shot_globals.op_repump_time
 
-            assert (
-                shot_globals.op_ta_time < shot_globals.op_repump_time
-            ), "TA time should be shorter than repump for pumping to F=4"
+            if shot_globals.op_ta_time >= shot_globals.op_repump_time:
+                raise ValueError("TA time should be shorter than repump for pumping to F=4")
+
             # TODO: test this timing
             self.D2Lasers_obj.ta_aom_off(t_aom_start + shot_globals.op_ta_time)
             self.D2Lasers_obj.ramp_ta_freq(
@@ -261,9 +261,8 @@ class OpticalPumpingOperations(MOTOperations):
 
             t_aom_off = t_aom_start + shot_globals.odp_ta_time
 
-            assert (
-                shot_globals.odp_ta_time > shot_globals.odp_repump_time
-            ), "TA time should be longer than repump for depumping to F = 3"
+            if shot_globals.odp_ta_time <= shot_globals.odp_repump_time:
+                raise ValueError("TA time should be longer than repump for depumping to F = 3")
             # TODO: test this timing
             self.D2Lasers_obj.repump_aom_off(t_aom_start + shot_globals.odp_repump_time)
 
