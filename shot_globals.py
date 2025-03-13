@@ -117,7 +117,7 @@ class ShotGlobals(SimpleNamespace):
         # TODO we can remove this once we stop using two bools as globals
         if shot_globals.do_mot_beams_during_imaging:
             return 'mot'
-        elif shot_globals.do.img_beams_during_imaging:
+        elif shot_globals.do_img_beams_during_imaging:
             return 'img'
         raise ValueError
 
