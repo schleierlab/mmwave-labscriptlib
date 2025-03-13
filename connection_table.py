@@ -42,22 +42,16 @@ class LabDevices():
             MAX_name='ni_6363_0',
         )
 
-        aom_delay = 0  # 630e-9 #delay time between the pulse and AOM
-        aom_delays = (aom_delay, aom_delay)
-
-        self.ta_aom_digital = Shutter(
+        self.ta_aom_digital = DigitalOut(
             name='ta_aom_digital',
             parent_device=ni_6363_0,
             connection='port0/line0',
-            delay=aom_delays,
-            open_state=1,
         )
-        self.repump_aom_digital = Shutter(
+
+        self.repump_aom_digital = DigitalOut(
             name='repump_aom_digital',
             parent_device=ni_6363_0,
             connection='port0/line1',
-            delay=aom_delays,
-            open_state=1,
         )
 
         self.x_coil_feedback_off = DigitalOut(
