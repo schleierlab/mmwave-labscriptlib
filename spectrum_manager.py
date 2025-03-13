@@ -6,10 +6,11 @@ Created on Aug 1st 2023
 
 @author: Michelle Wu
 """
-import labscript
-from connection_table import devices
+from typing import Any
 import numpy as np
-from tweezers_phaseAmplitudeAdjustment import trap_phase, trap_amplitude
+
+from labscriptlib.tweezers_phaseAmplitudeAdjustment import trap_phase, trap_amplitude
+from labscriptlib.connection_table import devices
 from labscriptlib.shot_globals import shot_globals
 
 TW_y_channel = True
@@ -62,12 +63,15 @@ class SpectrumManager():
         SpectrumPhase = 0
         SpectrumDuration = TW_loopDuration
 
+        def is_np_int_float(x: Any) -> bool:
+            return isinstance(x, np.int32) or isinstance(x, np.float64)
+
         # if only a single frequency is entered, convert it to an array with one entry
-        if type(TW_x_freqs)==np.int32 or type(TW_x_freqs)==np.float64:
+        if is_np_int_float(TW_x_freqs):
             TW_x_freqs = np.array([TW_x_freqs])
 
         if TW_y_channel:
-            if type(TW_y_freqs)==np.int32 or type(TW_y_freqs)==np.float64:
+            if is_np_int_float(TW_y_freqs):
                 TW_y_freqs = np.array([TW_y_freqs])
                 # round the y frequencies since we vary them sometimes
                 # TW_x_freqs = np.round(TW_x_freqs* 1e6 * SpectrumDuration) / SpectrumDuration / 1e6 #FIXME: this is bad mojo without phase optimization
