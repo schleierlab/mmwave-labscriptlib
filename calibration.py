@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Feb 21 11:52:40 2023
-
-@author: sslab
-"""
-
-import sys
-root_path = r"C:\Users\sslab\labscript-suite\userlib\labscriptlib"
-
-if root_path not in sys.path:
-    sys.path.append(root_path)
-
 import numpy as np
 
 

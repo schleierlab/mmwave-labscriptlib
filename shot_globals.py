@@ -11,6 +11,7 @@ import runmanager
 
 import labscriptlib
 
+
 # pyyaml doesn't recognize all scientific notation numbers
 # fix from https://stackoverflow.com/a/30462009
 loader = yaml.SafeLoader
