@@ -121,5 +121,9 @@ class ShotGlobals(SimpleNamespace):
             return 'img'
         raise ValueError
 
+    def get_n_runs(self) -> int:
+        with h5py.File(compiler.hdf5_filename, 'r') as f:
+            return f.attrs['n_runs']
+
 
 shot_globals = ShotGlobals()
