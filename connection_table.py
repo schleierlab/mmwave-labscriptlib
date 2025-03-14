@@ -436,11 +436,11 @@ class LabDevices():
         # Analog Inputs
         #==============================================================================
 
-        self.test_analog_in = AnalogIn(
-            name='test_analog_in', 
-            parent_device=ni_6363_0, 
-            connection='ai0',
-        )
+        # self.test_analog_in = AnalogIn(
+        #     name='test_analog_in',
+        #     parent_device=ni_6363_0,
+        #     connection='ai0',
+        # )
 
 
         #==============================================================================
