@@ -2,7 +2,7 @@ import labscript
 import labscript_devices as labscript_devices
 import labscript_devices.FunctionRunner
 import labscript_devices.FunctionRunner.labscript_devices
-from labscript import AnalogOut, ClockLine, DigitalOut, Shutter
+from labscript import AnalogIn, AnalogOut, ClockLine, DigitalOut, Shutter
 from labscript_devices.NI_DAQmx.models.NI_PXIe_6363 import NI_PXIe_6363
 from labscript_devices.PulseBlasterESRPro500 import PulseBlasterESRPro500
 from user_devices.DDS.AD9914 import AD9914
@@ -10,8 +10,8 @@ from user_devices.DDS.AD9914 import AD9914
 # from user_devices.spcm.Spectrum import Spectrum
 from user_devices.DDS.AD_DDS import AD_DDS
 
-from user_devices.manta419b.manta419b import Manta419B
-from user_devices.kinetix.Kinetix import Kinetix
+from user_devices.manta419b.manta419b import Manta419B  # noqa:F401
+from user_devices.kinetix.Kinetix import Kinetix  # noqa:F401
 from user_devices.NI_PXIe_6739 import NI_PXIe_6739
 from user_devices.spcm.Spectrum_bk import Spectrum
 
@@ -42,18 +42,6 @@ class LabDevices():
             MAX_name='ni_6363_0',
         )
 
-        self.ta_aom_digital = DigitalOut(
-            name='ta_aom_digital',
-            parent_device=ni_6363_0,
-            connection='port0/line0',
-        )
-
-        self.repump_aom_digital = DigitalOut(
-            name='repump_aom_digital',
-            parent_device=ni_6363_0,
-            connection='port0/line1',
-        )
-
         self.x_coil_feedback_off = DigitalOut(
             name='x_coil_feedback_off',
             parent_device=ni_6363_0,
@@ -70,14 +58,6 @@ class LabDevices():
             name='z_coil_feedback_off',
             parent_device=ni_6363_0,
             connection='port0/line14',
-        )
-
-        # port 2 is camera
-        # should this be deprecated?
-        self.mot_camera_trigger = DigitalOut(
-            name='mot_camera_trigger',
-            parent_device=ni_6363_0,
-            connection='port0/line2',
         )
 
         self.uwave_dds_switch = DigitalOut(
@@ -158,7 +138,17 @@ class LabDevices():
             connection='port0/line11',
         )
 
+        self.ta_aom_digital = DigitalOut(
+            name='ta_aom_digital',
+            parent_device=ni_6363_0,
+            connection='port0/line0',
+        )
 
+        self.repump_aom_digital = DigitalOut(
+            name='repump_aom_digital',
+            parent_device=ni_6363_0,
+            connection='port0/line1',
+        )
 
         self.tweezer_aom_digital = DigitalOut(
             name='tweezer_aom_digital',
@@ -166,27 +156,10 @@ class LabDevices():
             connection='flag 12',
         )
 
-        # self.tweezer_aom_digital = DigitalOut(
-        #     name='tweezer_aom_digital',
-        #     parent_device = ni_6363_0,
-        #     connection='port0/line12',
-        # )
-
-        self.tweezer_camera_trigger = DigitalOut(
-            name='tweezer_camera_trigger',
-            parent_device=ni_6363_0,
-            connection='port0/line13',
-        )
         self.servo_1064_aom_digital = DigitalOut(
             name='servo_1064_aom_digital',
             parent_device = pb.direct_outputs,
             connection='flag 13',
-        )
-
-        self.kinetix_camera_trigger = DigitalOut( #use this when not using kinetix server
-            name='kinetix_camera_trigger',
-            parent_device=ni_6363_0,
-            connection='port0/line15',
         )
 
         self.servo_456_aom_digital = DigitalOut(
@@ -276,16 +249,54 @@ class LabDevices():
             limits=(0, 1),
         )
 
-
-        self.ta_vco = AnalogOut(name='ta_vco', parent_device=ni_6739_0, connection='ao2')
-        self.repump_vco = AnalogOut(name='repump_vco', parent_device=ni_6739_0, connection='ao3')
-        self.mot_coil_current_ctrl = AnalogOut(name='mot_coil_current_ctrl', parent_device=ni_6739_0, connection='ao4')
-        self.x_coil_current = AnalogOut(name='x_coil_current', parent_device=ni_6739_0, connection='ao5')
-        self.y_coil_current = AnalogOut(name='y_coil_current', parent_device=ni_6739_0, connection='ao6')
-        self.z_coil_current = AnalogOut(name='z_coil_current', parent_device=ni_6739_0, connection='ao7')
-        self.tweezer_aom_analog = AnalogOut(name='tweezer_aom_analog', parent_device=ni_6739_0, connection='ao8', limits=(0, 1))
-        self.servo_1064_aom_analog = AnalogOut(name='notconnected_servo_1064_aom_analog', parent_device=ni_6739_0, connection='ao9', limits=(0, 1))
-        self.servo_456_aom_analog = AnalogOut(name='notconnected_servo_456_aom_analog', parent_device=ni_6739_0, connection='ao10', limits=(0, 1))
+        self.ta_vco = AnalogOut(
+            name='ta_vco', 
+            parent_device=ni_6739_0, 
+            connection='ao2'
+        )
+        self.repump_vco = AnalogOut(
+            name='repump_vco', 
+            parent_device=ni_6739_0, 
+            connection='ao3'
+        )
+        self.mot_coil_current_ctrl = AnalogOut(
+            name='mot_coil_current_ctrl', 
+            parent_device=ni_6739_0, 
+            connection='ao4'
+        )
+        self.x_coil_current = AnalogOut(
+            name='x_coil_current', 
+            parent_device=ni_6739_0, 
+            connection='ao5'
+        )
+        self.y_coil_current = AnalogOut(
+            name='y_coil_current', 
+            parent_device=ni_6739_0, 
+            connection='ao6'
+        )
+        self.z_coil_current = AnalogOut(
+            name='z_coil_current', 
+            parent_device=ni_6739_0, 
+            connection='ao7'
+        )
+        self.tweezer_aom_analog = AnalogOut(
+            name='tweezer_aom_analog', 
+            parent_device=ni_6739_0, 
+            connection='ao8', 
+            limits=(0, 1)
+        )
+        self.servo_1064_aom_analog = AnalogOut(
+            name='notconnected_servo_1064_aom_analog', 
+            parent_device=ni_6739_0, 
+            connection='ao9', 
+            limits=(0, 1)
+        )
+        self.servo_456_aom_analog = AnalogOut(
+            name='notconnected_servo_456_aom_analog', 
+            parent_device=ni_6739_0, 
+            connection='ao10', 
+            limits=(0, 1)
+        )
 
         #Mirror 1 is upstream mirror 2 is downstream
         self.mirror_456_1_v = AnalogOut(
@@ -344,68 +355,102 @@ class LabDevices():
             limits=(0, 10),
         )
 
-        self.pulse_456_aom_analog = AnalogOut(name='pulse_456_aom_analog', parent_device=ni_6739_0, connection='ao15', limits=(0, 1))
+        self.pulse_456_aom_analog = AnalogOut(
+            name='pulse_456_aom_analog', 
+            parent_device=ni_6739_0, 
+            connection='ao15', 
+            limits=(0, 1)
+        )
 
-        self.local_addr_1064_aom_analog = AnalogOut(name='local_addr_1064_aom_analog', parent_device=ni_6739_0, connection='ao16', limits=(0, 1))
+        self.local_addr_1064_aom_analog = AnalogOut(
+            name='local_addr_1064_aom_analog', 
+            parent_device=ni_6739_0, 
+            connection='ao16', 
+            limits=(0, 1)
+        )
 
-        self.pulse_1064_aom_analog = AnalogOut(name='pulse_1064_aom_analog', parent_device=ni_6739_0, connection='ao17', limits=(0, 1))
+        self.pulse_1064_aom_analog = AnalogOut(
+            name='pulse_1064_aom_analog', 
+            parent_device=ni_6739_0, 
+            connection='ao17', 
+            limits=(0, 1)
+        )
 
         # All 8 electrodes
         self.electrode_T1 = AnalogOut(
             name='electrode_T1',
             parent_device=ni_6739_0,
-            connection='ao22')
+            connection='ao22'
+        )
 
         self.electrode_T2 = AnalogOut(
             name='electrode_T2',
             parent_device=ni_6739_0,
-            connection='ao23')
+            connection='ao23'
+        )
 
         self.electrode_T3 = AnalogOut(
             name='electrode_T3',
             parent_device=ni_6739_0,
-            connection='ao24')
+            connection='ao24'
+        )
 
         self.electrode_T4 = AnalogOut(
             name='electrode_T4',
             parent_device=ni_6739_0,
-            connection='ao25')
+            connection='ao25'
+        )
 
         self.electrode_B1 = AnalogOut(
             name='electrode_B1',
             parent_device=ni_6739_0,
-            connection='ao26')
+            connection='ao26'
+        )
 
         self.electrode_B2 = AnalogOut(
             name='electrode_B2',
             parent_device=ni_6739_0,
-            connection='ao27')
+            connection='ao27'
+        )
 
         self.electrode_B3 = AnalogOut(
             name='electrode_B3',
             parent_device=ni_6739_0,
-            connection='ao28')
+            connection='ao28'
+        )
 
         self.electrode_B4 = AnalogOut(
             name='electrode_B4',
             parent_device=ni_6739_0,
-            connection='ao29')
+            connection='ao29'
+        )
 
         self.runner = labscript_devices.FunctionRunner.labscript_devices.FunctionRunner(
-            name = 'runner')
+            name = 'runner'
+        )
+
+        #==============================================================================
+        # Analog Inputs
+        #==============================================================================
+
+        self.test_analog_in = AnalogIn(
+            name='test_analog_in', 
+            parent_device=ni_6363_0, 
+            connection='ai0',
+            acqusition_rate=1000
+        )
 
 
         #==============================================================================
         # Cameras
         #==============================================================================
 
-
-        # self.manta419b_mot = Manta419B(
-        #     'manta419b_mot',
-        #     parent_device=ni_6363_0,
-        #     connection="port0/line2",
-        #     BIAS_port=54321,
-        # )
+        self.manta419b_mot = Manta419B(
+            'manta419b_mot',
+            parent_device=ni_6363_0,
+            connection="port0/line2",
+            BIAS_port=54321,
+        )
 
         # self.manta419b_tweezer = Manta419B(
         #     'manta419b_tweezer',
@@ -428,11 +473,31 @@ class LabDevices():
         #     BIAS_port=54323,
         # )
 
-        self.kinetix = Kinetix(
-            name='kinetix',
+        # self.kinetix = Kinetix(
+        #     name='kinetix',
+        #     parent_device=ni_6363_0,
+        #     connection='port0/line15',
+        #     BIAS_port=27171,
+        # )
+
+        # port 2 is camera
+        # should this be deprecated?
+        self.mot_camera_trigger = DigitalOut(
+            name='mot_camera_trigger',
+            parent_device=ni_6363_0,
+            connection='port0/line2',
+        )
+
+        self.tweezer_camera_trigger = DigitalOut(
+            name='tweezer_camera_trigger',
+            parent_device=ni_6363_0,
+            connection='port0/line13',
+        )
+
+        self.kinetix_camera_trigger = DigitalOut( #use this when not using kinetix server
+            name='kinetix_camera_trigger',
             parent_device=ni_6363_0,
             connection='port0/line15',
-            BIAS_port=27171,
         )
 
         #================================================================================
@@ -444,7 +509,7 @@ class LabDevices():
                     serial_number = 19621,
                     handle_name = b'/dev/spcm0',
                     triggerDur=10e-3
-                    )
+        )
 
         #==============================================================================
         # Spectrum Instrumentation Cards
