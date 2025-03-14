@@ -251,51 +251,51 @@ class LabDevices():
         )
 
         self.ta_vco = AnalogOut(
-            name='ta_vco', 
-            parent_device=ni_6739_0, 
+            name='ta_vco',
+            parent_device=ni_6739_0,
             connection='ao2'
         )
         self.repump_vco = AnalogOut(
-            name='repump_vco', 
-            parent_device=ni_6739_0, 
+            name='repump_vco',
+            parent_device=ni_6739_0,
             connection='ao3'
         )
         self.mot_coil_current_ctrl = AnalogOut(
-            name='mot_coil_current_ctrl', 
-            parent_device=ni_6739_0, 
+            name='mot_coil_current_ctrl',
+            parent_device=ni_6739_0,
             connection='ao4'
         )
         self.x_coil_current = AnalogOut(
-            name='x_coil_current', 
-            parent_device=ni_6739_0, 
+            name='x_coil_current',
+            parent_device=ni_6739_0,
             connection='ao5'
         )
         self.y_coil_current = AnalogOut(
-            name='y_coil_current', 
-            parent_device=ni_6739_0, 
+            name='y_coil_current',
+            parent_device=ni_6739_0,
             connection='ao6'
         )
         self.z_coil_current = AnalogOut(
-            name='z_coil_current', 
-            parent_device=ni_6739_0, 
+            name='z_coil_current',
+            parent_device=ni_6739_0,
             connection='ao7'
         )
         self.tweezer_aom_analog = AnalogOut(
-            name='tweezer_aom_analog', 
-            parent_device=ni_6739_0, 
-            connection='ao8', 
+            name='tweezer_aom_analog',
+            parent_device=ni_6739_0,
+            connection='ao8',
             limits=(0, 1)
         )
         self.servo_1064_aom_analog = AnalogOut(
-            name='notconnected_servo_1064_aom_analog', 
-            parent_device=ni_6739_0, 
-            connection='ao9', 
+            name='notconnected_servo_1064_aom_analog',
+            parent_device=ni_6739_0,
+            connection='ao9',
             limits=(0, 1)
         )
         self.servo_456_aom_analog = AnalogOut(
-            name='notconnected_servo_456_aom_analog', 
-            parent_device=ni_6739_0, 
-            connection='ao10', 
+            name='notconnected_servo_456_aom_analog',
+            parent_device=ni_6739_0,
+            connection='ao10',
             limits=(0, 1)
         )
 
@@ -357,23 +357,23 @@ class LabDevices():
         )
 
         self.pulse_456_aom_analog = AnalogOut(
-            name='pulse_456_aom_analog', 
-            parent_device=ni_6739_0, 
-            connection='ao15', 
+            name='pulse_456_aom_analog',
+            parent_device=ni_6739_0,
+            connection='ao15',
             limits=(0, 1)
         )
 
         self.local_addr_1064_aom_analog = AnalogOut(
-            name='local_addr_1064_aom_analog', 
-            parent_device=ni_6739_0, 
-            connection='ao16', 
+            name='local_addr_1064_aom_analog',
+            parent_device=ni_6739_0,
+            connection='ao16',
             limits=(0, 1)
         )
 
         self.pulse_1064_aom_analog = AnalogOut(
-            name='pulse_1064_aom_analog', 
-            parent_device=ni_6739_0, 
-            connection='ao17', 
+            name='pulse_1064_aom_analog',
+            parent_device=ni_6739_0,
+            connection='ao17',
             limits=(0, 1)
         )
 
