@@ -273,6 +273,44 @@ class OpticalPumpingOperations(MOTOperations):
                 "This optical depumping method is not implemented"
             )
 
+    def wipe_them_out___all_of_them(self, t, close_all_shutters=True):
+        self.kill_all(t, close_all_shutters=close_all_shutters)
+
+    def kill_all(self, t, close_all_shutters=True):
+        """
+        Remove atoms in both the F=3 and F=4 hyperfine manifolds
+        using a resonant TA pulse and repump light.
+
+        Parameters
+        ----------
+        t: float
+            Start time for the sequence.
+
+        Returns
+        -------
+        float
+            Sequence end time.
+        """
+        # ramp laser to resonance
+        t = self.D2Lasers_obj.ramp_ta_freq(
+            t, D2Lasers.CONST_TA_VCO_RAMP_TIME, final=0
+        )
+
+        # can consider making this configurable
+        kill_pulse_duration = 1e-3
+        t, t_aom_start = self.D2Lasers_obj.do_pulse(
+            t,
+            kill_pulse_duration,
+            ShutterConfig.OPTICAL_PUMPING_FULL,
+            ta_power=1,
+            repump_power=1,
+            close_all_shutters=close_all_shutters,
+        )
+
+        t_aom_off = t_aom_start + kill_pulse_duration
+
+        return t, t_aom_off
+
     def kill_F4(self, t, close_all_shutters=True):
         """Remove atoms in the F=4 hyperfine state using resonant light.
 

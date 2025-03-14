@@ -130,6 +130,7 @@ class TweezerOperations(OpticalPumpingOperations):
         """
         pass
 
+    # TODO make Camera object intelligently bump camera exposures in quick succession
     def image_tweezers(self, t, shot_number):
         """Image atoms in optical tweezers.
 
@@ -149,7 +150,7 @@ class TweezerOperations(OpticalPumpingOperations):
             t = self.do_tweezer_imaging(
                 t, close_all_shutters=shot_globals.do_shutter_close_after_first_shot
             )
-        if shot_number == 2:
+        elif shot_number > 1:
             # pulse for the second shots and wait for the first shot to finish the
             # first reading
             # print(shot_globals.kinetix_roi_row)
@@ -256,6 +257,21 @@ class TweezerOperations(OpticalPumpingOperations):
         t = self.image_tweezers(t, shot_number=2)
         t = self.reset_mot(t)
         # t = self.TweezerLaser_obj.stop_tweezers(t)
+
+        return t
+
+    def _do_tweezer_check_with_inshot_background(self, t) -> float:
+        t = self.load_tweezers(t)
+        t = self.image_tweezers(t, shot_number=1)
+        t += shot_globals.img_wait_time_between_shots
+        t = self.image_tweezers(t, shot_number=2)
+
+        self.TweezerLaser_obj.aom_off(t)
+        t, _ = self.kill_all(t, close_all_shutters=False)
+        self.TweezerLaser_obj.aom_on(t, const=1)
+
+        t = self.image_tweezers(t, shot_number=3)
+        t = self.reset_mot(t)
 
         return t
 

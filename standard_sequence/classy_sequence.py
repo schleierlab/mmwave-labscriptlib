@@ -62,6 +62,11 @@ if __name__ == "__main__":
         sequence_objects.append(TweezerSequence_obj)
         t = TweezerSequence_obj._do_tweezer_check_sequence(t)
 
+    elif shot_globals.do_tweezer_check_inshot_bkg:
+        TweezerSequence_obj = TweezerOperations(t)
+        sequence_objects.append(TweezerSequence_obj)
+        t = TweezerSequence_obj._do_tweezer_check_with_inshot_background(t)
+
     elif shot_globals.do_tweezer_position_check:
         TweezerSequence_obj = TweezerOperations(t)
         sequence_objects.append(TweezerSequence_obj)
