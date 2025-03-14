@@ -40,6 +40,7 @@ class LabDevices():
             parent_device=clockline_6363,
             clock_terminal='/ni_6363_0/PFI0',
             MAX_name='ni_6363_0',
+            acquisition_rate=2.5e5
         )
 
         self.x_coil_feedback_off = DigitalOut(
@@ -376,7 +377,9 @@ class LabDevices():
             limits=(0, 1)
         )
 
-        # All 8 electrodes
+        #==============================================================================
+        # Electrodes
+        #==============================================================================
         self.electrode_T1 = AnalogOut(
             name='electrode_T1',
             parent_device=ni_6739_0,
@@ -437,7 +440,6 @@ class LabDevices():
             name='test_analog_in', 
             parent_device=ni_6363_0, 
             connection='ai0',
-            acqusition_rate=1000
         )
 
 

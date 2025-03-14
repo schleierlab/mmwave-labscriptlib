@@ -16,6 +16,11 @@ if __name__ == "__main__":
     sequence_objects = []
     # Insert "stay on" statements for alignment here...
 
+    if shot_globals.do_test_analog_in:
+        duration = devices.test_analog_in.acquire('test_analog_in', t+1e-3, t+2e-3)
+        print("Duration was:", duration)
+        t += 2e-3
+
     if shot_globals.do_mot_in_situ_check:
         MOTSeq_obj = MOTOperations(t)
         sequence_objects.append(MOTSeq_obj)
@@ -156,7 +161,7 @@ if __name__ == "__main__":
     current_obj = next((obj for obj in sequence_objects if obj is not None), None)
 
     if current_obj is None:
-        raise NotImplementedError("No valid sequence object found")
+        print("Warning: No valid sequence object found")
 
     # Stop tweezers if the object has a TweezerLaser_obj
     if hasattr(current_obj, 'TweezerLaser_obj'):
