@@ -3,3 +3,5 @@ numpy
 scipy
 matplotlib
 numba
+pyyaml
+h5py

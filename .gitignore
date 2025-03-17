@@ -6,6 +6,9 @@
 # runmanager config files
 *.ini
 
+# Mac OS system files
+.DS_STORE
+
 ## Python default gitignores
 
 # Byte-compiled / optimized / DLL files
