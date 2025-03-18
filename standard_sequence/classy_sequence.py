@@ -75,7 +75,7 @@ if __name__ == "__main__":
     elif shot_globals.do_tweezer_position_check:
         TweezerSequence_obj = TweezerOperations(t)
         sequence_objects.append(TweezerSequence_obj)
-        t = TweezerSequence_obj._do_tweezer_position_check_sequence(t, check_with_vimba=False)
+        t = TweezerSequence_obj._do_tweezer_position_check_sequence(t, check_with_vimba=True)
 
     elif shot_globals.do_F4_microwave_spec_dipole_trap or shot_globals.do_dipole_trap_B_calib:
         RydSequence_obj = RydbergOperations(t)

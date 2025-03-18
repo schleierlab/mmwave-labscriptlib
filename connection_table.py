@@ -447,12 +447,12 @@ class LabDevices():
         # Cameras
         #==============================================================================
 
-        self.manta419b_mot = Manta419B(
-            'manta419b_mot',
-            parent_device=ni_6363_0,
-            connection="port0/line2",
-            BIAS_port=54321,
-        )
+        # self.manta419b_mot = Manta419B(
+        #     'manta419b_mot',
+        #     parent_device=ni_6363_0,
+        #     connection="port0/line2",
+        #     BIAS_port=54321,
+        # )
 
         # self.manta419b_tweezer = Manta419B(
         #     'manta419b_tweezer',
@@ -475,31 +475,11 @@ class LabDevices():
         #     BIAS_port=54323,
         # )
 
-        # self.kinetix = Kinetix(
-        #     name='kinetix',
-        #     parent_device=ni_6363_0,
-        #     connection='port0/line15',
-        #     BIAS_port=27171,
-        # )
-
-        # port 2 is camera
-        # should this be deprecated?
-        self.mot_camera_trigger = DigitalOut(
-            name='mot_camera_trigger',
-            parent_device=ni_6363_0,
-            connection='port0/line2',
-        )
-
-        self.tweezer_camera_trigger = DigitalOut(
-            name='tweezer_camera_trigger',
-            parent_device=ni_6363_0,
-            connection='port0/line13',
-        )
-
-        self.kinetix_camera_trigger = DigitalOut( #use this when not using kinetix server
-            name='kinetix_camera_trigger',
+        self.kinetix = Kinetix(
+            name='kinetix',
             parent_device=ni_6363_0,
             connection='port0/line15',
+            BIAS_port=27171,
         )
 
         #================================================================================
