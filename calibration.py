@@ -247,23 +247,23 @@ def spec_freq_calib(mw_detuning):
 
 def biasx_calib(field):
     # unit: V, mG
-    V0 = 0.55013845
-    Vp = 540.12122159
-    voltage = V0 +1/Vp*field
+    V0 = 0.5243 # V
+    Bp = 546.8 # mG/V
+    voltage = V0 +1/Bp*field
     return voltage
 
 
 def biasy_calib(field):
-    V0 =  5.25554597e-02
-    Vp = 1.07714936e+03
-    voltage = V0 +1/Vp*field
+    V0 =  0.0535 # V
+    Bp = 1158.1 # mG/V
+    voltage = V0 +1/Bp*field
     return voltage
 
 
 def biasz_calib(field):
-    V0 = -6.67996653e-01
-    Vp = 1.06445681e+03
-    voltage = V0 + field / Vp
+    V0 = -0.6682 # V
+    Bp = 1096.9 # mG/V
+    voltage = V0 + 1/Bp * field
     return voltage
 
 
