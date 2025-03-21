@@ -125,13 +125,13 @@ class RydbergOperations(TweezerOperations):
         t += 1e-3
 
         t, t_aom_off = self.pump_to_F4(
-            t, shot_globals.op_label, close_all_shutters=False,
+            t, shot_globals.op_label, close_all_shutters=True,
         )
 
         if shot_globals.do_dipole_trap_B_calib:
             t = self.BField_obj.ramp_bias_field(
                     t_aom_off + 200e-6, #TODO: wait for 200e-6s extra time in optical pumping field, can be changed
-                    voltage_vector=(shot_globals.mw_y_coil_voltage,
+                    voltage_vector=(shot_globals.mw_x_coil_voltage,
                                     shot_globals.mw_y_coil_voltage,
                                     shot_globals.mw_z_coil_voltage),
                     polar = False
@@ -145,8 +145,8 @@ class RydbergOperations(TweezerOperations):
                 polar = True
             )
 
-
         t += shot_globals.mw_field_wait_dur
+
         if shot_globals.drop_dp_during_mw:
             self.RydLasers_obj.pulse_1064_aom_off(t)
 
@@ -160,13 +160,73 @@ class RydbergOperations(TweezerOperations):
                 t, mw_sweep_start, mw_sweep_end, shot_globals.mw_sweep_duration
             )
 
-        t+=10e-6
+        # t+=10e-6
 
         if shot_globals.drop_dp_during_mw:
             self.RydLasers_obj.pulse_1064_aom_on(t, 1)
 
 
         t += 3e-6 #TODO: wait for extra time before killing, can be changed
+        if shot_globals.do_killing_pulse:
+            t, _ = self.kill_F4(t, close_all_shutters=True)
+        # This is the only place required for the special value of imaging
+        # t += 1e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
+        # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
+
+        t += shot_globals.dp_img_tof_imaging_delay
+        t = self.do_molasses_dipole_trap_imaging(
+            t,
+            ta_power = shot_globals.dp_img_ta_power,
+            ta_detuning = shot_globals.dp_img_ta_detuning,
+            repump_power = shot_globals.dp_img_repump_power,
+            do_repump=True,
+            exposure_time=shot_globals.dp_img_exposure_time,
+            close_all_shutters=True,
+        )
+
+        self.RydLasers_obj.pulse_1064_aom_off(t)
+
+        t += 100e-3
+
+        # Background image
+        t = self.do_molasses_dipole_trap_imaging(
+            t,
+            ta_power=shot_globals.dp_img_ta_power,
+            ta_detuning = shot_globals.dp_img_ta_detuning,
+            repump_power=shot_globals.dp_img_repump_power,
+            do_repump=True,
+            exposure_time=shot_globals.dp_img_exposure_time,
+            close_all_shutters=True,
+        )
+        t = self.reset_mot(t)
+
+        return t
+
+
+    def _do_dipole_trap_dark_state_measurement(self, t):
+
+        t = self.do_mot(t, dur=0.5)
+        if shot_globals.do_dipole_trap:
+            self.RydLasers_obj.pulse_1064_aom_on(0.1, 1)
+        else:
+            self.RydLasers_obj.pulse_1064_aom_off(0.1)
+        if not shot_globals.do_tweezers:
+            self.TweezerLaser_obj.aom_off(0.1)
+        t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
+
+        t += 1e-3
+
+        t, _ = self.pump_to_F4(
+            t, shot_globals.op_label, close_all_shutters=True,
+        )
+        
+        t+=1e-3
+        
+        if shot_globals.do_dp:
+            t = self.depump_ta_pulse(t, close_all_shutters=True)
+
+        t += 1e-3 #TODO: wait for extra time before killing, can be changed
+        
         if shot_globals.do_killing_pulse:
             t, _ = self.kill_F4(t, close_all_shutters=True)
         # This is the only place required for the special value of imaging

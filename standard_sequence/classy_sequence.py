@@ -81,6 +81,11 @@ if __name__ == "__main__":
         RydSequence_obj = RydbergOperations(t)
         sequence_objects.append(RydSequence_obj)
         t = RydSequence_obj._do_dipole_trap_F4_spec(t)
+    
+    elif shot_globals.do_dipole_trap_dark_state_measurement:
+        RydSequence_obj = RydbergOperations(t)
+        sequence_objects.append(RydSequence_obj)
+        t = RydSequence_obj._do_dipole_trap_dark_state_measurement(t)
 
     elif shot_globals.do_ryd_tweezer_check:
         RydSequence_obj = RydbergOperations(t)

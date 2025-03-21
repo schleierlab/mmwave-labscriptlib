@@ -539,7 +539,7 @@ class OpticalPumpingOperations(MOTOperations):
                 polar = True
             )
 
-        t += self.BField_obj.CONST_COIL_OFF_TIME
+        t += 5e-3#self.BField_obj.CONST_COIL_OFF_TIME
 
         if shot_globals.do_mw_pulse:
             t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
