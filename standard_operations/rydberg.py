@@ -214,7 +214,7 @@ class RydbergOperations(TweezerOperations):
             self.TweezerLaser_obj.aom_off(0.1)
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
 
-        t += 1e-3
+        t += 10e-3
 
         t, _ = self.pump_to_F4(
             t, shot_globals.op_label, close_all_shutters=True,

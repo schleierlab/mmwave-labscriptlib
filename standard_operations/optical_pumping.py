@@ -62,6 +62,7 @@ class OpticalPumpingOperations(MOTOperations):
 
         op_total_field = op_fixed_field + op_added_field
 
+
         if label == "mot":
             # Use the MOT beams for optical pumping
             # Do a repump pulse
