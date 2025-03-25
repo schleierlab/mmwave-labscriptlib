@@ -469,6 +469,7 @@ class TweezerOperations(OpticalPumpingOperations):
                 t, shot_globals.op_label, close_all_shutters=True
             )
 
+
         # Making sure the ramp ends right as the pumping is starting
         t_start_ramp = (
             t_aom_off - shot_globals.tw_ramp_dur - shot_globals.op_repump_time
@@ -486,6 +487,8 @@ class TweezerOperations(OpticalPumpingOperations):
 
         if shot_globals.do_depump_ta_pulse_after_pump:
             t = self.depump_ta_pulse(t)
+
+
 
         # [mw_biasx_field, mw_biasy_field, mw_biasz_field] = [
         #     shot_globals.mw_biasx_field,
@@ -521,6 +524,7 @@ class TweezerOperations(OpticalPumpingOperations):
                 t, mw_sweep_start, mw_sweep_end, shot_globals.mw_sweep_duration
             )
 
+
         if shot_globals.do_killing_pulse:
             t, _ = self.kill_F4(
                 t, close_all_shutters=False
@@ -534,18 +538,20 @@ class TweezerOperations(OpticalPumpingOperations):
 
         # hold the tweezers low for a constant length of time
         # contrasts with following line (ramp up after the kill pulse)
-        t = self.TweezerLaser_obj.ramp_power(t_aom_off + 15e-3, shot_globals.tw_ramp_dur, 0.99)
-        # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
+        # t = self.TweezerLaser_obj.ramp_power(t_aom_off + 15e-3, shot_globals.tw_ramp_dur, 0.99)
+        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
 
         t += 2e-3  # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
         # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
         t += shot_globals.img_wait_time_between_shots
+        print(f" before second image tweezers t = {t*1e3} ms")
         t = self.image_tweezers(t, shot_number=2)
 
-        self.TweezerLaser_obj.aom_off(t)
-        t, _ = self.kill_all(t, close_all_shutters=False)
-        self.TweezerLaser_obj.aom_on(t, const=1)
-        t = self.image_tweezers(t, shot_number=3) # take in shot background
+        # TODO: the following code unlock the D2 laser, need to debug
+        # self.TweezerLaser_obj.aom_off(t)
+        # t, _ = self.kill_all(t, close_all_shutters=False)
+        # self.TweezerLaser_obj.aom_on(t, const=1)
+        # t = self.image_tweezers(t, shot_number=3) # take in shot background
 
         t = self.reset_mot(t)
 
