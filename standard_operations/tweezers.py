@@ -523,7 +523,8 @@ class TweezerOperations(OpticalPumpingOperations):
             t = self.Microwave_obj.do_sweep(
                 t, mw_sweep_start, mw_sweep_end, shot_globals.mw_sweep_duration
             )
-
+        else:
+            t+= shot_globals.mw_time
 
         if shot_globals.do_killing_pulse:
             t, _ = self.kill_F4(

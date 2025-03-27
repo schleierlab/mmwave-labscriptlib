@@ -382,6 +382,12 @@ class RydbergOperations(TweezerOperations):
         # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
+
+        self.TweezerLaser_obj.aom_off(t)
+        t, _ = self.kill_all(t, close_all_shutters=False)
+        self.TweezerLaser_obj.aom_on(t, const=1)
+
+        t = self.image_tweezers(t, shot_number=3)
         t = self.reset_mot(t)
 
         return t

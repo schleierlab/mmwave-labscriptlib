@@ -62,10 +62,10 @@ if __name__ == "__main__":
         sequence_objects.append(OPSeq_obj)
         t = OPSeq_obj._do_F4_microwave_spec_molasses(t, reset_mot=True)
 
-    # elif shot_globals.do_tweezer_check:
-    #     TweezerSequence_obj = TweezerOperations(t)
-    #     sequence_objects.append(TweezerSequence_obj)
-    #     t = TweezerSequence_obj._do_tweezer_check_sequence(t)
+    elif shot_globals.do_tweezer_check_avg_bkg:
+        TweezerSequence_obj = TweezerOperations(t)
+        sequence_objects.append(TweezerSequence_obj)
+        t = TweezerSequence_obj._do_tweezer_check_sequence(t)
 
     elif shot_globals.do_tweezer_check_inshot_bkg:
         TweezerSequence_obj = TweezerOperations(t)
@@ -81,7 +81,7 @@ if __name__ == "__main__":
         RydSequence_obj = RydbergOperations(t)
         sequence_objects.append(RydSequence_obj)
         t = RydSequence_obj._do_dipole_trap_F4_spec(t)
-    
+
     elif shot_globals.do_dipole_trap_dark_state_measurement:
         RydSequence_obj = RydbergOperations(t)
         sequence_objects.append(RydSequence_obj)
