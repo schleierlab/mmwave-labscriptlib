@@ -219,14 +219,14 @@ class RydbergOperations(TweezerOperations):
         t, _ = self.pump_to_F4(
             t, shot_globals.op_label, close_all_shutters=True,
         )
-        
+
         t+=1e-3
-        
+
         if shot_globals.do_dp:
             t = self.depump_ta_pulse(t, close_all_shutters=True)
 
         t += 1e-3 #TODO: wait for extra time before killing, can be changed
-        
+
         if shot_globals.do_killing_pulse:
             t, _ = self.kill_F4(t, close_all_shutters=True)
         # This is the only place required for the special value of imaging
@@ -306,6 +306,13 @@ class RydbergOperations(TweezerOperations):
         # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
+
+
+        self.TweezerLaser_obj.aom_off(t)
+        t, _ = self.kill_all(t, close_all_shutters=False)
+        self.TweezerLaser_obj.aom_on(t, const=1)
+
+        t = self.image_tweezers(t, shot_number=3)
         t = self.reset_mot(t)
 
         return t
@@ -464,6 +471,12 @@ class RydbergOperations(TweezerOperations):
 
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
+
+        self.TweezerLaser_obj.aom_off(t)
+        t, _ = self.kill_all(t, close_all_shutters=False)
+        self.TweezerLaser_obj.aom_on(t, const=1)
+
+        t = self.image_tweezers(t, shot_number=3)
         t = self.reset_mot(t)
 
         return t

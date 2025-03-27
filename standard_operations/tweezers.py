@@ -544,7 +544,7 @@ class TweezerOperations(OpticalPumpingOperations):
         t += 2e-3  # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
         # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
         t += shot_globals.img_wait_time_between_shots
-        print(f" before second image tweezers t = {t*1e3} ms")
+
         t = self.image_tweezers(t, shot_number=2)
 
         # TODO: the following code unlock the D2 laser, need to debug
