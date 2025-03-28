@@ -1125,17 +1125,16 @@ class RydLasers:
             if power_1064 !=0:
                 self.pulse_1064_aom_on(t, power_1064, digital_only=True)
 
-            print(f"t for aom on time {t}")
-            pulse_times = [t]
+            t_aom_start = t
+
             t += dur
-            pulse_times.append(t)
-            print(f"t for aom off time {t}")
             self.pulse_456_aom_off(t, digital_only=True)
             self.pulse_1064_aom_off(t, digital_only=True)
+
 
         if close_shutter:
             if power_456 != 0:
                 t = self.update_blue_456_shutter(t, "close")
             # self.pulse_456_aom_on(t, 1, digital_only=True)
 
-        return t, pulse_times
+        return t, t_aom_start

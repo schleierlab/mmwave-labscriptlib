@@ -92,10 +92,10 @@ if __name__ == "__main__":
         sequence_objects.append(RydSequence_obj)
         t = RydSequence_obj._do_ryd_check_sequence(t)
 
-    elif shot_globals.do_ryd_tweezer_trap_off_check:
-        RydSequence_obj = RydbergOperations(t)
-        sequence_objects.append(RydSequence_obj)
-        t = RydSequence_obj._do_ryd_check_trap_off_sequence(t)
+    # elif shot_globals.do_ryd_tweezer_trap_off_check:
+    #     RydSequence_obj = RydbergOperations(t)
+    #     sequence_objects.append(RydSequence_obj)
+    #     t = RydSequence_obj._do_ryd_check_trap_off_sequence(t)
 
     elif shot_globals.do_ryd_multipulse_check:
         RydSequence_obj = RydbergOperations(t)

@@ -203,6 +203,19 @@ class TweezerOperations(OpticalPumpingOperations):
 
         return t
 
+    def take_in_shot_background(self, t):
+        """
+        Taking background in the shot,
+        the tweezer will be turned off first
+        and a kill all pulse will be applied to remove all atoms
+        then tweezer back on for same imaging condition
+        """
+        self.TweezerLaser_obj.aom_off(t)
+        t, _ = self.kill_all(t, close_all_shutters=False)
+        self.TweezerLaser_obj.aom_on(t, const=1)
+        t = self.image_tweezers(t, shot_number=3)
+        return t
+
     def pump_then_rotate(self, t, B_field, polar = False):
         """Pumps to stretched state then rotates the field
         Also lowers the trap, but doesn't raise it back.
