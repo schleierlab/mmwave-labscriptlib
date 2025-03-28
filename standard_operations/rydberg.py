@@ -588,9 +588,13 @@ class RydbergOperations(TweezerOperations):
             shot_globals.ryd_456_repump_power,
             close_all_shutters=True,
         )
+
+        # Apply kiiling pulse frequency scan
+        t, t_aom_off = self.kill_F4(t, close_all_shutters=False)
+        t_aom_start = t_aom_off - shot_globals.op_killing_pulse_time
         # Apply Rydberg pulse with only 456 active
         t, _ = self.RydLasers_obj.do_rydberg_pulse(
-            t_aom_start, # synchronize with repump pulse
+            t_aom_start, # synchronize with killing pulse
             dur=shot_globals.ryd_456_duration,
             power_456=shot_globals.ryd_456_power,
             power_1064=0,
