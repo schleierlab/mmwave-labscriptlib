@@ -16,7 +16,7 @@ MOT:
   zero_Efield_Vy: { value: -0.18, unit: V }
   zero_Efield_Vz: { value: 0.14, unit: V }
 
-BrightMolasses:
+Bright_Molasses:
   bm_exposure_time: { value: 1e-3, unit: s }
   bm_parity_projection_pulse_dur: { value: 10e-3, unit: s }
   bm_parity_projection_ta_detuning: { value: -35, unit: MHz }
@@ -61,7 +61,7 @@ Microwaves:
   mw_y_coil_voltage: { value: 0.0525, unit: V }
   mw_z_coil_voltage: { value: -1.6, unit: V }
 
-OpticalPumping:
+Optical_pumping:
   # TODO: are both of these necessary?
   do_depump_ta_pulse_after_pump: { value: False, unit: bool }
   do_depump_ta_pulse_before_pump: { value: False, unit: bool }
@@ -88,7 +88,7 @@ OpticalPumping:
   op_killing_pulse_time: { value: 20e-6, unit: s }
   op_killing_ta_power: { value: 0.05, unit: V }
   # TODO: do we use this anymore?
-  op_label: { value: "sigma", unit:  }
+  op_label: { value: "sigma", unit: "" }
   op_ramp_delay: { value: 0, unit: s }
   op_repump_power: { value: 1, unit: V }
   # TODO: Does this name make sense?
@@ -101,16 +101,14 @@ OpticalPumping:
 # TODO: there seems to be a lot of redundant do this/do that statements in Tweezers
 Tweezers:
   TW_loopDuration: { value: 0.96e-3, unit: s }
-  TW_maxPulses: { value: 1, unit:  }
-  TW_post_select_img_row_index: { value: 0, unit:  }
+  TW_maxPulses: { value: 1, unit: "" }
+  TW_post_select_img_row_index: { value: 0, unit: "" }
   # TODO: are these needed if they are zero? What do they do? why are there two offsets?
   TW_rearrangement_fine_time_offset: { value: 0, unit: s }
   TW_rearrangement_time_offset: { value: 0, unit: s }
   TW_target_array: { value: "tuple(np.arange(0,20,1))", unit: }
-  TW_x_amplitude: { value: , unit: }
   TW_x_freqs: { value: "tuple(np.arange(60,88,0.7))", unit: MHz }
-  TW_x_power: { value: , unit: }
-  TW_y_amplitude: { value: 0.99, unit: }
+  TW_y_amplitude: { value: 0.99, unit: ""}
   TW_y_freqs: { value: 70.75, unit: MHz }
   TW_y_power: { value: 33, unit: dBm }
   do_cooling_while_rearrange: { value: False, unit: bool }
@@ -168,21 +166,21 @@ Rydberg:
   ryd_bias_amp: { value: 2800, unit: mG }
   ryd_bias_phi: { value: -3, unit: deg }
   ryd_bias_theta: { value: 134, unit: deg }
-  ryd_n_pulses: { value: 5, unit: }
+  ryd_n_pulses: { value: 5, unit: ""}
   ryd_pulse_wait_dur: { value: 1e-6, unit: s }
 
   
 
 Imaging:
   #TODO: is this used?
-  camera_type: { value: "MOT_manta", unit:  }
+  camera_type: { value: "MOT_manta", unit: "" }
   # TODO: these two should be replaced
   do_img_beams_during_imaging: { value: True, unit: bool }
   do_mot_beams_during_imaging: { value: False, unit: bool }
   # TODO: is this used anymore?
   do_shutter_close_after_first_shot: { value: True, unit: bool }
   do_tweezer_camera: { value: False, unit: bool }
-  imaging_label: { value: "xyz", unit:  }
+  imaging_label: { value: "xyz", unit: "" }
   img_exposure_time: { value: 80e-3, unit: s }
   img_repump_power: { value: 0.3, unit: V }
   img_ta_detuning: { value: -47, unit: MHz}
@@ -190,7 +188,6 @@ Imaging:
   img_tof_imaging_delay: { value: 50e-3, unit: s }
   # TODO: is this used anymore?
   img_wait_time_between_shots: { value: 0, unit: s}
-  kinetix_roi_row: { value: , unit: }
   n_shots: { value: "np.arange(50)", unit:  }
 
 
