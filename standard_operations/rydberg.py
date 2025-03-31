@@ -579,36 +579,37 @@ class RydbergOperations(TweezerOperations):
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
 
-        # Apply repump pulse
-        t, t_aom_start = self.D2Lasers_obj.do_pulse(
+        t += 3e-3
+
+        _ = self.pump_then_rotate(
             t,
-            shot_globals.ryd_456_duration,
-            ShutterConfig.OPTICAL_PUMPING_REPUMP,
-            0,
-            shot_globals.ryd_456_repump_power,
-            close_all_shutters=True,
-        )
+            (shot_globals.ryd_bias_amp,
+             shot_globals.ryd_bias_phi,
+             shot_globals.ryd_bias_theta),
+             polar=True) # trap is lowered when optical pump happens
+
+        t += 10e-3
+
 
         # Apply kiiling pulse frequency scan
-        t, t_aom_off = self.kill_F4(t, close_all_shutters=False)
-        t_aom_start = t_aom_off - shot_globals.op_killing_pulse_time
-        # Apply Rydberg pulse with only 456 active
-        t, _ = self.RydLasers_obj.do_rydberg_pulse(
-            t_aom_start, # synchronize with killing pulse
-            dur=shot_globals.ryd_456_duration,
-            power_456=shot_globals.ryd_456_power,
-            power_1064=0,
-            close_shutter=True  # Close shutter after pulse to prevent any residual light
-        )
+        if shot_globals.do_killing_pulse:
+            t, t_aom_off = self.kill_F4(t, close_all_shutters=False)
+            t_aom_start = t_aom_off - shot_globals.op_killing_pulse_time
+            # Apply Rydberg pulse with only 456 active
+            t, _ = self.RydLasers_obj.do_rydberg_pulse(
+                t_aom_start, # synchronize with killing pulse
+                dur=shot_globals.op_killing_pulse_time,
+                power_456=shot_globals.ryd_456_power,
+                power_1064=0,
+                close_shutter=True  # Close shutter after pulse to prevent any residual light
+            )
+
+        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
 
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
+        t = self.take_in_shot_background(t)
 
-        self.TweezerLaser_obj.aom_off(t)
-        t, _ = self.kill_all(t, close_all_shutters=False)
-        self.TweezerLaser_obj.aom_on(t, const=1)
-
-        t = self.image_tweezers(t, shot_number=3)
         t = self.reset_mot(t)
 
         return t
