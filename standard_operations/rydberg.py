@@ -560,7 +560,7 @@ class RydbergOperations(TweezerOperations):
 
         return t
 
-    def _do_456_check_light_shift_sequence(self, t):
+    def _do_456_light_shift_check_sequence(self, t):
         """Perform a Rydberg excitation check sequence.
 
         Executes a sequence to verify Rydberg excitation:
@@ -595,14 +595,21 @@ class RydbergOperations(TweezerOperations):
         if shot_globals.do_killing_pulse:
             t, t_aom_off = self.kill_F4(t, close_all_shutters=False)
             t_aom_start = t_aom_off - shot_globals.op_killing_pulse_time
-            # Apply Rydberg pulse with only 456 active
-            t, _ = self.RydLasers_obj.do_rydberg_pulse(
-                t_aom_start, # synchronize with killing pulse
-                dur=shot_globals.op_killing_pulse_time,
-                power_456=shot_globals.ryd_456_power,
-                power_1064=0,
-                close_shutter=True  # Close shutter after pulse to prevent any residual light
+        elif shot_globals.do_dp:
+            t, t_aom_start = self.depump_ta_pulse(
+                t, close_all_shutters=False
             )
+        else:
+            t_aom_start = t
+
+        # Apply Rydberg pulse with only 456 active
+        t, _ = self.RydLasers_obj.do_rydberg_pulse(
+            t_aom_start, # synchronize with killing pulse or depump pulse
+            dur=shot_globals.op_killing_pulse_time,
+            power_456=shot_globals.ryd_456_power,
+            power_1064=0,
+            close_shutter=True  # Close shutter after pulse to prevent any residual light
+        )
 
         t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
 

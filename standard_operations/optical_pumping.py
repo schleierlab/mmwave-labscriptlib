@@ -189,7 +189,7 @@ class OpticalPumpingOperations(MOTOperations):
 
         t = np.max([t, t_aom_start + shot_globals.op_depump_pulse_time + D2Lasers.CONST_TA_VCO_RAMP_TIME])#+= 1e-3
 
-        return t
+        return t, t_aom_start
 
     def depump_to_F3(self, t, label, close_all_shutters=True):
         """Pump atoms from F=4 to F=3 hyperfine state.
