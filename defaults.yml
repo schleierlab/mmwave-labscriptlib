@@ -1,4 +1,5 @@
 ---
+# Note: don't leave an empty units field, use "" for an empty string instead
 MOT:
   mot_do_coil: { value: True, unit: bool }
   mot_do_uv: { value: False, unit: bool }
@@ -106,7 +107,7 @@ Tweezers:
   # TODO: are these needed if they are zero? What do they do? why are there two offsets?
   TW_rearrangement_fine_time_offset: { value: 0, unit: s }
   TW_rearrangement_time_offset: { value: 0, unit: s }
-  TW_target_array: { value: "tuple(np.arange(0,20,1))", unit: }
+  TW_target_array: { value: "tuple(np.arange(0,20,1))", unit: "" }
   TW_x_freqs: { value: "tuple(np.arange(60,88,0.7))", unit: MHz }
   TW_y_amplitude: { value: 0.99, unit: ""}
   TW_y_freqs: { value: 70.75, unit: MHz }
@@ -188,7 +189,7 @@ Imaging:
   img_tof_imaging_delay: { value: 50e-3, unit: s }
   # TODO: is this used anymore?
   img_wait_time_between_shots: { value: 0, unit: s}
-  n_shots: { value: "np.arange(50)", unit:  }
+  n_shots: { value: "np.arange(50)", unit: "" }
 
 
 
