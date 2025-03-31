@@ -223,7 +223,7 @@ class RydbergOperations(TweezerOperations):
         t+=1e-3
 
         if shot_globals.do_dp:
-            t = self.depump_ta_pulse(t, close_all_shutters=True)
+            t, _ = self.depump_ta_pulse(t, close_all_shutters=True)
 
         t += 1e-3 #TODO: wait for extra time before killing, can be changed
 

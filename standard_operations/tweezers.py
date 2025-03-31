@@ -370,7 +370,7 @@ class TweezerOperations(OpticalPumpingOperations):
         t += 3e-3
 
         if shot_globals.do_depump_ta_pulse_before_pump:
-            t = self.depump_ta_pulse(t)
+            t, _ = self.depump_ta_pulse(t)
 
         if shot_globals.do_op:
             t, t_aom_off = self.pump_to_F4(
@@ -382,7 +382,7 @@ class TweezerOperations(OpticalPumpingOperations):
             )
 
         if shot_globals.do_depump_ta_pulse_after_pump:
-            t_aom_off = self.depump_ta_pulse(t)
+            t_aom_off, _ = self.depump_ta_pulse(t)
 
         # We use Cartiesan to zero the field and polar for the other instance
 
@@ -475,7 +475,7 @@ class TweezerOperations(OpticalPumpingOperations):
 
 
         if shot_globals.do_depump_ta_pulse_before_pump:
-            t = self.depump_ta_pulse(t)
+            t, _ = self.depump_ta_pulse(t)
 
         if shot_globals.do_op:
             t, t_aom_off = self.pump_to_F4(
@@ -499,7 +499,7 @@ class TweezerOperations(OpticalPumpingOperations):
         # )
 
         if shot_globals.do_depump_ta_pulse_after_pump:
-            t = self.depump_ta_pulse(t)
+            t, _ = self.depump_ta_pulse(t)
 
 
 
@@ -614,7 +614,7 @@ class TweezerOperations(OpticalPumpingOperations):
         #     t_aom_off, shot_globals.tw_ramp_dur, 0.99
         # )
 
-        t = self.depump_ta_pulse(t, close_all_shutters=False)
+        t, _ = self.depump_ta_pulse(t, close_all_shutters=False)
 
         # t = self.BField_obj.ramp_bias_field(t, bias_field_vector=(0, 0, 0))
 

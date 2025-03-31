@@ -443,7 +443,7 @@ class OpticalPumpingOperations(MOTOperations):
 
         if shot_globals.do_depump_ta_pulse_after_pump:
             # do depump pulse to meausre the dark state lifetime
-            t = self.depump_ta_pulse(t_aom_off, close_all_shutters=True)
+            t, _ = self.depump_ta_pulse(t_aom_off, close_all_shutters=True)
         if shot_globals.do_killing_pulse:
             # do kill pulse to remove all atom in F=4
             t, _ = self.kill_F4(t_aom_off)
