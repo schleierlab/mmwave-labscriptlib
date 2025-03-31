@@ -153,11 +153,14 @@ class TweezerOperations(OpticalPumpingOperations):
         elif shot_number > 1:
             # pulse for the second shots and wait for the first shot to finish the
             # first reading
-            # print(shot_globals.kinetix_roi_row)
-            kinetix_readout_time = shot_globals.kinetix_roi_row[1] * 4.7065e-6
+            if shot_globals.do_tweezers:
+                kinetix_readout_time = shot_globals.tw_kinetix_roi_row[1] * 4.7065e-6
+            elif shot_globals.do_dipole_trap:
+                kinetix_readout_time = shot_globals.dp_kinetix_roi_row[1] * 4.7065e-6
+            else:
+                raise ValueError("No tweezers or dipole trap selected")
             # need extra 7 ms for shutter to close on the second shot
-            # TODO: is shot_globals.kinetix_extra_readout_time always zero? Delete if so.
-            t += kinetix_readout_time + shot_globals.kinetix_extra_readout_time
+            t += kinetix_readout_time 
             t = self.do_tweezer_imaging(t, close_all_shutters=True)
         return t
 

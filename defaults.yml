@@ -134,6 +134,44 @@ Tweezers:
   tw_turn_off_time: { value: 0, unit: s }
 
 Rydberg:
+  do_blue_kill: { value: False, unit: bool }
+  do_dipole_trap: { value: False, unit: bool }
+  do_local_addr: { value: False, unit: bool }
+  do_ryd_2_photon: { value: False, unit: bool }
+  dp_img_exposure_time: { value: 80e-3, unit: s }
+  dp_img_repump_power: { value: 0.4, unit: V }
+  dp_img_ta_detuning: { value: -83, unit: MHz}
+  dp_img_ta_power: { value: 0.25, unit: V }
+  dp_img_tof_imaging_delay: { value: 35e-3, unit: s }
+  dp_kinetix_roi_row: { value: "(0,2400)", unit: pixels }
+  drop_dp_during_mw: { value: False, unit: bool }
+  local_addr_ramp_dur: { value: 4e-3, unit: s }
+  local_addr_ramp_power: { value: 0.3, unit: V }
+  ryd_1064_mirror_1_h: { value: 5, unit: V }
+  ryd_1064_mirror_1_v: { value: 5, unit: V }
+  ryd_1064_mirror_2_h: { value: 3.7, unit: V }
+  ryd_1064_mirror_2_v: { value: 1.5, unit: V }
+  ryd_1064_power: { value: 0.5, unit: V }
+  ryd_456_detuning: { value: 530, unit: MHz }
+  ryd_456_duration: { value: 15e-6, unit: s }
+  ryd_456_mirror_1_h: { value: 5, unit: V }
+  ryd_456_mirror_1_v: { value: 7, unit: V }
+  ryd_456_mirror_2_h: { value: 3, unit: V }
+  ryd_456_mirror_2_v: { value: 1, unit: V }
+  ryd_456_power: { value: 1, unit: V }
+  ryd_456_repump_power: { value: 1, unit: V }
+  #TODO: can we rename this to "settle_time" or something less awkward?
+  ryd_Bfield_stabilize_wait_time: { value: 1e-3, unit: s }
+  ryd_Efield_Vx: { value: 0.1, unit: V }
+  ryd_Efield_Vy: { value: -0.18, unit: V }
+  ryd_Efield_Vz: { value: 0.14, unit: V }
+  ryd_bias_amp: { value: 2800, unit: mG }
+  ryd_bias_phi: { value: -3, unit: deg }
+  ryd_bias_theta: { value: 134, unit: deg }
+  ryd_n_pulses: { value: 5, unit: }
+  ryd_pulse_wait_dur: { value: 1e-6, unit: s }
+
+  
 
 Imaging:
   #TODO: is this used?
@@ -145,15 +183,13 @@ Imaging:
   do_shutter_close_after_first_shot: { value: True, unit: bool }
   do_tweezer_camera: { value: False, unit: bool }
   imaging_label: { value: "xyz", unit:  }
-  img_exposure_time: { value: , unit: }
-  img_repump_power: { value: , unit: }
-  img_ta_detuning: { value: , unit: }
-  img_ta_power: { value: , unit: }
-  img_tof_imaging_delay: { value: , unit: }
+  img_exposure_time: { value: 80e-3, unit: s }
+  img_repump_power: { value: 0.3, unit: V }
+  img_ta_detuning: { value: -47, unit: MHz}
+  img_ta_power: { value: 0.2, unit: V }
+  img_tof_imaging_delay: { value: 50e-3, unit: s }
   # TODO: is this used anymore?
   img_wait_time_between_shots: { value: 0, unit: s}
-  # TODO: is this used anymore?
-  kinetix_extra_readout_time: { value: 0, unit: s}
   kinetix_roi_row: { value: , unit: }
   n_shots: { value: "np.arange(50)", unit:  }
 
