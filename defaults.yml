@@ -170,24 +170,17 @@ Rydberg:
   ryd_n_pulses: { value: 5, unit: ""}
   ryd_pulse_wait_dur: { value: 1e-6, unit: s }
 
-  
+
 
 Imaging:
-  #TODO: is this used?
   camera_type: { value: "MOT_manta", unit: "" }
   # TODO: these two should be replaced
   do_img_beams_during_imaging: { value: True, unit: bool }
   do_mot_beams_during_imaging: { value: False, unit: bool }
-  # TODO: is this used anymore?
   do_shutter_close_after_first_shot: { value: True, unit: bool }
   do_tweezer_camera: { value: False, unit: bool }
   imaging_label: { value: "xyz", unit: "" }
-  img_exposure_time: { value: 80e-3, unit: s }
-  img_repump_power: { value: 0.3, unit: V }
-  img_ta_detuning: { value: -47, unit: MHz}
-  img_ta_power: { value: 0.2, unit: V }
-  img_tof_imaging_delay: { value: 50e-3, unit: s }
-  # TODO: is this used anymore?
+  # TODO: is this used anymore? Yes it is used for rearrangement code
   img_wait_time_between_shots: { value: 0, unit: s}
   n_shots: { value: "np.arange(50)", unit: "" }
 

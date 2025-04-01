@@ -43,13 +43,13 @@ class TweezerOperations(OpticalPumpingOperations):
         """
         t = self.BField_obj.ramp_bias_field(t, bias_field_vector=(0, 0, 0))
         t = self.D2Lasers_obj.ramp_ta_freq(
-            t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.img_ta_detuning
+            t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.tw_img_ta_detuning
         )
         self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
 
-        if shot_globals.img_ta_power == 0:
-            raise ValueError("img_ta_power should not be zero")
-        if shot_globals.img_repump_power == 0:
+        if shot_globals.tw_img_ta_power == 0:
+            raise ValueError("tw_img_ta_power should not be zero")
+        if shot_globals.tw_img_repump_power == 0:
             raise ValueError("img_repump_power should not be zero")
 
         return t
@@ -105,14 +105,14 @@ class TweezerOperations(OpticalPumpingOperations):
                 t,
                 shot_globals.bm_robust_loading_pulse_dur,
                 ShutterConfig.IMG_FULL,
-                shot_globals.img_ta_power,
-                shot_globals.img_repump_power,
+                shot_globals.tw_img_ta_power,
+                shot_globals.tw_img_repump_power,
                 close_all_shutters=True,
             )
 
-        if shot_globals.img_tof_imaging_delay <= D2Lasers.CONST_MIN_SHUTTER_OFF_TIME:
+        if shot_globals.tw_img_tof_imaging_delay <= D2Lasers.CONST_MIN_SHUTTER_OFF_TIME:
             raise ValueError("time of flight needs to be greater than CONST_MIN_SHUTTER_OFF_TIME")
-        t += shot_globals.img_tof_imaging_delay
+        t += shot_globals.tw_img_tof_imaging_delay
 
         return t
 
@@ -160,7 +160,7 @@ class TweezerOperations(OpticalPumpingOperations):
             else:
                 raise ValueError("No tweezers or dipole trap selected")
             # need extra 7 ms for shutter to close on the second shot
-            t += kinetix_readout_time 
+            t += kinetix_readout_time
             t = self.do_tweezer_imaging(t, close_all_shutters=True)
         return t
 
@@ -187,15 +187,15 @@ class TweezerOperations(OpticalPumpingOperations):
         )
         t_pulse_end, t_aom_start = self.D2Lasers_obj.do_pulse(
             t,
-            shot_globals.img_exposure_time,
+            shot_globals.tw_img_exposure_time,
             shutter_config,
-            shot_globals.img_ta_power,
-            shot_globals.img_repump_power,
+            shot_globals.tw_img_ta_power,
+            shot_globals.tw_img_repump_power,
             close_all_shutters=close_all_shutters,
         )
 
         self.Camera_obj.set_type("kinetix")
-        exposure_time = max(shot_globals.img_exposure_time, 1e-3)
+        exposure_time = max(shot_globals.tw_img_exposure_time, 1e-3)
 
         # expose the camera
         self.Camera_obj.expose(t_aom_start, exposure_time)
