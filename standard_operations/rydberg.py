@@ -558,14 +558,16 @@ class RydbergOperations(TweezerOperations):
         return t
 
     def _do_456_light_shift_check_sequence(self, t):
-        """Perform a Rydberg excitation check sequence.
+        """Perform a 456 light shift check sequence.
 
-        Executes a sequence to verify Rydberg excitation:
         1. Load atoms into tweezers
         2. Take first image
-        3. Apply Rydberg excitation pulse
-        4. Take second image to check for atom loss
-        5. Reset MOT parameters
+        3. optical pump then rotate field for rydberg
+        4. (killing pulse + blue) or (depump pulse + blue)
+        5. (do killing pulse only if do depump)
+        6. Take second image to check for atom loss
+        7. Take 3rd image for bkg
+        8. Reset MOT parameters
 
         Args:
             t (float): Start time for the sequence
@@ -586,7 +588,6 @@ class RydbergOperations(TweezerOperations):
              polar=True) # trap is lowered when optical pump happens
 
         t += 10e-3
-
 
         # Apply kiiling pulse frequency scan or depump pulse frequency scan
         if shot_globals.do_killing_pulse and not shot_globals.do_dp:
