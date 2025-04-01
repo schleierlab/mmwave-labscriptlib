@@ -472,7 +472,7 @@ class RydbergOperations(TweezerOperations):
         t, t_aom_start = self.D2Lasers_obj.do_pulse(
             t,
             shot_globals.ryd_456_duration,
-            ShutterConfig.OPTICAL_PUMPING_REPUMP,
+            ShutterConfig.MOT_REPUMP,
             0,
             shot_globals.ryd_456_repump_power,
             close_all_shutters=True,
@@ -495,7 +495,7 @@ class RydbergOperations(TweezerOperations):
 
         return t
 
-    def _do_456_check_with_dark_state_sequence(self, t):
+    def _do_456_with_dark_state_sequence(self, t):
         """Perform a Rydberg excitation check sequence.
 
         Executes a sequence to verify Rydberg excitation:
@@ -518,7 +518,6 @@ class RydbergOperations(TweezerOperations):
 
         t += 3e-3
 
-
         _ = self.pump_then_rotate(
             t,
             (shot_globals.ryd_bias_amp,
@@ -527,8 +526,6 @@ class RydbergOperations(TweezerOperations):
              polar=True) # trap is lowered when optical pump happens
 
         t += 10e-3
-
-
 
         t, _ = self.RydLasers_obj.do_rydberg_pulse(
             t, #t_aom_start synchronize with repump pulse
@@ -591,25 +588,42 @@ class RydbergOperations(TweezerOperations):
         t += 10e-3
 
 
-        # Apply kiiling pulse frequency scan
-        if shot_globals.do_killing_pulse:
+        # Apply kiiling pulse frequency scan or depump pulse frequency scan
+        if shot_globals.do_killing_pulse and not shot_globals.do_dp:
             t, t_aom_off = self.kill_F4(t, close_all_shutters=False)
             t_aom_start = t_aom_off - shot_globals.op_killing_pulse_time
+            ryd_pulse_duration = shot_globals.op_killing_pulse_time
         elif shot_globals.do_dp:
             t, t_aom_start = self.depump_ta_pulse(
-                t, close_all_shutters=False
+                t, close_all_shutters=True
             )
+            ryd_pulse_duration = shot_globals.op_depump_pulse_time
         else:
             t_aom_start = t
+            ryd_pulse_duration = shot_globals.ryd_456_duration
 
         # Apply Rydberg pulse with only 456 active
         t, _ = self.RydLasers_obj.do_rydberg_pulse(
             t_aom_start, # synchronize with killing pulse or depump pulse
-            dur=shot_globals.op_killing_pulse_time,
+            dur = ryd_pulse_duration*1.5,
             power_456=shot_globals.ryd_456_power,
             power_1064=0,
             close_shutter=True  # Close shutter after pulse to prevent any residual light
         )
+
+        #If you set the blue power to 0, the Rydberg shutter doesn't open, and the
+        #time it returns is the pulse duration, which we usually have as too short
+        #relative to the TA vco time, as kill_F4 immediately starts ramping the ta vco
+        #even if the pulses don't start until the shutters have been handled
+        t+=1e-3
+
+        # do killing pulse when we do depump light shift measurement
+        if shot_globals.do_killing_pulse and shot_globals.do_dp:
+            t, _ = self.kill_F4(
+                t, close_all_shutters=True
+            )
+        else:
+            t += shot_globals.op_killing_pulse_time
 
         t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
 

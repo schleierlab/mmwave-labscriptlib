@@ -135,7 +135,7 @@ if __name__ == "__main__":
         RydSequence_obj = RydbergOperations(t)
         sequence_objects.append(RydSequence_obj)
         if shot_globals.op_label == "sigma":
-            t = RydSequence_obj._do_456_check_with_dark_state_sequence(t)
+            t = RydSequence_obj._do_456_with_dark_state_sequence(t)
         else:
             raise NotImplementedError
 
