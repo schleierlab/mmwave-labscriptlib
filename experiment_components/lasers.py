@@ -418,6 +418,7 @@ class D2Lasers:
             t = max(self.last_shutter_close_t * open_bool_list) + self.CONST_MIN_SHUTTER_OFF_TIME
         #TODO: Double check that this actually still works robustly...
         # if the last shutter is opened and now needs to be closed, close it after CONST_MIN_SHUTTER_ON_TIME
+        # subtract CONST_SHUTTER_TURN_OFF_TIME because in do_pulse, shutter time is updated after adding CONST_SHUTTER_TURN_OFF_TIME
         elif any (t - self.CONST_SHUTTER_TURN_OFF_TIME - self.last_shutter_open_t * close_bool_list < self.CONST_MIN_SHUTTER_ON_TIME):
             t = max(self.last_shutter_open_t * close_bool_list) + self.CONST_MIN_SHUTTER_ON_TIME + self.CONST_SHUTTER_TURN_OFF_TIME
 
