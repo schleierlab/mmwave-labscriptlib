@@ -243,7 +243,7 @@ class D2Lasers:
                 samplerate=4e5,
             )
             self.ta_freq = final
-            print(f"last ta freq is {self.ta_freq} MHz and the time is {t*1e3} ms")
+            # print(f"last ta freq is {self.ta_freq} MHz and the time is {t*1e3} ms")
             return t + duration
 
     def ramp_repump_freq(self, t, duration, final):
