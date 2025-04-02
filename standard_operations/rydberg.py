@@ -531,7 +531,7 @@ class RydbergOperations(TweezerOperations):
             t, #t_aom_start synchronize with repump pulse
             dur=shot_globals.ryd_456_duration,
             power_456=shot_globals.ryd_456_power,
-            power_1064=0,
+            power_1064=shot_globals.ryd_1064_power, # use this to do A-T measurement when 1064 power is non-zero
             close_shutter=True  # Close shutter after pulse to prevent any residual light
         )
 
@@ -605,8 +605,11 @@ class RydbergOperations(TweezerOperations):
 
         # Apply Rydberg pulse with only 456 active
         t, _ = self.RydLasers_obj.do_rydberg_pulse(
-            t_aom_start, # synchronize with killing pulse or depump pulse
-            dur = ryd_pulse_duration*1.5,
+            # Should synchronize with killing pulse or depump pulse,
+            # but turn on earlier to account for the small "blip" from TA atom
+            # Turn off later so the blue would cover the entire depump or killing pulse
+            t_aom_start-3e-6,
+            dur = ryd_pulse_duration + 7e-6,
             power_456=shot_globals.ryd_456_power,
             power_1064=0,
             close_shutter=True  # Close shutter after pulse to prevent any residual light
