@@ -6,6 +6,8 @@ from typing import Any, Literal, TypedDict
 import h5py
 import yaml
 
+import numpy as np
+
 from labscript import compiler
 import runmanager
 
@@ -68,7 +70,12 @@ class ShotGlobals(SimpleNamespace):
                 for varname, var in groupvars.items():
                     if varname in flattened_defaults:
                         raise ValueError(f'Duplicated name {varname} in defaults')
-                    flattened_defaults[varname] = var['value']
+                    var_value = var['value']
+                    if isinstance(var_value, str):
+                        flattened_defaults[varname] = eval(var_value)
+                    else:
+                        flattened_defaults[varname] = var_value
+                    #flattened_defaults[varname] = var['value']
 
             self._loaded_globals = flattened_defaults | self._runmanager_globals
             self._save_defaults_to_h5(flattened_defaults)
@@ -112,14 +119,6 @@ class ShotGlobals(SimpleNamespace):
                 subgroup.attrs.update(defaults_values)
                 subgroup.create_group('units')
                 subgroup['units'].attrs.update(defaults_units)
-
-    def imaging_beam_choice(self) -> Literal['mot', 'img']:
-        # TODO we can remove this once we stop using two bools as globals
-        if shot_globals.do_mot_beams_during_imaging:
-            return 'mot'
-        elif shot_globals.do_img_beams_during_imaging:
-            return 'img'
-        raise ValueError
 
     def get_n_runs(self) -> int:
         with h5py.File(compiler.hdf5_filename, 'r') as f:

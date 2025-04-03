@@ -296,14 +296,14 @@ class MOTOperations:
         Returns:
             float: End time of the molasses sequence
         """
-        if not (shot_globals.do_molasses_img_beam or shot_globals.do_molasses_mot_beam):
-            raise ValueError("either do_molasses_img_beam or do_molasses_mot_beam has to be on")
+        if shot_globals.bm_beam_choice != "mot" and shot_globals.bm_beam_choice != "img":
+            raise ValueError("bm_beam_choice must be mot or img")
         if shot_globals.bm_ta_detuning == 0:
             raise ValueError("bright molasses detuning = 0. TA detuning should be non-zero for bright molasses.")
 
         _ = self.ramp_to_molasses(t)
 
-        if shot_globals.do_molasses_mot_beam:
+        if shot_globals.bm_beam_choice == "mot":
             t, _ = self.D2Lasers_obj.do_pulse(
                 t,
                 dur,
@@ -313,7 +313,7 @@ class MOTOperations:
                 close_all_shutters=close_all_shutters,
             )
 
-        if shot_globals.do_molasses_img_beam:
+        if shot_globals.bm_beam_choice == "img":
             t, _ = self.D2Lasers_obj.do_pulse(
                 t,
                 dur,
@@ -363,7 +363,7 @@ class MOTOperations:
 
         shutter_config = ShutterConfig.select_imaging_shutters(
             imaging_label=shot_globals.imaging_label,
-            beam_choice=shot_globals.imaging_beam_choice(),
+            beam_choice=shot_globals.imaging_beam_choice,
             do_repump=do_repump,
         )
 

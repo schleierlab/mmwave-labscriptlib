@@ -153,13 +153,7 @@ class TweezerOperations(OpticalPumpingOperations):
         elif shot_number > 1:
             # pulse for the second shots and wait for the first shot to finish the
             # first reading
-            if shot_globals.do_tweezers:
-                kinetix_readout_time = shot_globals.tw_kinetix_roi_row[1] * 4.7065e-6
-            elif shot_globals.do_dipole_trap:
-                kinetix_readout_time = shot_globals.dp_kinetix_roi_row[1] * 4.7065e-6
-            else:
-                raise ValueError("No tweezers or dipole trap selected")
-            # need extra 7 ms for shutter to close on the second shot
+            kinetix_readout_time = shot_globals.kinetix_roi_row[1] * 4.7065e-6
             t += kinetix_readout_time
             t = self.do_tweezer_imaging(t, close_all_shutters=True)
         return t
@@ -182,7 +176,7 @@ class TweezerOperations(OpticalPumpingOperations):
         """
         shutter_config = ShutterConfig.select_imaging_shutters(
             imaging_label=shot_globals.imaging_label,
-            beam_choice=shot_globals.imaging_beam_choice(),
+            beam_choice=shot_globals.imaging_beam_choice,
             do_repump=True,
         )
         t_pulse_end, t_aom_start = self.D2Lasers_obj.do_pulse(
@@ -348,6 +342,8 @@ class TweezerOperations(OpticalPumpingOperations):
         """
         raise NotImplementedError
 
+    #TODO: Rename this? A little confusing title. Maybe something like:
+    # _do_op_with_mot_beams_in_tweezers_check
     def _do_optical_pump_mot_in_tweezer_check(self, t):
         """Check optical pumping using mot beams for atoms in tweezers.
 
@@ -372,6 +368,8 @@ class TweezerOperations(OpticalPumpingOperations):
 
         t += 3e-3
 
+        #TODO: This logic is super convoluted, we need to clean this up.
+        #Is there ever a situation where we do depump before pump, then dp, then depump after pump? Probably not.
         if shot_globals.do_depump_ta_pulse_before_pump:
             t, _ = self.depump_ta_pulse(t)
 
@@ -422,7 +420,7 @@ class TweezerOperations(OpticalPumpingOperations):
 
         if shot_globals.do_mw_pulse:
             # self.TweezerLaser_obj.aom_off(t)
-            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_pulse_time)
             # self.TweezerLaser_obj.aom_on(t, shot_globals.tw_ramp_power)
         elif shot_globals.do_mw_sweep:
             mw_sweep_start = (
@@ -525,9 +523,12 @@ class TweezerOperations(OpticalPumpingOperations):
         # t = self.TweezerLaser_obj.ramp_power(
         #     t, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power
         # )
+
+        #TODO: It seems like the added time here will be wrong if we do the sweep, so
+        # lets refactor this (already mentioned in optical_pumping file)
         if shot_globals.do_mw_pulse:
             # self.TweezerLaser_obj.aom_off(t)
-            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_pulse_time)
             # self.TweezerLaser_obj.aom_on(t, shot_globals.tw_ramp_power)
         elif shot_globals.do_mw_sweep:
             mw_sweep_start = (
@@ -540,7 +541,7 @@ class TweezerOperations(OpticalPumpingOperations):
                 t, mw_sweep_start, mw_sweep_end, shot_globals.mw_sweep_duration
             )
         else:
-            t+= shot_globals.mw_time
+            t+= shot_globals.mw_pulse_time
 
         if shot_globals.do_killing_pulse:
             t, _ = self.kill_F4(

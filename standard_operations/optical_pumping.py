@@ -142,6 +142,7 @@ class OpticalPumpingOperations(MOTOperations):
         else:
             raise NotImplementedError("This optical pumping method is not implemented")
 
+    #TODO: We have 2 depumping sequence. We need to consolidate this.
     def depump_ta_pulse(self, t, close_all_shutters=False):
         """Execute a TA pulse to depump atoms from F=4 to F=3.
 
@@ -460,7 +461,7 @@ class OpticalPumpingOperations(MOTOperations):
 
         if shot_globals.do_mw_pulse:
             # do microwave in molasses
-            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_pulse_time)
 
         if shot_globals.do_killing_pulse:
             # do kill pulse after microwave to remove F=4 atom
@@ -543,8 +544,9 @@ class OpticalPumpingOperations(MOTOperations):
         t += 5e-3 # Added for field stabilization. CONST_COIL_OFF_TIME is too short
         #self.BField_obj.CONST_COIL_OFF_TIME
 
+        #TODO: We have this copied and pasted all over the place, so put this into one function.
         if shot_globals.do_mw_pulse:
-            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_pulse_time)
         elif shot_globals.do_mw_sweep:
             mw_sweep_start = shot_globals.mw_detuning + shot_globals.mw_sweep_range / 2
             mw_sweep_end = shot_globals.mw_detuning - shot_globals.mw_sweep_range / 2

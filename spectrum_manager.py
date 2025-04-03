@@ -31,13 +31,13 @@ class SpectrumManager():
         self.outputting = False
 
         # we need to declare some runmanager variables as global so that we can reference them later
-        TW_x_freqs = shot_globals.TW_x_freqs
+        TW_x_freqs = np.asarray(shot_globals.TW_x_freqs)
 
         #print(f"TW_x_freqs = {TW_x_freqs}")
         TW_x_power = 33 # Translated from old runmanager settings
         TW_x_amplitude = 0.99 # Translated from old runmanager settings
         if TW_y_channel:
-            TW_y_freqs = shot_globals.TW_y_freqs
+            TW_y_freqs = np.asarray(shot_globals.TW_y_freqs)
             TW_y_power = shot_globals.TW_y_power
             TW_y_amplitude = shot_globals.TW_y_amplitude
         TW_maxPulses = shot_globals.TW_maxPulses
