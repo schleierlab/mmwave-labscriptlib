@@ -38,6 +38,7 @@ class SpectrumManager():
         TW_x_amplitude = 0.99 # Translated from old runmanager settings
         if TW_y_channel:
             TW_y_freqs = np.asarray(shot_globals.TW_y_freqs)
+            TW_y_freqs = np.array([TW_y_freqs])
             TW_y_power = shot_globals.TW_y_power
             TW_y_amplitude = shot_globals.TW_y_amplitude
         TW_maxPulses = shot_globals.TW_maxPulses

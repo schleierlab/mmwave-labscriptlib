@@ -75,7 +75,7 @@ class TweezerOperations(OpticalPumpingOperations):
         """
         # TODO this still spends some time loading the MOT;
         # figure out whether we even need this here at all.
-        t = self.do_mot(t, dur=0)  # MOT loads between shots, don't need to spend extra time
+        t = self.do_mot(t, dur=1)  # MOT loads between shots, don't need to spend extra time
 
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
 
@@ -244,33 +244,7 @@ class TweezerOperations(OpticalPumpingOperations):
 
         return t
 
-    def _do_tweezer_check_sequence(self, t):
-        """Perform a basic tweezer loading and imaging check sequence.
-
-        Executes a complete sequence to verify tweezer operation:
-        1. Load atoms into tweezers
-        2. Take first image
-        3. Wait specified time
-        4. Take second image
-        5. Reset MOT parameters
-
-        Args:
-            t (float): Start time for the sequence
-
-        Returns:
-            float: End time of the sequence
-        """
-        t = self.load_tweezers(t)
-        t = self.image_tweezers(t, shot_number=1)
-        # TODO: add tweezer modulation here, or in a separate sequence?
-        t += shot_globals.img_wait_time_between_shots
-        t = self.image_tweezers(t, shot_number=2)
-        t = self.reset_mot(t)
-        # t = self.TweezerLaser_obj.stop_tweezers(t)
-
-        return t
-
-    def _do_tweezer_check_with_inshot_background(self, t) -> float:
+    def _do_tweezer_check(self, t) -> float:
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
         t += shot_globals.img_wait_time_between_shots

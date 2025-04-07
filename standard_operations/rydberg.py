@@ -56,7 +56,13 @@ class RydbergOperations(TweezerOperations):
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
 
         t += 1e-3
-        if shot_globals.do_blue_kill:
+
+        if shot_globals.do_op:
+            t, _ = self.pump_to_F4(
+            t, shot_globals.op_label, close_all_shutters=True,
+        )
+
+        if shot_globals.do_blue:
             #Apply repump pulse
             t, t_aom_start = self.D2Lasers_obj.do_pulse(
                 t,
@@ -216,14 +222,35 @@ class RydbergOperations(TweezerOperations):
 
         t += 10e-3
 
-        t, _ = self.pump_to_F4(
+        t, t_aom_off = self.pump_to_F4(
             t, shot_globals.op_label, close_all_shutters=True,
         )
+
+        if shot_globals.do_blue:
+            t = self.BField_obj.ramp_bias_field(
+                t_aom_off + 200e-6, #TODO: wait for 200e-6s extra time in optical pumping field, can be changed
+                bias_field_vector=(shot_globals.ryd_bias_amp,
+                                   shot_globals.ryd_bias_phi,
+                                   shot_globals.ryd_bias_theta),
+                polar = True
+            )
+            t += shot_globals.mw_field_wait_dur
+
 
         t+=1e-3
 
         if shot_globals.do_dp:
             t, _ = self.depump_ta_pulse(t, close_all_shutters=True)
+        if shot_globals.do_blue:
+
+            t, _ = self.RydLasers_obj.do_rydberg_pulse_short(
+                t, #t_aom_start synchronize with repump pulse
+                dur=shot_globals.ryd_456_duration,
+                power_456=shot_globals.ryd_456_power,
+                power_1064=shot_globals.ryd_1064_power, # use this to do A-T measurement when 1064 power is non-zero
+                close_shutter=True  # Close shutter after pulse to prevent any residual light
+            )
+
 
         t += 1e-3 #TODO: wait for extra time before killing, can be changed
 
@@ -262,7 +289,7 @@ class RydbergOperations(TweezerOperations):
 
         return t
 
-    def _do_ryd_check_sequence(self, t):
+    def _do_ryd_tweezer_check_sequence(self, t):
         """Perform a Rydberg excitation check sequence.
 
         Executes a sequence to verify Rydberg excitation:
@@ -452,7 +479,7 @@ class RydbergOperations(TweezerOperations):
 
         t += 10e-3
 
-        t, _ = self.RydLasers_obj.do_rydberg_pulse(
+        t, _ = self.RydLasers_obj.do_rydberg_pulse_short(
             t, #t_aom_start synchronize with repump pulse
             dur=shot_globals.ryd_456_duration,
             power_456=shot_globals.ryd_456_power,
