@@ -715,19 +715,18 @@ class RydLasers:
     # Constants for shutter timing
     CONST_SHUTTER_TURN_ON_TIME: ClassVar[float] = 2e-3  # 2ms for shutter to open
     CONST_SHUTTER_TURN_OFF_TIME: ClassVar[float] = 2e-3  # 2ms for shutter to close
-    CONST_MIN_SHUTTER_OFF_TIME: ClassVar[float] = (
-        6.28e-3  # minimum time for shutter to be off and on again
-    )
-    CONST_MIN_SHUTTER_ON_TIME: ClassVar[float] = (
-        3.6e-3  # minimum time for shutter to be on
-    )
 
-    CONST_MIN_FREQ_STEP = 2 # MHz
-    CONST_DEFAULT_DETUNING_456 = 600 #MHz
+    CONST_MIN_SHUTTER_OFF_TIME: ClassVar[float] = 6.28e-3
+    """minimum time for shutter to be off and on again"""
+    CONST_MIN_SHUTTER_ON_TIME: ClassVar[float] = 3.6e-3
+    """minimum time for shutter to be on"""
+
+    CONST_MIN_FREQ_STEP: ClassVar[float] = 2  # MHz
+    CONST_DEFAULT_DETUNING_456: ClassVar[float] = 600  # MHz
 
     # NI analog seems to be responding slower than the pulse blaster digital
     # this is only really a problem for devices that use both (ryd lasers, tweezers, local addressing)
-    CONST_NI_ANALOG_DELAY = 0
+    CONST_NI_ANALOG_DELAY: ClassVar[float] = 0
 
 
     def __init__(self, t, blue_pointing: PointingConfig, ir_pointing: PointingConfig, init_blue_detuning: float):
