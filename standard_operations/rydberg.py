@@ -208,7 +208,6 @@ class RydbergOperations(TweezerOperations):
 
         return t
 
-
     def _do_dipole_trap_dark_state_measurement(self, t):
 
         t = self.do_mot(t, dur=0.5)
@@ -237,22 +236,29 @@ class RydbergOperations(TweezerOperations):
             t += shot_globals.mw_field_wait_dur
 
 
-        t+=1e-3
+        t += 1e-3
 
         if shot_globals.do_dp:
             t, _ = self.depump_ta_pulse(t, close_all_shutters=True)
         if shot_globals.do_blue:
+            # t, _ = self.RydLasers_obj.do_rydberg_pulse_short(
+            #     t, #t_aom_start synchronize with repump pulse
+            #     dur=shot_globals.ryd_456_duration,
+            #     power_456=shot_globals.ryd_456_power,
+            #     power_1064=shot_globals.ryd_1064_power, # use this to do A-T measurement when 1064 power is non-zero
+            #     close_shutter=True  # Close shutter after pulse to prevent any residual light
+            # )
 
-            t, _ = self.RydLasers_obj.do_rydberg_pulse_short(
+            t, t_aom_start = self.RydLasers_obj.do_rydberg_pulse(
                 t, #t_aom_start synchronize with repump pulse
                 dur=shot_globals.ryd_456_duration,
                 power_456=shot_globals.ryd_456_power,
                 power_1064=shot_globals.ryd_1064_power, # use this to do A-T measurement when 1064 power is non-zero
-                close_shutter=True  # Close shutter after pulse to prevent any residual light
+                close_shutter=True,  # Close shutter after pulse to prevent any residual light
+                in_dipole_trap=shot_globals.do_dipole_trap,
             )
 
-
-        t += 1e-3 #TODO: wait for extra time before killing, can be changed
+        t += 1e-3  #TODO: wait for extra time before killing, can be changed
 
         if shot_globals.do_killing_pulse:
             t, _ = self.kill_F4(t, close_all_shutters=True)

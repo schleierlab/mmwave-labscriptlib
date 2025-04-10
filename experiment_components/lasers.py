@@ -723,8 +723,11 @@ class RydLasers:
     )
 
     CONST_MIN_FREQ_STEP = 2 # MHz
-    CONST_MIN_T_STEP = 100e-6 # 10us
     CONST_DEFAULT_DETUNING_456 = 600 #MHz
+
+    # NI analog seems to be responding slower than the pulse blaster digital
+    # this is only really a problem for devices that use both (ryd lasers, tweezers, local addressing)
+    CONST_NI_ANALOG_DELAY = 0
 
 
     def __init__(self, t, blue_pointing: PointingConfig, ir_pointing: PointingConfig, init_blue_detuning: float):
@@ -735,6 +738,7 @@ class RydLasers:
         """
         # Can't do any output from NI card until 12e-6
         t = max(t, 12e-6)
+        print(t)
 
         # Keep the intensity servo on, regardless of BLACs settings
         self.servo_456_intensity_keep_on(t)
@@ -835,7 +839,7 @@ class RydLasers:
         """
         devices.pulse_456_aom_digital.go_high(t)  # digital on
         if not digital_only:
-            devices.pulse_456_aom_analog.constant(t, const)  # analog to const
+            devices.pulse_456_aom_analog.constant(t - self.CONST_NI_ANALOG_DELAY, const)  # analog to const
             self.power_456 = const
 
     def pulse_456_aom_off(self, t, digital_only = False):
@@ -846,7 +850,7 @@ class RydLasers:
         """
         devices.pulse_456_aom_digital.go_low(t)  # digital off
         if not digital_only:
-            devices.pulse_456_aom_analog.constant(t, 0)  # analog off
+            devices.pulse_456_aom_analog.constant(t - self.CONST_NI_ANALOG_DELAY, 0)  # analog off
             self.power_456 = 0
 
     def servo_1064_aom_on(self, t, const):
@@ -998,7 +1002,7 @@ class RydLasers:
 
 
 
-    def do_rydberg_pulse(self, t, dur, power_456, power_1064, close_shutter=False):
+    def do_rydberg_pulse(self, t, dur, power_456, power_1064, close_shutter=False, in_dipole_trap=False):
         """Perform a Rydberg excitation pulse with specified parameters.
 
         Executes a laser pulse by configuring the shutter and AOM powers for both 456nm and 1064nm lasers.
@@ -1017,18 +1021,29 @@ class RydLasers:
             power_456 (float): Power level for the 456nm beam (0 to 1)
             power_1064 (float): Power level for the 1064nm beam (0 to 1)
             close_shutter (bool, optional): Whether to close shutter after pulse. Defaults to False.
+            in_dipole_trap (bool, optional): Whether there is a dipole trap on at subsequence onset.
+                Controls end state of 1064 light and allows fully dropping dipole trap during pulse
+                by setting power_1064=0
 
         Returns:
-            tuple[float]: (End time after pulse and shutter operations)
+            tuple[float, float]: (End time after pulse and shutter operations)
         """
         if not self.shutter_open:
             if power_456 != 0:
                 t = self.update_blue_456_shutter(t, "open")
             # Turn off AOMs while waiting for shutter to fully open
             self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
+
+
+        if in_dipole_trap:
+            if power_1064 == 0:
+                self.pulse_1064_aom_off(t)
+            else:
+                self.pulse_1064_aom_on(t, power_1064)
+        else:
             if power_1064 != 0:
-                self.pulse_1064_aom_on(t , power_1064)
-                # self.pulse_1064_aom_on(t- self.CONST_SHUTTER_TURN_ON_TIME, power_1064)
+                self.pulse_1064_aom_on(t, power_1064)
+
 
         # Turn on AOMs with specified powers
         if power_456 != 0:
@@ -1037,10 +1052,13 @@ class RydLasers:
         t_aom_start = t
         t += dur
 
-
         # Turn off AOMs at the end of the pulse
         self.pulse_456_aom_off(t)
-        self.pulse_1064_aom_off(t)
+
+        if in_dipole_trap:
+            self.pulse_1064_aom_on(t, 1)
+        else:
+            self.pulse_1064_aom_off(t)
 
         if close_shutter:
             if power_456 != 0:
@@ -1052,7 +1070,6 @@ class RydLasers:
         # t = self.do_456_freq_sweep(t, self.CONST_DEFAULT_DETUNING_456)
 
         return t, t_aom_start
-
 
     def do_rydberg_multipulses(self, t, n_pulses, pulse_dur, pulse_wait_dur, power_456, power_1064, just_456=False, close_shutter=False):
 

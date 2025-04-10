@@ -201,12 +201,12 @@ class LabDevices():
             delay=ta_shutter_delays,
             open_state=1,
         )
-
-        self.digital_out_ch22 = DigitalOut(
-            name='digital_out_ch22',
-            parent_device=ni_6363_0,
-            connection='port0/line22',
-        )
+        # Dummy digital out to keep even number for Blacs
+        # self.digital_out_ch22 = DigitalOut(
+        #     name='digital_out_ch22',
+        #     parent_device=ni_6363_0,
+        #     connection='port0/line22',
+        # )
 
         self.mmwave_switch = DigitalOut(
             name='mmwave_switch',
@@ -222,11 +222,11 @@ class LabDevices():
             open_state=1,
         )
 
-        # self.digital_out_ch26 = DigitalOut(
-        #     name='digital_out_ch26',
-        #     parent_device=ni_6363_0,
-        #     connection='port0/line26',
-        # )
+        self.digital_out_ch26 = DigitalOut(
+            name='digital_out_ch26',
+            parent_device=ni_6363_0,
+            connection='port0/line26',
+        )
 
         clockline_6739 = ClockLine(name='clockline_6739', pseudoclock=pb.pseudoclock, connection='flag 17')
         ni_6739_0 = NI_PXIe_6739(
@@ -548,6 +548,7 @@ class LabDevices():
         # # 456 DDS: AD9914 1
         # #==============================================================================
 
+        # commenting out because 9914 temporarily not working 4/7
         ad9914_1 = AD9914('AD9914_1', parent_device=clockline_6363, com_port=54320)
         self.dds1 = AD_DDS(
             name='dds1',
