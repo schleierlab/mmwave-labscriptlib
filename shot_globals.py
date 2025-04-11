@@ -1,17 +1,14 @@
 import re
 from importlib import resources as impresources
 from types import SimpleNamespace
-from typing import Any, Literal, TypedDict
+from typing import Any, TypedDict
 
 import h5py
 import yaml
 
-import numpy as np
-
-from labscript import compiler
-import runmanager
-
 import labscriptlib
+import runmanager
+from labscript import compiler
 
 
 # pyyaml doesn't recognize all scientific notation numbers
