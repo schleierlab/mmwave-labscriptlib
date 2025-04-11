@@ -13,7 +13,6 @@ from labscriptlib.calibration import (
 )
 from labscriptlib.connection_table import devices
 from labscriptlib.spectrum_manager import spectrum_manager
-from user_devices.DDS.AD_DDS import AD_DDS
 
 # from spectrum_manager_fifo import spectrum_manager_fifo
 
@@ -729,17 +728,8 @@ class RydLasers:
     # this is only really a problem for devices that use both (ryd lasers, tweezers, local addressing)
     CONST_NI_ANALOG_DELAY: ClassVar[float] = 0
 
-    blue_dds: AD_DDS
-    """DDS controlling the blue laser frequency"""
 
-    def __init__(
-            self,
-            t,
-            blue_pointing: PointingConfig,
-            ir_pointing: PointingConfig,
-            init_blue_detuning: float,
-            blue_dds: AD_DDS = devices.dds1,
-        ):
+    def __init__(self, t, blue_pointing: PointingConfig, ir_pointing: PointingConfig, init_blue_detuning: float):
         """Initialize the Rydberg laser system.
 
         Args:
@@ -755,9 +745,7 @@ class RydLasers:
         # Initialize 456nm laser detuning
         # the initial detuning every ramp start and end to
         self.detuning_456 = init_blue_detuning
-        self.blue_dds = blue_dds
-
-        self.blue_dds.synthesize(t, freq=self.detuning_456, amp=0.5, ph=0)
+        devices.dds1.synthesize(t, freq = self.detuning_456, amp = 0.5, ph = 0)
         # Initialize shutter state
         self.shutter_open = False
 
@@ -797,7 +785,7 @@ class RydLasers:
         t_step = np.linspace(t - dur, t, num_steps)
         freq_step = np.linspace(start_freq, end_freq, num_steps)
         for i in np.arange(num_steps):
-            self.blue_dds.synthesize(t_step[i], freq=freq_step[i], amp=0.7, ph=0)
+            devices.dds1.synthesize(t_step[i], freq = freq_step[i], amp = 0.7, ph = 0)
 
         self.detuning_456 = end_freq
         return t
