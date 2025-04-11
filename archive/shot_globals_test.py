@@ -6,7 +6,7 @@ from labscriptlib.shot_globals import shot_globals
 
 devices.initialize()
 
-print(shot_globals.n_shot)
+print(shot_globals.repetition_index)
 print(shot_globals)
 
 t = 0

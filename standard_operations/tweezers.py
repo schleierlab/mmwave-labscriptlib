@@ -43,13 +43,13 @@ class TweezerOperations(OpticalPumpingOperations):
         """
         t = self.BField_obj.ramp_bias_field(t, bias_field_vector=(0, 0, 0))
         t = self.D2Lasers_obj.ramp_ta_freq(
-            t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.img_ta_detuning
+            t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.tw_img_ta_detuning
         )
         self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
 
-        if shot_globals.img_ta_power == 0:
-            raise ValueError("img_ta_power should not be zero")
-        if shot_globals.img_repump_power == 0:
+        if shot_globals.tw_img_ta_power == 0:
+            raise ValueError("tw_img_ta_power should not be zero")
+        if shot_globals.tw_img_repump_power == 0:
             raise ValueError("img_repump_power should not be zero")
 
         return t
@@ -75,7 +75,7 @@ class TweezerOperations(OpticalPumpingOperations):
         """
         # TODO this still spends some time loading the MOT;
         # figure out whether we even need this here at all.
-        t = self.do_mot(t, dur=0)  # MOT loads between shots, don't need to spend extra time
+        t = self.do_mot(t, dur=1)  # MOT loads between shots, don't need to spend extra time
 
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
 
@@ -105,14 +105,14 @@ class TweezerOperations(OpticalPumpingOperations):
                 t,
                 shot_globals.bm_robust_loading_pulse_dur,
                 ShutterConfig.IMG_FULL,
-                shot_globals.img_ta_power,
-                shot_globals.img_repump_power,
+                shot_globals.tw_img_ta_power,
+                shot_globals.tw_img_repump_power,
                 close_all_shutters=True,
             )
 
-        if shot_globals.img_tof_imaging_delay <= D2Lasers.CONST_MIN_SHUTTER_OFF_TIME:
+        if shot_globals.tw_img_tof_imaging_delay <= D2Lasers.CONST_MIN_SHUTTER_OFF_TIME:
             raise ValueError("time of flight needs to be greater than CONST_MIN_SHUTTER_OFF_TIME")
-        t += shot_globals.img_tof_imaging_delay
+        t += shot_globals.tw_img_tof_imaging_delay
 
         return t
 
@@ -153,11 +153,8 @@ class TweezerOperations(OpticalPumpingOperations):
         elif shot_number > 1:
             # pulse for the second shots and wait for the first shot to finish the
             # first reading
-            # print(shot_globals.kinetix_roi_row)
             kinetix_readout_time = shot_globals.kinetix_roi_row[1] * 4.7065e-6
-            # need extra 7 ms for shutter to close on the second shot
-            # TODO: is shot_globals.kinetix_extra_readout_time always zero? Delete if so.
-            t += kinetix_readout_time + shot_globals.kinetix_extra_readout_time
+            t += kinetix_readout_time
             t = self.do_tweezer_imaging(t, close_all_shutters=True)
         return t
 
@@ -179,20 +176,20 @@ class TweezerOperations(OpticalPumpingOperations):
         """
         shutter_config = ShutterConfig.select_imaging_shutters(
             imaging_label=shot_globals.imaging_label,
-            beam_choice=shot_globals.imaging_beam_choice(),
+            beam_choice=shot_globals.imaging_beam_choice,
             do_repump=True,
         )
         t_pulse_end, t_aom_start = self.D2Lasers_obj.do_pulse(
             t,
-            shot_globals.img_exposure_time,
+            shot_globals.tw_img_exposure_time,
             shutter_config,
-            shot_globals.img_ta_power,
-            shot_globals.img_repump_power,
+            shot_globals.tw_img_ta_power,
+            shot_globals.tw_img_repump_power,
             close_all_shutters=close_all_shutters,
         )
 
         self.Camera_obj.set_type("kinetix")
-        exposure_time = max(shot_globals.img_exposure_time, 1e-3)
+        exposure_time = max(shot_globals.tw_img_exposure_time, 1e-3)
 
         # expose the camera
         self.Camera_obj.expose(t_aom_start, exposure_time)
@@ -201,6 +198,19 @@ class TweezerOperations(OpticalPumpingOperations):
         t += exposure_time
         t = max(t, t_pulse_end)
 
+        return t
+
+    def take_in_shot_background(self, t):
+        """
+        Taking background in the shot,
+        the tweezer will be turned off first
+        and a kill all pulse will be applied to remove all atoms
+        then tweezer back on for same imaging condition
+        """
+        self.TweezerLaser_obj.aom_off(t)
+        t, _ = self.kill_all(t, close_all_shutters=False)
+        self.TweezerLaser_obj.aom_on(t, const=1)
+        t = self.image_tweezers(t, shot_number=3)
         return t
 
     def pump_then_rotate(self, t, B_field, polar = False):
@@ -234,33 +244,7 @@ class TweezerOperations(OpticalPumpingOperations):
 
         return t
 
-    def _do_tweezer_check_sequence(self, t):
-        """Perform a basic tweezer loading and imaging check sequence.
-
-        Executes a complete sequence to verify tweezer operation:
-        1. Load atoms into tweezers
-        2. Take first image
-        3. Wait specified time
-        4. Take second image
-        5. Reset MOT parameters
-
-        Args:
-            t (float): Start time for the sequence
-
-        Returns:
-            float: End time of the sequence
-        """
-        t = self.load_tweezers(t)
-        t = self.image_tweezers(t, shot_number=1)
-        # TODO: add tweezer modulation here, or in a separate sequence?
-        t += shot_globals.img_wait_time_between_shots
-        t = self.image_tweezers(t, shot_number=2)
-        t = self.reset_mot(t)
-        # t = self.TweezerLaser_obj.stop_tweezers(t)
-
-        return t
-
-    def _do_tweezer_check_with_inshot_background(self, t) -> float:
+    def _do_tweezer_check(self, t) -> float:
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
         t += shot_globals.img_wait_time_between_shots
@@ -332,6 +316,8 @@ class TweezerOperations(OpticalPumpingOperations):
         """
         raise NotImplementedError
 
+    #TODO: Rename this? A little confusing title. Maybe something like:
+    # _do_op_with_mot_beams_in_tweezers_check
     def _do_optical_pump_mot_in_tweezer_check(self, t):
         """Check optical pumping using mot beams for atoms in tweezers.
 
@@ -356,8 +342,10 @@ class TweezerOperations(OpticalPumpingOperations):
 
         t += 3e-3
 
+        #TODO: This logic is super convoluted, we need to clean this up.
+        #Is there ever a situation where we do depump before pump, then dp, then depump after pump? Probably not.
         if shot_globals.do_depump_ta_pulse_before_pump:
-            t = self.depump_ta_pulse(t)
+            t, _ = self.depump_ta_pulse(t)
 
         if shot_globals.do_op:
             t, t_aom_off = self.pump_to_F4(
@@ -369,7 +357,7 @@ class TweezerOperations(OpticalPumpingOperations):
             )
 
         if shot_globals.do_depump_ta_pulse_after_pump:
-            t_aom_off = self.depump_ta_pulse(t)
+            t_aom_off, _ = self.depump_ta_pulse(t)
 
         # We use Cartiesan to zero the field and polar for the other instance
 
@@ -406,7 +394,7 @@ class TweezerOperations(OpticalPumpingOperations):
 
         if shot_globals.do_mw_pulse:
             # self.TweezerLaser_obj.aom_off(t)
-            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_pulse_time)
             # self.TweezerLaser_obj.aom_on(t, shot_globals.tw_ramp_power)
         elif shot_globals.do_mw_sweep:
             mw_sweep_start = (
@@ -462,12 +450,13 @@ class TweezerOperations(OpticalPumpingOperations):
 
 
         if shot_globals.do_depump_ta_pulse_before_pump:
-            t = self.depump_ta_pulse(t)
+            t, _ = self.depump_ta_pulse(t)
 
         if shot_globals.do_op:
             t, t_aom_off = self.pump_to_F4(
                 t, shot_globals.op_label, close_all_shutters=True
             )
+
 
         # Making sure the ramp ends right as the pumping is starting
         t_start_ramp = (
@@ -485,7 +474,9 @@ class TweezerOperations(OpticalPumpingOperations):
         # )
 
         if shot_globals.do_depump_ta_pulse_after_pump:
-            t = self.depump_ta_pulse(t)
+            t, _ = self.depump_ta_pulse(t)
+
+
 
         # [mw_biasx_field, mw_biasy_field, mw_biasz_field] = [
         #     shot_globals.mw_biasx_field,
@@ -506,9 +497,12 @@ class TweezerOperations(OpticalPumpingOperations):
         # t = self.TweezerLaser_obj.ramp_power(
         #     t, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power
         # )
+
+        #TODO: It seems like the added time here will be wrong if we do the sweep, so
+        # lets refactor this (already mentioned in optical_pumping file)
         if shot_globals.do_mw_pulse:
             # self.TweezerLaser_obj.aom_off(t)
-            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_pulse_time)
             # self.TweezerLaser_obj.aom_on(t, shot_globals.tw_ramp_power)
         elif shot_globals.do_mw_sweep:
             mw_sweep_start = (
@@ -520,6 +514,8 @@ class TweezerOperations(OpticalPumpingOperations):
             t = self.Microwave_obj.do_sweep(
                 t, mw_sweep_start, mw_sweep_end, shot_globals.mw_sweep_duration
             )
+        else:
+            t+= shot_globals.mw_pulse_time
 
         if shot_globals.do_killing_pulse:
             t, _ = self.kill_F4(
@@ -534,13 +530,21 @@ class TweezerOperations(OpticalPumpingOperations):
 
         # hold the tweezers low for a constant length of time
         # contrasts with following line (ramp up after the kill pulse)
-        t = self.TweezerLaser_obj.ramp_power(t_aom_off + 15e-3, shot_globals.tw_ramp_dur, 0.99)
-        # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
+        # t = self.TweezerLaser_obj.ramp_power(t_aom_off + 15e-3, shot_globals.tw_ramp_dur, 0.99)
+        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
 
         t += 2e-3  # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
         # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
         t += shot_globals.img_wait_time_between_shots
+
         t = self.image_tweezers(t, shot_number=2)
+
+        # TODO: the following code unlock the D2 laser, need to debug
+        # self.TweezerLaser_obj.aom_off(t)
+        # t, _ = self.kill_all(t, close_all_shutters=False)
+        # self.TweezerLaser_obj.aom_on(t, const=1)
+        # t = self.image_tweezers(t, shot_number=3) # take in shot background
+
         t = self.reset_mot(t)
 
         return t
@@ -588,7 +592,7 @@ class TweezerOperations(OpticalPumpingOperations):
         #     t_aom_off, shot_globals.tw_ramp_dur, 0.99
         # )
 
-        t = self.depump_ta_pulse(t, close_all_shutters=False)
+        t, _ = self.depump_ta_pulse(t, close_all_shutters=False)
 
         # t = self.BField_obj.ramp_bias_field(t, bias_field_vector=(0, 0, 0))
 

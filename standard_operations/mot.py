@@ -221,45 +221,6 @@ class MOTOperations:
 
         return t
 
-    # TODO: Needs more experimental debugging. When should the shutter close? What timescales should we expect the MOT to disperse in?
-    def _do_mot_tof_sequence(self, t, reset_mot=False):
-        """Perform time-of-flight MOT imaging sequence.
-
-        This sequence loads a MOT, releases it, and images after a time-of-flight
-        period to measure temperature or expansion.
-
-        Args:
-            t (float): Start time for sequence
-            reset_mot (bool, optional): Whether to reset MOT parameters after sequence
-
-        Returns:
-            float: End time of the sequence
-        """
-        print("Running _do_mot_tof_sequence")
-
-        # MOT loading time 500 ms
-        mot_load_dur = 0.5
-
-        t = self.do_mot(t, mot_load_dur)
-
-        # assert shot_globals.mot_tof_imaging_delay > CONST_MIN_SHUTTER_OFF_TIME, "time of flight too short for shutter"
-        t += shot_globals.mot_tof_imaging_delay
-
-        t = self.image_mot(t)
-        # Shutter does not need to be held open
-
-        # Wait until the MOT disappear for background image
-        t += 0.1
-        t = self.image_mot(t)
-
-        # Reset laser frequency so lasers do not jump frequency and come unlocked
-        t = self.D2Lasers_obj.reset_to_mot_freq(t)
-
-        if reset_mot:
-            t = self.reset_mot(t)
-
-        return t
-
     def ramp_to_molasses(self, t):
         """Configure system for optical molasses.
 
@@ -296,14 +257,14 @@ class MOTOperations:
         Returns:
             float: End time of the molasses sequence
         """
-        if not (shot_globals.do_molasses_img_beam or shot_globals.do_molasses_mot_beam):
-            raise ValueError("either do_molasses_img_beam or do_molasses_mot_beam has to be on")
+        if shot_globals.bm_beam_choice != "mot" and shot_globals.bm_beam_choice != "img":
+            raise ValueError("bm_beam_choice must be mot or img")
         if shot_globals.bm_ta_detuning == 0:
             raise ValueError("bright molasses detuning = 0. TA detuning should be non-zero for bright molasses.")
 
         _ = self.ramp_to_molasses(t)
 
-        if shot_globals.do_molasses_mot_beam:
+        if shot_globals.bm_beam_choice == "mot":
             t, _ = self.D2Lasers_obj.do_pulse(
                 t,
                 dur,
@@ -313,7 +274,7 @@ class MOTOperations:
                 close_all_shutters=close_all_shutters,
             )
 
-        if shot_globals.do_molasses_img_beam:
+        if shot_globals.bm_beam_choice == "img":
             t, _ = self.D2Lasers_obj.do_pulse(
                 t,
                 dur,
@@ -363,7 +324,7 @@ class MOTOperations:
 
         shutter_config = ShutterConfig.select_imaging_shutters(
             imaging_label=shot_globals.imaging_label,
-            beam_choice=shot_globals.imaging_beam_choice(),
+            beam_choice=shot_globals.imaging_beam_choice,
             do_repump=do_repump,
         )
 

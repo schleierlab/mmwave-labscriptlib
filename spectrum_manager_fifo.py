@@ -33,8 +33,8 @@ class SpectrumManagerFifo():
 
         # we need to declare some runmanager variables as global so that we can reference them later
         TW_x_freqs = shot_globals.TW_x_freqs
-        TW_x_power = shot_globals.TW_x_power
-        TW_x_amplitude = shot_globals.TW_x_amplitude
+        TW_x_power = 33.2 # Translated from old runmanager settings
+        TW_x_amplitude = 1.0 # Translated from old runmanager settings
         # TW_y_freqs = shot_globals.TW_y_freqs
         # TW_y_power = shot_globals.TW_y_power
         # TW_y_amplitude = shot_globals.TW_y_amplitude

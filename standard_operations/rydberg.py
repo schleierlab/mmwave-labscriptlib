@@ -56,7 +56,13 @@ class RydbergOperations(TweezerOperations):
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
 
         t += 1e-3
-        if shot_globals.do_blue_kill:
+
+        if shot_globals.do_op:
+            t, _ = self.pump_to_F4(
+            t, shot_globals.op_label, close_all_shutters=True,
+        )
+
+        if shot_globals.do_blue:
             #Apply repump pulse
             t, t_aom_start = self.D2Lasers_obj.do_pulse(
                 t,
@@ -125,13 +131,13 @@ class RydbergOperations(TweezerOperations):
         t += 1e-3
 
         t, t_aom_off = self.pump_to_F4(
-            t, shot_globals.op_label, close_all_shutters=False,
+            t, shot_globals.op_label, close_all_shutters=True,
         )
 
         if shot_globals.do_dipole_trap_B_calib:
             t = self.BField_obj.ramp_bias_field(
                     t_aom_off + 200e-6, #TODO: wait for 200e-6s extra time in optical pumping field, can be changed
-                    voltage_vector=(shot_globals.mw_y_coil_voltage,
+                    voltage_vector=(shot_globals.mw_x_coil_voltage,
                                     shot_globals.mw_y_coil_voltage,
                                     shot_globals.mw_z_coil_voltage),
                     polar = False
@@ -145,14 +151,14 @@ class RydbergOperations(TweezerOperations):
                 polar = True
             )
 
-
         t += shot_globals.mw_field_wait_dur
+
         if shot_globals.drop_dp_during_mw:
             self.RydLasers_obj.pulse_1064_aom_off(t)
 
 
         if shot_globals.do_mw_pulse:
-            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_pulse_time)
         elif shot_globals.do_mw_sweep:
             mw_sweep_start = shot_globals.mw_detuning + shot_globals.mw_sweep_range / 2
             mw_sweep_end = shot_globals.mw_detuning - shot_globals.mw_sweep_range / 2
@@ -160,7 +166,7 @@ class RydbergOperations(TweezerOperations):
                 t, mw_sweep_start, mw_sweep_end, shot_globals.mw_sweep_duration
             )
 
-        t+=10e-6
+        # t+=10e-6
 
         if shot_globals.drop_dp_during_mw:
             self.RydLasers_obj.pulse_1064_aom_on(t, 1)
@@ -202,7 +208,95 @@ class RydbergOperations(TweezerOperations):
 
         return t
 
-    def _do_ryd_check_sequence(self, t):
+    def _do_dipole_trap_dark_state_measurement(self, t):
+
+        t = self.do_mot(t, dur=0.5)
+        if shot_globals.do_dipole_trap:
+            self.RydLasers_obj.pulse_1064_aom_on(0.1, 1)
+        else:
+            self.RydLasers_obj.pulse_1064_aom_off(0.1)
+        if not shot_globals.do_tweezers:
+            self.TweezerLaser_obj.aom_off(0.1)
+        t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
+
+        t += 10e-3
+
+        t, t_aom_off = self.pump_to_F4(
+            t, shot_globals.op_label, close_all_shutters=True,
+        )
+
+        if shot_globals.do_blue:
+            t = self.BField_obj.ramp_bias_field(
+                t_aom_off + 200e-6, #TODO: wait for 200e-6s extra time in optical pumping field, can be changed
+                bias_field_vector=(shot_globals.ryd_bias_amp,
+                                   shot_globals.ryd_bias_phi,
+                                   shot_globals.ryd_bias_theta),
+                polar = True
+            )
+            t += shot_globals.mw_field_wait_dur
+
+
+        t += 1e-3
+
+        if shot_globals.do_dp:
+            t, _ = self.depump_ta_pulse(t, close_all_shutters=True)
+        if shot_globals.do_blue:
+            t, _ = self.RydLasers_obj.do_rydberg_pulse_short(
+                t,
+                dur=shot_globals.ryd_456_duration,
+                power_456=shot_globals.ryd_456_power,
+                power_1064=shot_globals.ryd_1064_power, # use this to do A-T measurement when 1064 power is non-zero
+                close_shutter=True,  # Close shutter after pulse to prevent any residual light
+                in_dipole_trap=shot_globals.do_dipole_trap,
+            )
+
+            # t, _ = self.RydLasers_obj.do_rydberg_pulse(
+            #     t,
+            #     dur=shot_globals.ryd_456_duration,
+            #     power_456=shot_globals.ryd_456_power,
+            #     power_1064=shot_globals.ryd_1064_power, # use this to do A-T measurement when 1064 power is non-zero
+            #     close_shutter=True,  # Close shutter after pulse to prevent any residual light
+            #     in_dipole_trap=shot_globals.do_dipole_trap,
+            # )
+
+        t += 1e-3  #TODO: wait for extra time before killing, can be changed
+
+        if shot_globals.do_killing_pulse:
+            t, _ = self.kill_F4(t, close_all_shutters=True)
+        # This is the only place required for the special value of imaging
+        # t += 1e-3 # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
+        # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
+
+        t += shot_globals.dp_img_tof_imaging_delay
+        t = self.do_molasses_dipole_trap_imaging(
+            t,
+            ta_power = shot_globals.dp_img_ta_power,
+            ta_detuning = shot_globals.dp_img_ta_detuning,
+            repump_power = shot_globals.dp_img_repump_power,
+            do_repump=True,
+            exposure_time=shot_globals.dp_img_exposure_time,
+            close_all_shutters=True,
+        )
+
+        self.RydLasers_obj.pulse_1064_aom_off(t)
+
+        t += 100e-3
+
+        # Background image
+        t = self.do_molasses_dipole_trap_imaging(
+            t,
+            ta_power=shot_globals.dp_img_ta_power,
+            ta_detuning = shot_globals.dp_img_ta_detuning,
+            repump_power=shot_globals.dp_img_repump_power,
+            do_repump=True,
+            exposure_time=shot_globals.dp_img_exposure_time,
+            close_all_shutters=True,
+        )
+        t = self.reset_mot(t)
+
+        return t
+
+    def _do_ryd_tweezer_check_sequence(self, t):
         """Perform a Rydberg excitation check sequence.
 
         Executes a sequence to verify Rydberg excitation:
@@ -233,88 +327,37 @@ class RydbergOperations(TweezerOperations):
         t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99) # ramp trap power back
         # Apply Rydberg pulse with both 456 and 1064 active
 
-        t, _ = self.RydLasers_obj.do_rydberg_pulse(
-            t,
-            dur=shot_globals.ryd_456_duration,
-            power_456=shot_globals.ryd_456_power,
-            power_1064=shot_globals.ryd_1064_power,
-            close_shutter=True  # Close shutter after pulse to prevent any residual light
-        )
+        if shot_globals.ryd_456_duration > 2.5e-6:
+            t, t_aom_start= self.RydLasers_obj.do_rydberg_pulse(
+                t,
+                dur=shot_globals.ryd_456_duration,
+                power_456=shot_globals.ryd_456_power,
+                power_1064=shot_globals.ryd_1064_power,
+                close_shutter=True  # Close shutter after pulse to prevent any residual light
+            )
+        else:
+            t += 3.1e-6
+            # added to allow the short duration < 3us pulse
+            # because the analog change from tweezer ramp power
+            t, t_aom_start = self.RydLasers_obj.do_rydberg_pulse_short(
+                t,
+                dur=shot_globals.ryd_456_duration,
+                power_456 = shot_globals.ryd_456_power,
+                power_1064 = shot_globals.ryd_1064_power,
+                close_shutter=True)
+        if shot_globals.do_tw_trap_off:
+            self.TweezerLaser_obj.aom_off(t_aom_start - 0.6e-6, digital_only=True)
+            self.TweezerLaser_obj.aom_on(t_aom_start + shot_globals.ryd_456_duration, 0.99, digital_only=True)
+
 
         # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
         t += 2e-3  # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
         # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
-        t = self.reset_mot(t)
-
-        return t
-
-    def _do_ryd_check_trap_off_sequence(self,t):
-        """Perform a Rydberg excitation check sequence.
-
-        Executes a sequence to verify Rydberg excitation:
-        1. Load atoms into tweezers
-        2. Take first image
-        3. Apply Rydberg excitation pulse
-        4. Take second image to check for atom loss
-        5. Reset MOT parameters
-
-        Args:
-            t (float): Start time for the sequence
-
-        Returns:
-            float: End time of the sequence
-        """
-        t = self.load_tweezers(t)
-        t = self.image_tweezers(t, shot_number=1)
-
-        t += 1e-3
 
 
-        t = self.pump_then_rotate(
-            t,
-            (shot_globals.ryd_bias_amp,
-             shot_globals.ryd_bias_phi,
-             shot_globals.ryd_bias_theta),
-             polar=True) # trap is lowered when optical pump happens
-
-        E_field_voltage = [shot_globals.ryd_Efield_Vx,
-                           shot_globals.ryd_Efield_Vy,
-                           shot_globals.ryd_Efield_Vz,]
-
-        self.EField_obj.set_electric_field(t, E_field_voltage)
-
-        # t += 100e-6
-        t += shot_globals.ryd_Bfield_stabilize_wait_time
-        # Apply Rydberg pulse with both 456 and 1064 active
-
-        t, pulse_time = self.RydLasers_obj.do_rydberg_pulse_short(
-            t,
-            shot_globals.ryd_pulse_dur,
-            power_456 = shot_globals.ryd_456_power,
-            power_1064 = shot_globals.ryd_1064_power,
-            close_shutter=True)
-
-        # turn off tweezer laser during the Rydberg pulse
-        tweezer_switch_buffer = 2e-6
-        pulse_time = np.array([pulse_time[0] - tweezer_switch_buffer, pulse_time[1] + tweezer_switch_buffer]) - 0.3e-6
-        self.TweezerLaser_obj.aom_off(pulse_time[0], digital_only=True)
-        self.TweezerLaser_obj.aom_on(pulse_time[1], 0.99, digital_only=False)
-        print(pulse_time)
-        # self.TweezerLaser_obj.aom_on(pulse_time[1], shot_globals.tw_ramp_power, digital_only=True)
-        # self.TweezerLaser_obj.ramp_power(pulse_time[1], shot_globals.tw_ramp_dur, 0.99)
-
-        zero_E_field_voltage = [shot_globals.zero_Efield_Vx,
-                                shot_globals.zero_Efield_Vy,
-                                shot_globals.zero_Efield_Vz,]
-        self.EField_obj.set_electric_field(t, zero_E_field_voltage) # turn E field back to zero field
-
-        # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
-        t += 2e-3  # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
-        # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
-        t += shot_globals.img_wait_time_between_shots
-        t = self.image_tweezers(t, shot_number=2)
+        t = self.take_in_shot_background(t)
         t = self.reset_mot(t)
 
         return t
@@ -388,7 +431,7 @@ class RydbergOperations(TweezerOperations):
         t, t_aom_start = self.D2Lasers_obj.do_pulse(
             t,
             shot_globals.ryd_456_duration,
-            ShutterConfig.OPTICAL_PUMPING_REPUMP,
+            ShutterConfig.MOT_REPUMP,
             0,
             shot_globals.ryd_456_repump_power,
             close_all_shutters=True,
@@ -404,11 +447,14 @@ class RydbergOperations(TweezerOperations):
 
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
+
+        t = self.take_in_shot_background(t)
+
         t = self.reset_mot(t)
 
         return t
 
-    def _do_456_check_with_dark_state_sequence(self, t):
+    def _do_456_with_dark_state_sequence(self, t):
         """Perform a Rydberg excitation check sequence.
 
         Executes a sequence to verify Rydberg excitation:
@@ -431,7 +477,6 @@ class RydbergOperations(TweezerOperations):
 
         t += 3e-3
 
-
         _ = self.pump_then_rotate(
             t,
             (shot_globals.ryd_bias_amp,
@@ -441,13 +486,11 @@ class RydbergOperations(TweezerOperations):
 
         t += 10e-3
 
-
-
-        t, _ = self.RydLasers_obj.do_rydberg_pulse(
+        t, _ = self.RydLasers_obj.do_rydberg_pulse_short(
             t, #t_aom_start synchronize with repump pulse
             dur=shot_globals.ryd_456_duration,
             power_456=shot_globals.ryd_456_power,
-            power_1064=0,
+            power_1064=shot_globals.ryd_1064_power, # use this to do A-T measurement when 1064 power is non-zero
             close_shutter=True  # Close shutter after pulse to prevent any residual light
         )
 
@@ -467,10 +510,93 @@ class RydbergOperations(TweezerOperations):
 
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
+
+        t = self.take_in_shot_background(t)
         t = self.reset_mot(t)
 
         return t
 
+    def _do_456_light_shift_check_sequence(self, t):
+        """Perform a 456 light shift check sequence.
+
+        1. Load atoms into tweezers
+        2. Take first image
+        3. optical pump then rotate field for rydberg
+        4. (killing pulse + blue) or (depump pulse + blue)
+        5. (do killing pulse only if do depump)
+        6. Take second image to check for atom loss
+        7. Take 3rd image for bkg
+        8. Reset MOT parameters
+
+        Args:
+            t (float): Start time for the sequence
+
+        Returns:
+            float: End time of the sequence
+        """
+        t = self.load_tweezers(t)
+        t = self.image_tweezers(t, shot_number=1)
+
+        t += 3e-3
+
+        _ = self.pump_then_rotate(
+            t,
+            (shot_globals.ryd_bias_amp,
+             shot_globals.ryd_bias_phi,
+             shot_globals.ryd_bias_theta),
+             polar=True) # trap is lowered when optical pump happens
+
+        t += 10e-3
+
+        # Apply kiiling pulse frequency scan or depump pulse frequency scan
+        if shot_globals.do_killing_pulse and not shot_globals.do_dp:
+            t, t_aom_off = self.kill_F4(t, close_all_shutters=False)
+            t_aom_start = t_aom_off - shot_globals.op_killing_pulse_time
+            ryd_pulse_duration = shot_globals.op_killing_pulse_time
+        elif shot_globals.do_dp:
+            t, t_aom_start = self.depump_ta_pulse(
+                t, close_all_shutters=True
+            )
+            ryd_pulse_duration = shot_globals.op_depump_pulse_time
+        else:
+            t_aom_start = t
+            ryd_pulse_duration = shot_globals.ryd_456_duration
+
+        # Apply Rydberg pulse with only 456 active
+        t, _ = self.RydLasers_obj.do_rydberg_pulse(
+            # Should synchronize with killing pulse or depump pulse,
+            # but turn on earlier to account for the small "blip" from TA atom
+            # Turn off later so the blue would cover the entire depump or killing pulse
+            t_aom_start-3e-6,
+            dur = ryd_pulse_duration + 7e-6,
+            power_456=shot_globals.ryd_456_power,
+            power_1064=0,
+            close_shutter=True  # Close shutter after pulse to prevent any residual light
+        )
+
+        #If you set the blue power to 0, the Rydberg shutter doesn't open, and the
+        #time it returns is the pulse duration, which we usually have as too short
+        #relative to the TA vco time, as kill_F4 immediately starts ramping the ta vco
+        #even if the pulses don't start until the shutters have been handled
+        t+=1e-3
+
+        # do killing pulse when we do depump light shift measurement
+        if shot_globals.do_killing_pulse and shot_globals.do_dp:
+            t, _ = self.kill_F4(
+                t, close_all_shutters=True
+            )
+        else:
+            t += shot_globals.op_killing_pulse_time
+
+        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
+
+        t += shot_globals.img_wait_time_between_shots
+        t = self.image_tweezers(t, shot_number=2)
+        t = self.take_in_shot_background(t)
+
+        t = self.reset_mot(t)
+
+        return t
 
     def _do_456_light_shift_on_hyperfine_ground_states_check(self, t):
         """Check optical pumping using sigma+ beam for atoms in tweezers.
@@ -527,14 +653,14 @@ class RydbergOperations(TweezerOperations):
 
         t, t_aom_start = self.RydLasers_obj.do_rydberg_pulse(
             t,
-            dur=shot_globals.mw_time,
+            dur=shot_globals.mw_pulse_time,
             power_456=shot_globals.ryd_456_power,
             power_1064=0,
             close_shutter=True  # Close shutter after pulse to prevent any residual light
         )
 
         if shot_globals.do_mw_pulse:
-            t = self.Microwave_obj.do_pulse(t_aom_start-self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET, shot_globals.mw_time)
+            t = self.Microwave_obj.do_pulse(t_aom_start-self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET, shot_globals.mw_pulse_time)
         elif shot_globals.do_mw_sweep:
             mw_sweep_start = (
                 shot_globals.mw_detuning + shot_globals.mw_sweep_range / 2
@@ -563,7 +689,8 @@ class RydbergOperations(TweezerOperations):
 
         return t
 
-#TODO: It's not yet tested!
+    # TODO: It's not yet tested!
+    # TODO: why'd you write it then? Why didn't you test it?
     def _do_1064_light_shift_check_sequence(self, t):
         """Perform a Rydberg excitation check sequence.
 
@@ -615,7 +742,7 @@ class RydbergOperations(TweezerOperations):
 
         if shot_globals.do_mw_pulse:
             # self.TweezerLaser_obj.aom_off(t)
-            t, t_1st_end = self.Microwave_obj.do_ramsey_pulse(t, shot_globals.mw_time, shot_globals.ryd_456_duration)
+            t, t_1st_end = self.Microwave_obj.do_ramsey_pulse(t, shot_globals.mw_pulse_time, shot_globals.ryd_456_duration)
 
         # insert a 1064 pulse between two microwave pulse that has the same phase, make sure the pulse start the end of the 1st pulse
         self.RydLasers_obj.pulse_1064_aom_on(t_1st_end, shot_globals.ryd_1064_power)

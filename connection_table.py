@@ -201,12 +201,12 @@ class LabDevices():
             delay=ta_shutter_delays,
             open_state=1,
         )
-
-        self.digital_out_ch22 = DigitalOut(
-            name='digital_out_ch22',
-            parent_device=ni_6363_0,
-            connection='port0/line22',
-        )
+        # Dummy digital out to keep even number for Blacs
+        # self.digital_out_ch22 = DigitalOut(
+        #     name='digital_out_ch22',
+        #     parent_device=ni_6363_0,
+        #     connection='port0/line22',
+        # )
 
         self.mmwave_switch = DigitalOut(
             name='mmwave_switch',
@@ -222,11 +222,11 @@ class LabDevices():
             open_state=1,
         )
 
-        # self.digital_out_ch26 = DigitalOut(
-        #     name='digital_out_ch26',
-        #     parent_device=ni_6363_0,
-        #     connection='port0/line26',
-        # )
+        self.digital_out_ch26 = DigitalOut(
+            name='digital_out_ch26',
+            parent_device=ni_6363_0,
+            connection='port0/line26',
+        )
 
         clockline_6739 = ClockLine(name='clockline_6739', pseudoclock=pb.pseudoclock, connection='flag 17')
         ni_6739_0 = NI_PXIe_6739(
@@ -436,23 +436,23 @@ class LabDevices():
         # Analog Inputs
         #==============================================================================
 
-        self.test_analog_in = AnalogIn(
-            name='test_analog_in', 
-            parent_device=ni_6363_0, 
-            connection='ai0',
-        )
+        # self.test_analog_in = AnalogIn(
+        #     name='test_analog_in',
+        #     parent_device=ni_6363_0,
+        #     connection='ai0',
+        # )
 
 
         #==============================================================================
         # Cameras
         #==============================================================================
 
-        self.manta419b_mot = Manta419B(
-            'manta419b_mot',
-            parent_device=ni_6363_0,
-            connection="port0/line2",
-            BIAS_port=54321,
-        )
+        # self.manta419b_mot = Manta419B(
+        #     'manta419b_mot',
+        #     parent_device=ni_6363_0,
+        #     connection="port0/line2",
+        #     BIAS_port=54321,
+        # )
 
         # self.manta419b_tweezer = Manta419B(
         #     'manta419b_tweezer',
@@ -475,31 +475,11 @@ class LabDevices():
         #     BIAS_port=54323,
         # )
 
-        # self.kinetix = Kinetix(
-        #     name='kinetix',
-        #     parent_device=ni_6363_0,
-        #     connection='port0/line15',
-        #     BIAS_port=27171,
-        # )
-
-        # port 2 is camera
-        # should this be deprecated?
-        self.mot_camera_trigger = DigitalOut(
-            name='mot_camera_trigger',
-            parent_device=ni_6363_0,
-            connection='port0/line2',
-        )
-
-        self.tweezer_camera_trigger = DigitalOut(
-            name='tweezer_camera_trigger',
-            parent_device=ni_6363_0,
-            connection='port0/line13',
-        )
-
-        self.kinetix_camera_trigger = DigitalOut( #use this when not using kinetix server
-            name='kinetix_camera_trigger',
+        self.kinetix = Kinetix(
+            name='kinetix',
             parent_device=ni_6363_0,
             connection='port0/line15',
+            BIAS_port=27171,
         )
 
         #================================================================================
@@ -568,6 +548,7 @@ class LabDevices():
         # # 456 DDS: AD9914 1
         # #==============================================================================
 
+        # commenting out because 9914 temporarily not working 4/7
         ad9914_1 = AD9914('AD9914_1', parent_device=clockline_6363, com_port=54320)
         self.dds1 = AD_DDS(
             name='dds1',

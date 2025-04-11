@@ -62,6 +62,7 @@ class OpticalPumpingOperations(MOTOperations):
 
         op_total_field = op_fixed_field + op_added_field
 
+
         if label == "mot":
             # Use the MOT beams for optical pumping
             # Do a repump pulse
@@ -141,6 +142,7 @@ class OpticalPumpingOperations(MOTOperations):
         else:
             raise NotImplementedError("This optical pumping method is not implemented")
 
+    #TODO: We have 2 depumping sequence. We need to consolidate this.
     def depump_ta_pulse(self, t, close_all_shutters=False):
         """Execute a TA pulse to depump atoms from F=4 to F=3.
 
@@ -188,7 +190,7 @@ class OpticalPumpingOperations(MOTOperations):
 
         t = np.max([t, t_aom_start + shot_globals.op_depump_pulse_time + D2Lasers.CONST_TA_VCO_RAMP_TIME])#+= 1e-3
 
-        return t
+        return t, t_aom_start
 
     def depump_to_F3(self, t, label, close_all_shutters=True):
         """Pump atoms from F=4 to F=3 hyperfine state.
@@ -442,7 +444,7 @@ class OpticalPumpingOperations(MOTOperations):
 
         if shot_globals.do_depump_ta_pulse_after_pump:
             # do depump pulse to meausre the dark state lifetime
-            t = self.depump_ta_pulse(t_aom_off, close_all_shutters=True)
+            t, _ = self.depump_ta_pulse(t_aom_off, close_all_shutters=True)
         if shot_globals.do_killing_pulse:
             # do kill pulse to remove all atom in F=4
             t, _ = self.kill_F4(t_aom_off)
@@ -459,7 +461,7 @@ class OpticalPumpingOperations(MOTOperations):
 
         if shot_globals.do_mw_pulse:
             # do microwave in molasses
-            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_pulse_time)
 
         if shot_globals.do_killing_pulse:
             # do kill pulse after microwave to remove F=4 atom
@@ -539,10 +541,12 @@ class OpticalPumpingOperations(MOTOperations):
                 polar = True
             )
 
-        t += self.BField_obj.CONST_COIL_OFF_TIME
+        t += 5e-3 # Added for field stabilization. CONST_COIL_OFF_TIME is too short
+        #self.BField_obj.CONST_COIL_OFF_TIME
 
+        #TODO: We have this copied and pasted all over the place, so put this into one function.
         if shot_globals.do_mw_pulse:
-            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_time)
+            t = self.Microwave_obj.do_pulse(t, shot_globals.mw_pulse_time)
         elif shot_globals.do_mw_sweep:
             mw_sweep_start = shot_globals.mw_detuning + shot_globals.mw_sweep_range / 2
             mw_sweep_end = shot_globals.mw_detuning - shot_globals.mw_sweep_range / 2

@@ -26,15 +26,7 @@ if __name__ == "__main__":
         sequence_objects.append(MOTSeq_obj)
         t = MOTSeq_obj._do_mot_in_situ_sequence(t, reset_mot=True)
 
-    elif shot_globals.do_mot_tof_check:
-        MOTSeq_obj = MOTOperations(t)
-        sequence_objects.append(MOTSeq_obj)
-        t = MOTSeq_obj._do_mot_tof_sequence(t, reset_mot=True)
-
     elif shot_globals.do_molasses_in_situ_check:
-        # TODO this logic can be moved once we figure out a good code structure for separate sequences
-        # If you're trying to do in-situ imaging, you want to image faster than switch shutters allows for,
-        # so you can't do imaging beam imaging
         if shot_globals.do_molasses_in_situ_check and shot_globals.imaging_beam_choice() != 'mot':
             raise ValueError
 
@@ -65,32 +57,27 @@ if __name__ == "__main__":
     elif shot_globals.do_tweezer_check:
         TweezerSequence_obj = TweezerOperations(t)
         sequence_objects.append(TweezerSequence_obj)
-        t = TweezerSequence_obj._do_tweezer_check_sequence(t)
-
-    elif shot_globals.do_tweezer_check_inshot_bkg:
-        TweezerSequence_obj = TweezerOperations(t)
-        sequence_objects.append(TweezerSequence_obj)
-        t = TweezerSequence_obj._do_tweezer_check_with_inshot_background(t)
+        t = TweezerSequence_obj._do_tweezer_check(t)
 
     elif shot_globals.do_tweezer_position_check:
         TweezerSequence_obj = TweezerOperations(t)
         sequence_objects.append(TweezerSequence_obj)
-        t = TweezerSequence_obj._do_tweezer_position_check_sequence(t)
+        t = TweezerSequence_obj._do_tweezer_position_check_sequence(t, check_with_vimba=True)
 
     elif shot_globals.do_F4_microwave_spec_dipole_trap or shot_globals.do_dipole_trap_B_calib:
         RydSequence_obj = RydbergOperations(t)
         sequence_objects.append(RydSequence_obj)
         t = RydSequence_obj._do_dipole_trap_F4_spec(t)
 
+    elif shot_globals.do_dipole_trap_dark_state_measurement:
+        RydSequence_obj = RydbergOperations(t)
+        sequence_objects.append(RydSequence_obj)
+        t = RydSequence_obj._do_dipole_trap_dark_state_measurement(t)
+
     elif shot_globals.do_ryd_tweezer_check:
         RydSequence_obj = RydbergOperations(t)
         sequence_objects.append(RydSequence_obj)
-        t = RydSequence_obj._do_ryd_check_sequence(t)
-
-    elif shot_globals.do_ryd_tweezer_trap_off_check:
-        RydSequence_obj = RydbergOperations(t)
-        sequence_objects.append(RydSequence_obj)
-        t = RydSequence_obj._do_ryd_check_trap_off_sequence(t)
+        t = RydSequence_obj._do_ryd_tweezer_check_sequence(t)
 
     elif shot_globals.do_ryd_multipulse_check:
         RydSequence_obj = RydbergOperations(t)
@@ -106,9 +93,6 @@ if __name__ == "__main__":
         RydSequence_obj = RydbergOperations(t)
         sequence_objects.append(RydSequence_obj)
         t = RydSequence_obj._do_dipole_trap_sequence(t)
-
-    # if shot_globals.do_tweezer_check_fifo:
-    #     t = do_tweezer_check_fifo(t)
 
     elif shot_globals.do_optical_pump_in_tweezer_check:
         TweezerSequence_obj = TweezerOperations(t)
@@ -130,7 +114,7 @@ if __name__ == "__main__":
         RydSequence_obj = RydbergOperations(t)
         sequence_objects.append(RydSequence_obj)
         if shot_globals.op_label == "sigma":
-            t = RydSequence_obj._do_456_check_with_dark_state_sequence(t)
+            t = RydSequence_obj._do_456_with_dark_state_sequence(t)
         else:
             raise NotImplementedError
 
@@ -138,23 +122,14 @@ if __name__ == "__main__":
         RydSequence_obj = RydbergOperations(t)
         sequence_objects.append(RydSequence_obj)
         if shot_globals.op_label == "sigma":
-            t = RydSequence_obj._do_456_light_shift_on_hyperfine_ground_states_check(t)
+            t = RydSequence_obj._do_456_light_shift_check_sequence(t)
         else:
             raise NotImplementedError
-
-
-    elif shot_globals.do_1064_check:
-        RydSequence_obj = RydbergOperations(t)
-        sequence_objects.append(RydSequence_obj)
-        t = RydSequence_obj._do_1064_check_sequence(t)
 
     elif shot_globals.do_1064_light_shift_check:
         RydSequence_obj = RydbergOperations(t)
         sequence_objects.append(RydSequence_obj)
         t = RydSequence_obj._do_1064_light_shift_check_sequence(t)
-
-    # if shot_globals.do_optical_pump_in_microtrap_check:
-    #     t = do_optical_pump_in_microtrap_check(t)
 
     """ Here doing all the finish up quirk for spectrum cards """
     # Find the first non-None sequence object

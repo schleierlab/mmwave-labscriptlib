@@ -225,6 +225,7 @@ class BField:
         # if bias_field_vector is not None:
 
         self.bias_voltages = tuple(voltage_vector)
+        # print(self.bias_voltages)
 
         return t + dur
 

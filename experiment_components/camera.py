@@ -39,7 +39,7 @@ class Camera:
 
         if self.type == "MOT_manta":
             devices.manta419b_mot.expose(
-                "manta419b", t, "atoms", exposure_time=exposure_time
+                "manta419b", t, "atoms", exposure_time=exposure_time,
             )
 
         if self.type == "tweezer_manta":
