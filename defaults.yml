@@ -165,7 +165,7 @@ Imaging:
   do_tweezer_camera: { value: False, unit: bool }
   imaging_label: { value: "\"xyz\"", unit: "" }
   img_wait_time_between_shots: { value: 0, unit: s}
-  n_shots: { value: 1, unit: "" }
+  repetition_index: { value: 1, unit: "" }
 
 Sequence:
   do_test_analog_in: { value: False, unit: bool }

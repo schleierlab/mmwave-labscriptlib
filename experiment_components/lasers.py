@@ -1011,8 +1011,6 @@ class RydLasers:
 
         return t
 
-
-
     def do_rydberg_pulse(self, t, dur, power_456, power_1064, close_shutter=False, in_dipole_trap=False):
         """Perform a Rydberg excitation pulse with specified parameters.
 
@@ -1045,7 +1043,6 @@ class RydLasers:
             # Turn off AOMs while waiting for shutter to fully open
             self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
 
-
         if in_dipole_trap:
             if power_1064 == 0:
                 self.pulse_1064_aom_off(t)
@@ -1054,7 +1051,6 @@ class RydLasers:
         else:
             if power_1064 != 0:
                 self.pulse_1064_aom_on(t, power_1064)
-
 
         # Turn on AOMs with specified powers
         if power_456 != 0:
@@ -1076,7 +1072,6 @@ class RydLasers:
                 t = self.update_blue_456_shutter(t, "close")
                 t += 1e-3
             self.pulse_456_aom_on(t, 1)
-            # self.pulse_1064_aom_on(t,1)
 
         # t = self.do_456_freq_sweep(t, self.CONST_DEFAULT_DETUNING_456)
 
@@ -1130,40 +1125,64 @@ class RydLasers:
 
         return t_end, pulse_start_times
 
-    def do_rydberg_pulse_short(self, t, dur, power_456, power_1064, close_shutter=False):
+    def do_rydberg_pulse_short(
+            self,
+            t,
+            dur: float,
+            power_456: float,
+            power_1064: float,
+            close_shutter: bool = False,
+            in_dipole_trap: bool = False,
+    ):
         '''
         turn analog on 10 us earlier than the digital so there won't be pulseblaster related errors from the labscript
         '''
+        if not dur >= 0:
+            raise ValueError(f'duration must be nonnegative, was {dur}')
+        if not 0 <= power_456 <= 1:
+            raise ValueError(f'456 power out of bounds [0, 1], was {power_456}')
+        if not 0 <= power_1064 <= 1:
+            raise ValueError(f'1064 power out of bounds [0, 1], was {power_1064}')
 
         # turn analog on 10 us earlier than the digital
         # workaround for timing limitation on pulseblaster due to labscript
         # https://groups.google.com/g/labscriptsuite/c/QdW6gUGNwQ0
-        aom_analog_ctrl_anticipation = 1e-5
+        aom_analog_ctrl_anticipation = 10e-6
         if not self.shutter_open:
-            if power_1064 != 0:
-                devices.pulse_1064_aom_analog.constant(t - aom_analog_ctrl_anticipation, power_1064)
             if power_456 != 0:
-                devices.pulse_456_aom_analog.constant(t - aom_analog_ctrl_anticipation, power_456)
                 t = self.update_blue_456_shutter(t, "open")
-
             # Turn off AOMs while waiting for shutter to fully open
             self.pulse_456_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME, digital_only=True)
 
-            if power_456!=0:
-                self.pulse_456_aom_on(t, power_456, digital_only=True)
-            if power_1064 !=0:
+        if power_456 != 0:
+            devices.pulse_456_aom_analog.constant(t - aom_analog_ctrl_anticipation, power_456)
+            self.pulse_456_aom_on(t, power_456, digital_only=True)
+
+        if in_dipole_trap:
+            if power_1064 == 0:
+                self.pulse_1064_aom_off(t, digital_only=True)
+            else:
+                raise ValueError("Can't switch from dipole trap to nonzero power with a short pulse")
+        else:
+            if power_1064 != 0:
+                devices.pulse_1064_aom_analog.constant(t - aom_analog_ctrl_anticipation, power_1064)
                 self.pulse_1064_aom_on(t, power_1064, digital_only=True)
 
-            t_aom_start = t
+        t_aom_start = t
 
-            t += dur
-            self.pulse_456_aom_off(t, digital_only=True)
+        t += dur
+        self.pulse_456_aom_off(t, digital_only=True)
+        devices.pulse_456_aom_analog.constant(t + aom_analog_ctrl_anticipation, 0)
+
+        if in_dipole_trap:
+            self.pulse_1064_aom_on(t, 1, digital_only=True)
+        else:
             self.pulse_1064_aom_off(t, digital_only=True)
-
+            devices.pulse_1064_aom_analog.constant(t + aom_analog_ctrl_anticipation, 0)
 
         if close_shutter:
             if power_456 != 0:
                 t = self.update_blue_456_shutter(t, "close")
-            # self.pulse_456_aom_on(t, 1, digital_only=True)
+            self.pulse_456_aom_on(t, 1, digital_only=True)
 
         return t, t_aom_start
