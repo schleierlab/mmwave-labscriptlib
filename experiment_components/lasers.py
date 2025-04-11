@@ -243,7 +243,6 @@ class D2Lasers:
                 samplerate=4e5,
             )
             self.ta_freq = final
-            # print(f"last ta freq is {self.ta_freq} MHz and the time is {t*1e3} ms")
             return t + duration
 
     def ramp_repump_freq(self, t, duration, final):
@@ -737,7 +736,6 @@ class RydLasers:
         """
         # Can't do any output from NI card until 12e-6
         t = max(t, 12e-6)
-        print(t)
 
         # Keep the intensity servo on, regardless of BLACs settings
         self.servo_456_intensity_keep_on(t)
