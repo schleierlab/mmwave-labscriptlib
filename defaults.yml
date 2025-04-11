@@ -189,6 +189,3 @@ Sequence:
   do_456_with_dark_state_check: { value: False, unit: bool }
   do_456_light_shift_check: { value: False, unit: bool }
   do_1064_light_shift_check: { value: False, unit: bool }
-
-
-
