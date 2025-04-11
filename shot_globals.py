@@ -37,7 +37,7 @@ class ParameterSpec(TypedDict):
 
 class ShotGlobals(SimpleNamespace):
     # declare globals here!
-    n_shot: int
+    repetition_index: int
     manta_exposure: float
 
     def __init__(self) -> None:
