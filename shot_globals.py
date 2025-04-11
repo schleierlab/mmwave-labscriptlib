@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from typing import Any, TypedDict
 
 import h5py
+import numpy as np  # noqa:F401  # needed for correctly parsing call to eval below
 import yaml
 
 import labscriptlib
