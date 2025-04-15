@@ -188,6 +188,12 @@ class LabDevices():
             connection='flag 11',
         )
 
+        self.ta_relock = DigitalOut(
+            name='ta_relock',
+            parent_device=ni_6363_0,
+            connection='port0/line16',
+        )
+
         self.dispenser_off_trigger = DigitalOut(
             name='dispenser_off_trigger',
             parent_device=ni_6363_0,
@@ -201,12 +207,13 @@ class LabDevices():
             delay=ta_shutter_delays,
             open_state=1,
         )
+
         # Dummy digital out to keep even number for Blacs
-        # self.digital_out_ch22 = DigitalOut(
-        #     name='digital_out_ch22',
-        #     parent_device=ni_6363_0,
-        #     connection='port0/line22',
-        # )
+        self.digital_out_ch22 = DigitalOut(
+            name='digital_out_ch22',
+            parent_device=ni_6363_0,
+            connection='port0/line22',
+        )
 
         self.mmwave_switch = DigitalOut(
             name='mmwave_switch',
