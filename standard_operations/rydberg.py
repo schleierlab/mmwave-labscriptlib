@@ -39,13 +39,14 @@ class RydbergOperations(TweezerOperations):
         float
             End time of sequence.
         """
+        dipole_trap_on_time = t + 0.1
         t = self.do_mot(t, dur=0.5)
         if shot_globals.do_dipole_trap:
-            self.RydLasers_obj.pulse_1064_aom_on(0.1, 1)
+            self.RydLasers_obj.pulse_1064_aom_on(dipole_trap_on_time, 1)
         else:
-            self.RydLasers_obj.pulse_1064_aom_off(0.1)
+            self.RydLasers_obj.pulse_1064_aom_off(dipole_trap_on_time)
         if not shot_globals.do_tweezers:
-            self.TweezerLaser_obj.aom_off(0.1)
+            self.TweezerLaser_obj.aom_off(dipole_trap_on_time)
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
 
         return t
