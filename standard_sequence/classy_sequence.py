@@ -94,6 +94,11 @@ if __name__ == "__main__":
         sequence_objects.append(RydSequence_obj)
         t = RydSequence_obj._do_dipole_trap_sequence(t)
 
+    elif shot_globals.do_dipole_trap_state_sensitive_img_check:
+        RydSequence_obj = RydbergOperations(t)
+        sequence_objects.append(RydSequence_obj)
+        t = RydSequence_obj._do_dipole_trap_state_sensitive_img_check(t)
+
     elif shot_globals.do_optical_pump_in_tweezer_check:
         TweezerSequence_obj = TweezerOperations(t)
         sequence_objects.append(TweezerSequence_obj)
