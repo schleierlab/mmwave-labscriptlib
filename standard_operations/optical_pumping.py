@@ -313,20 +313,24 @@ class OpticalPumpingOperations(MOTOperations):
 
         return t, t_aom_off
 
-    def kill_F4(self, t, close_all_shutters=True):
+    def kill_F4(self, t: float, close_all_shutters: bool = True):
         """Remove atoms in the F=4 hyperfine state using resonant light.
 
         Uses a resonant TA pulse to push away atoms in the F=4 state while leaving
         F=3 atoms unaffected. The method configures the appropriate shutter and
         laser parameters for efficient state-selective removal.
 
-        Args:
-            t (float): Start time for the removal sequence
-            close_all_shutters (bool, optional): Whether to close all shutters after
-                the sequence. Defaults to True.
+        Parameters
+        ----------
+        t: float
+            Start time for the removal sequence
+        close_all_shutters: bool, optional
+            Whether to close all shutters after the sequence. Defaults to True.
 
-        Returns:
-            tuple[float, float]: End time of sequence and AOM turn-off time
+        Returns
+        -------
+        t_end, t_aom_off: tuple[float, float]
+            End time of sequence and AOM turn-off time
         """
         # The shutter configuration can be optical_pumping_full or optical_pump_TA
         # optical_pumping_full allow the two pulse sequence purely switched with aom after
