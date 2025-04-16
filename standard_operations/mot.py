@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import ClassVar
 
 from labscriptlib.experiment_components import (
     BField,
@@ -42,6 +43,13 @@ class MOTOperations:
     and manipulation. It coordinates multiple hardware components including D2 lasers,
     magnetic fields, microwave systems, UV lamps, and cameras.
     """
+
+    # TODO: store the min exposure times with the camera object and eventually get rid of this
+    MIN_CAMERA_EXPOSURE_TIMES: ClassVar[dict[str, float]] = {
+        "MOT_manta": 50e-6,
+        "tweezer_manta": 50e-6,
+        "kinetix": 1e-3,
+    }
 
     def __init__(self, t):
         # Standard initialization for hardware objects puts everything in
@@ -290,29 +298,40 @@ class MOTOperations:
     # TODO: Maybe pass the shutter config into here? This would get rid of all the if statements?
     def do_molasses_dipole_trap_imaging(
         self,
-        t,
-        ta_power=1,
-        ta_detuning=0,
-        repump_power=1,
-        do_repump=True,
-        exposure_time=shot_globals.bm_exposure_time,
-        close_all_shutters=False,
+        t: float,
+        ta_power: float = 1,
+        ta_detuning: float = 0,
+        repump_power: float = 1,
+        do_repump: bool = True,
+        exposure_time: float = shot_globals.bm_exposure_time,
+        close_all_shutters: bool = False,
     ):
         """Capture an image of the molasses or the dipole trap.
 
         Configures imaging parameters and captures an image of the molasses or the
         dipole trap using the camera system.
 
-        Args:
-            t (float): Time to begin imaging
-            ta_power (float, optional): Power of the TA beam
-            repump_power (float, optional): Power of the repump beam
-            exposure (float, optional): Exposure time of the camera
-            do_repump (bool, optional): Whether to use the repump beam
-            close_all_shutters (bool, optional): Whether to close all shutters after imaging
+        Parameters
+        ----------
+        t: float
+            Time to begin the imaging sequence. Not necessarily the start of the camera exposure.
+        ta_power: float, optional
+            Power of the TA beam as an AOM driver control voltage, defaults to 1 V.
+        ta_detuning: float, optional
+            Detuning of the TA beam from the D2 4 -> 5 transition frequency, in MHz.
+        repump_power: float, optional
+            Power of the repump beam as an AOM driver control voltage, defaults to 1 V.
+        do_repump: bool, optional
+            Whether to use the repump beam during imaging; defaults to True.
+        exposure_time: float, optional
+            Length of the camera exposure, in s. Defaults to value configured in shot_globals.
+        close_all_shutters: bool, optional
+            Whether to close all shutters after imaging
 
-        Returns:
-            float: End time of the imaging sequence
+        Returns
+        -------
+        float
+            End time of the imaging sequence
         """
         # zero the field
         _ = self.BField_obj.ramp_bias_field(t, bias_field_vector=(0, 0, 0))
@@ -338,17 +357,11 @@ class MOTOperations:
             close_all_shutters=close_all_shutters,
         )
 
-        # TODO: store the min exposure times with the camera object and eventually get rid of this
         self.Camera_obj.set_type(shot_globals.camera_type)
-        min_exposure_times = {
-            "MOT_manta": 50e-6,
-            "tweezer_manta": 50e-6,
-            "kinetix": 1e-3,
-        }
-        if self.Camera_obj.type not in min_exposure_times.keys():
+        if self.Camera_obj.type not in self.MIN_CAMERA_EXPOSURE_TIMES.keys():
             raise ValueError(f"Camera type {self.Camera_obj.type} not recognized")
 
-        min_exposure_time = min_exposure_times[self.Camera_obj.type]
+        min_exposure_time = self.MIN_CAMERA_EXPOSURE_TIMES[self.Camera_obj.type]
         if exposure_time < min_exposure_time:
             raise ValueError(
                 f"Exposure time {exposure_time} shorter than "
