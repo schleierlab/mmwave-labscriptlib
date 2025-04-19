@@ -832,7 +832,7 @@ class RydLasers:
         devices.servo_456_aom_analog.constant(t, 0)  # analog off
         self.power_456 = 0
 
-    def pulse_456_aom_on(self, t: float, power, digital_only: bool = False):
+    def pulse_456_aom_on(self, t: float, power: float, digital_only: bool = False):
         """Turn on the 456nm laser pulse AOM.
 
         Parameters
