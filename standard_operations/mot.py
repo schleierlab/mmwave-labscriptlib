@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import ClassVar
+from typing import ClassVar, Optional
 
 from labscriptlib.experiment_components import (
     BField,
@@ -304,6 +304,7 @@ class MOTOperations:
         repump_power: float = 1,
         do_repump: bool = True,
         exposure_time: float = shot_globals.bm_exposure_time,
+        pulse_time: Optional[float] = None,
         close_all_shutters: bool = False,
     ):
         """Capture an image of the molasses or the dipole trap.
@@ -325,6 +326,8 @@ class MOTOperations:
             Whether to use the repump beam during imaging; defaults to True.
         exposure_time: float, optional
             Length of the camera exposure, in s. Defaults to value configured in shot_globals.
+        pulse_time: float, optional
+            Length of the imaging light pulse, in s. If not specified, defaults to `exposure_time`.
         close_all_shutters: bool, optional
             Whether to close all shutters after imaging
 
@@ -347,10 +350,15 @@ class MOTOperations:
             do_repump=do_repump,
         )
 
+        if pulse_time is None:
+            pulse_time = exposure_time
+        elif pulse_time < 0:
+            raise ValueError(f"pulse_time must be non-negative, was {pulse_time}")
+
         # full power ta and repump pulse
         t_pulse_end, t_aom_start = self.D2Lasers_obj.do_pulse(
             t,
-            exposure_time,
+            pulse_time,
             shutter_config,
             ta_power,
             repump_power,

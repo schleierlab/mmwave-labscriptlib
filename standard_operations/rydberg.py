@@ -180,23 +180,29 @@ class RydbergOperations(TweezerOperations):
             t += shot_globals.ryd_456_duration
 
         # drop dipole trap, image and kill F = 4, raise dipole trap
-        self.RydLasers_obj.pulse_1064_aom_off(t)
+        # self.RydLasers_obj.pulse_1064_aom_off(t)
         t = self.do_molasses_dipole_trap_imaging(
             t,
-            ta_power = shot_globals.dp_img_ta_power,
-            ta_detuning = shot_globals.dp_img_ta_detuning,
+            ta_power = shot_globals.dp_state_sel_ta_power,
+            ta_detuning = shot_globals.dp_state_sel_ta_det,
             repump_power = shot_globals.dp_img_repump_power,
             do_repump=True,
             exposure_time=shot_globals.dp_img_exposure_time,
+            pulse_time=shot_globals.dp_state_sel_exp_time,
             close_all_shutters=True,
         )
-        self.kill_F4(t)
-        self.RydLasers_obj.pulse_1064_aom_on(t, 1)
+        # self.kill_F4(t)
+        # self.RydLasers_obj.pulse_1064_aom_on(t, 1)
 
         # wait
-        t += 1e-3
+        t += 20e-3
 
-        # image with repump for F = 3, trap up
+        # repump the F=3 atoms to F=4, then image as before
+        # t, _ = self.pump_to_F4(
+        #         t,
+        #         shot_globals.op_label,
+        #         close_all_shutters=True,
+        #     )
         t = self.do_molasses_dipole_trap_imaging(
             t,
             ta_power = shot_globals.dp_img_ta_power,
@@ -214,13 +220,26 @@ class RydbergOperations(TweezerOperations):
         # Background image
         t = self.do_molasses_dipole_trap_imaging(
             t,
-            ta_power=shot_globals.dp_img_ta_power,
+            ta_power = shot_globals.dp_state_sel_ta_power,
             ta_detuning = shot_globals.dp_img_ta_detuning,
-            repump_power=shot_globals.dp_img_repump_power,
-            do_repump=True,
+            repump_power = 0,
+            do_repump=False,
             exposure_time=shot_globals.dp_img_exposure_time,
+            pulse_time=shot_globals.dp_state_sel_exp_time,
             close_all_shutters=True,
         )
+
+        # t = self.do_molasses_dipole_trap_imaging(
+        #     t,
+        #     ta_power = shot_globals.dp_state_sel_ta_power,
+        #     ta_detuning = shot_globals.dp_state_sel_ta_det,
+        #     repump_power = shot_globals.dp_img_repump_power,
+        #     do_repump=False,
+        #     exposure_time=shot_globals.dp_state_sel_exp_time,
+        #     close_all_shutters=True,
+        # )
+
+        t += 50e-3
         t = self.reset_mot(t)
 
         return t
