@@ -25,6 +25,32 @@ class RydbergOperations(TweezerOperations):
             t, blue_pointing, ir_pointing, init_blue_detuning=shot_globals.ryd_456_detuning
         )
 
+    def load_dipole_trap(self, t: float):
+        """
+        Load a dipole trap. Runs at the start of a sequence.
+
+        Parameters
+        ----------
+        t: float
+            Start time of sequence.
+
+        Returns
+        -------
+        float
+            End time of sequence.
+        """
+        dipole_trap_on_time = t + 0.1
+        t = self.do_mot(t, dur=0.5)
+        if shot_globals.do_dipole_trap:
+            self.RydLasers_obj.pulse_1064_aom_on(dipole_trap_on_time, 1)
+        else:
+            self.RydLasers_obj.pulse_1064_aom_off(dipole_trap_on_time)
+        if not shot_globals.do_tweezers:
+            self.TweezerLaser_obj.aom_off(dipole_trap_on_time)
+        t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
+
+        return t
+
     def pulsed_rydberg_excitation(self, t, n_pulses, pulse_dur, pulse_wait_dur, power_456, power_1064, just_456=False, close_shutter=False):
         print('multipulse start time t = ', t)
 
@@ -45,22 +71,15 @@ class RydbergOperations(TweezerOperations):
         return t
 
     def _do_dipole_trap_sequence(self, t):
-
-        t = self.do_mot(t, dur=0.5)
-        if shot_globals.do_dipole_trap:
-            self.RydLasers_obj.pulse_1064_aom_on(0.1, 1)
-        else:
-            self.RydLasers_obj.pulse_1064_aom_off(0.1)
-        if not shot_globals.do_tweezers:
-            self.TweezerLaser_obj.aom_off(0.1)
-        t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
-
+        t = self.load_dipole_trap(t)
         t += 1e-3
 
         if shot_globals.do_op:
             t, _ = self.pump_to_F4(
-            t, shot_globals.op_label, close_all_shutters=True,
-        )
+                t,
+                shot_globals.op_label,
+                close_all_shutters=True,
+            )
 
         if shot_globals.do_blue:
             #Apply repump pulse
@@ -117,17 +136,116 @@ class RydbergOperations(TweezerOperations):
 
         return t
 
-    def _do_dipole_trap_F4_spec(self, t):
+    def _do_dipole_trap_state_sensitive_img_check(
+            self,
+            t: float,
+    ):
+        """
+        Largely copied from _do_dipole_trap_sequence.
+        """
+        t = self.load_dipole_trap(t)
+        t += 1e-3
 
-        t = self.do_mot(t, dur=0.5)
-        if shot_globals.do_dipole_trap:
-            self.RydLasers_obj.pulse_1064_aom_on(0.1, 1)
+        if shot_globals.do_op:
+            t, _ = self.pump_to_F4(
+                t,
+                shot_globals.op_label,
+                close_all_shutters=True,
+            )
+
+        if shot_globals.do_blue:
+            #Apply repump pulse
+            t, t_aom_start = self.D2Lasers_obj.do_pulse(
+                t,
+                shot_globals.ryd_456_duration,
+                ShutterConfig.OPTICAL_PUMPING_REPUMP,
+                0,
+                shot_globals.ryd_456_repump_power,
+                close_all_shutters=True,
+            )
+            t = self.RydLasers_obj.do_456_pulse(
+                t_aom_start, # synchronize with repump pulse
+                dur=shot_globals.ryd_456_duration,
+                power_456=shot_globals.ryd_456_power,
+                close_shutter=True  # Close shutter after pulse to prevent any residual light
+            )
+        elif shot_globals.do_ryd_2_photon:
+            t = self.RydLasers_obj.do_456_pulse(
+                t,
+                dur=shot_globals.ryd_456_duration,
+                power_456=shot_globals.ryd_456_power,
+                close_shutter=False  # Close shutter after pulse to prevent any residual light
+            )
         else:
-            self.RydLasers_obj.pulse_1064_aom_off(0.1)
-        if not shot_globals.do_tweezers:
-            self.TweezerLaser_obj.aom_off(0.1)
-        t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
+            t += shot_globals.ryd_456_duration
 
+        # drop dipole trap, image and kill F = 4, raise dipole trap
+        # self.RydLasers_obj.pulse_1064_aom_off(t)
+        t = self.do_molasses_dipole_trap_imaging(
+            t,
+            ta_power = shot_globals.dp_state_sel_ta_power,
+            ta_detuning = shot_globals.dp_state_sel_ta_det,
+            repump_power = shot_globals.dp_img_repump_power,
+            do_repump=True,
+            exposure_time=shot_globals.dp_img_exposure_time,
+            pulse_time=shot_globals.dp_state_sel_exp_time,
+            close_all_shutters=True,
+        )
+        # self.kill_F4(t)
+        # self.RydLasers_obj.pulse_1064_aom_on(t, 1)
+
+        # wait
+        t += 20e-3
+
+        # repump the F=3 atoms to F=4, then image as before
+        # t, _ = self.pump_to_F4(
+        #         t,
+        #         shot_globals.op_label,
+        #         close_all_shutters=True,
+        #     )
+        t = self.do_molasses_dipole_trap_imaging(
+            t,
+            ta_power = shot_globals.dp_img_ta_power,
+            ta_detuning = shot_globals.dp_img_ta_detuning,
+            repump_power = shot_globals.dp_img_repump_power,
+            do_repump=True,
+            exposure_time=shot_globals.dp_img_exposure_time,
+            close_all_shutters=True,
+        )
+
+        self.RydLasers_obj.pulse_1064_aom_off(t)
+
+        t += 100e-3
+
+        # Background image
+        t = self.do_molasses_dipole_trap_imaging(
+            t,
+            ta_power = shot_globals.dp_state_sel_ta_power,
+            ta_detuning = shot_globals.dp_img_ta_detuning,
+            repump_power = 0,
+            do_repump=False,
+            exposure_time=shot_globals.dp_img_exposure_time,
+            pulse_time=shot_globals.dp_state_sel_exp_time,
+            close_all_shutters=True,
+        )
+
+        # t = self.do_molasses_dipole_trap_imaging(
+        #     t,
+        #     ta_power = shot_globals.dp_state_sel_ta_power,
+        #     ta_detuning = shot_globals.dp_state_sel_ta_det,
+        #     repump_power = shot_globals.dp_img_repump_power,
+        #     do_repump=False,
+        #     exposure_time=shot_globals.dp_state_sel_exp_time,
+        #     close_all_shutters=True,
+        # )
+
+        t += 50e-3
+        t = self.reset_mot(t)
+
+        return t
+
+    def _do_dipole_trap_F4_spec(self, t):
+        t = self.load_dipole_trap(t)
         t += 1e-3
 
         t, t_aom_off = self.pump_to_F4(
@@ -209,16 +327,7 @@ class RydbergOperations(TweezerOperations):
         return t
 
     def _do_dipole_trap_dark_state_measurement(self, t):
-
-        t = self.do_mot(t, dur=0.5)
-        if shot_globals.do_dipole_trap:
-            self.RydLasers_obj.pulse_1064_aom_on(0.1, 1)
-        else:
-            self.RydLasers_obj.pulse_1064_aom_off(0.1)
-        if not shot_globals.do_tweezers:
-            self.TweezerLaser_obj.aom_off(0.1)
-        t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
-
+        t = self.load_dipole_trap(t)
         t += 10e-3
 
         t, t_aom_off = self.pump_to_F4(

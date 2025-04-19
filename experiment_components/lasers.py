@@ -806,88 +806,120 @@ class RydLasers:
         """keep the AOM digital high for intensity servo"""
         self.servo_1064_aom_on(t, 0)
 
-    def servo_456_aom_on(self, t, const):
+    def servo_456_aom_on(self, t: float, power: float):
         """Turn on the 456nm laser servo AOM.
 
-        Args:
-            t (float): Time to turn on the AOM
-            const (float): Power level for the AOM
+        Parameters
+        ----------
+        t: float
+            Time to turn on the AOM
+        power: float
+            Power level for the AOM
         """
         devices.servo_456_aom_digital.go_high(t)  # digital on
-        devices.servo_456_aom_analog.constant(t, const)  # analog to const
-        self.power_456 = const
+        devices.servo_456_aom_analog.constant(t, power)  # analog to const
+        self.power_456 = power
 
-    def servo_456_aom_off(self, t):
+    def servo_456_aom_off(self, t: float):
         """Turn off the 456nm laser servo AOM.
 
-        Args:
-            t (float): Time to turn off the AOM
+        Parameters
+        ----------
+        t: float
+            Time to turn off the AOM
         """
         devices.servo_456_aom_digital.go_low(t)  # digital off
         devices.servo_456_aom_analog.constant(t, 0)  # analog off
         self.power_456 = 0
 
-    def pulse_456_aom_on(self, t, const, digital_only = False):
+    def pulse_456_aom_on(self, t: float, power: float, digital_only: bool = False):
         """Turn on the 456nm laser pulse AOM.
 
-        Args:
-            t (float): Time to turn on the AOM
-            const (float): Power level for the AOM
+        Parameters
+        ----------
+        t: float
+            Time to turn on the AOM
+        power: float
+            Power level for the AOM
+        digital_only: bool
+            Whether to switch only the digital control. Defaults to False
+            (i.e. also use analog control).
         """
         devices.pulse_456_aom_digital.go_high(t)  # digital on
         if not digital_only:
-            devices.pulse_456_aom_analog.constant(t - self.CONST_NI_ANALOG_DELAY, const)  # analog to const
-            self.power_456 = const
+            devices.pulse_456_aom_analog.constant(t - self.CONST_NI_ANALOG_DELAY, power)  # analog to const
+            self.power_456 = power
 
-    def pulse_456_aom_off(self, t, digital_only = False):
+    def pulse_456_aom_off(self, t: float, digital_only: bool = False):
         """Turn off the 456nm laser pulse AOM.
 
-        Args:
-            t (float): Time to turn off the AOM
+        Parameters
+        ----------
+        t: float
+            Time to turn off the AOM
+        digital_only: bool
+            Whether to switch only the digital control. Defaults to False
+            (i.e. also use analog control).
         """
         devices.pulse_456_aom_digital.go_low(t)  # digital off
         if not digital_only:
             devices.pulse_456_aom_analog.constant(t - self.CONST_NI_ANALOG_DELAY, 0)  # analog off
             self.power_456 = 0
 
-    def servo_1064_aom_on(self, t, const):
+    def servo_1064_aom_on(self, t: float, power: float):
         """Turn on the 1064nm laser servo AOM.
 
-        Args:
-            t (float): Time to turn on the AOM
-            const (float): Power level for the AOM
+        Parameters
+        ----------
+        t: float
+            Time to turn on the AOM
+        power: float
+            Power level for the AOM
         """
         devices.servo_1064_aom_digital.go_high(t)  # digital on
-        devices.servo_1064_aom_analog.constant(t, const)  # analog to const
-        self.power_1064 = const
+        devices.servo_1064_aom_analog.constant(t, power)  # analog to const
+        self.power_1064 = power
 
-    def servo_1064_aom_off(self, t):
+    def servo_1064_aom_off(self, t: float):
         """Turn off the 1064nm laser servo AOM.
 
-        Args:
-            t (float): Time to turn off the AOM
+        Parameters
+        ----------
+        t: float
+            Time to turn off the AOM
         """
         devices.servo_1064_aom_digital.go_low(t)  # digital off
         devices.servo_1064_aom_analog.constant(t, 0)  # analog off
         self.power_1064 = 0
 
-    def pulse_1064_aom_on(self, t, const, digital_only = False):
+    def pulse_1064_aom_on(self, t: float, power: float, digital_only: bool = False):
         """Turn on the 1064nm laser pulse AOM.
 
-        Args:
-            t (float): Time to turn on the AOM
-            const (float): Power level for the AOM
+        Parameters
+        ----------
+        t: float
+            Time to turn on the AOM
+        power: float
+            Power level for the AOM
+        digital_only: bool
+            Whether to switch only the digital control. Defaults to False
+            (i.e. also use analog control).
         """
         devices.pulse_1064_aom_digital.go_high(t)  # digital on
         if not digital_only:
-            devices.pulse_1064_aom_analog.constant(t, const)  # analog to const
-            self.power_1064 = const
+            devices.pulse_1064_aom_analog.constant(t, power)  # analog to const
+            self.power_1064 = power
 
-    def pulse_1064_aom_off(self, t, digital_only = False):
+    def pulse_1064_aom_off(self, t: float, digital_only: bool = False):
         """Turn off the 1064nm laser pulse AOM.
 
-        Args:
-            t (float): Time to turn off the AOM
+        Parameters
+        ----------
+        t: float
+            Time to turn off the AOM
+        digital_only: bool
+            Whether to switch only the digital control. Defaults to False
+            (i.e. also use analog control).
         """
         devices.pulse_1064_aom_digital.go_low(t)  # digital off
         if not digital_only:

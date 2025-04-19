@@ -38,6 +38,9 @@ class ShotGlobals(SimpleNamespace):
     repetition_index: int
     manta_exposure: float
 
+    dp_img_tof_imaging_delay: float
+    '''Time for killed F = 4 atoms to leave'''
+
     def __init__(self) -> None:
         super().__init__()
         self._last_loaded_h5 = None
