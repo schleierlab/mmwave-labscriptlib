@@ -581,7 +581,7 @@ class TweezerLaser:
     tweezer_power: float
     spectrum_mode: Literal['sequence', 'fifo']
 
-    def __init__(self, t, tweezer_power: float, spectrum_mode: Literal['sequence', 'fifo']):
+    def __init__(self, t, tweezer_power: float, spectrum_mode: Literal['sequence', 'fifo'], tw_y_use_dds: bool):
         """Initialize the tweezer laser system.
 
         Args:
@@ -589,6 +589,7 @@ class TweezerLaser:
         """
         self.tweezer_power = tweezer_power
         self.spectrum_mode = spectrum_mode
+        self.tw_y_use_dds = tw_y_use_dds
 
         # self.intensity_servo_keep_on(t)
         self.start_tweezers(t)
@@ -599,21 +600,19 @@ class TweezerLaser:
         Args:
             t (float): Time to start the tweezers
         """
-        # if self.spectrum_mode != 'sequence':0.95
-        #     raise ValueError(
-        #         'global `do_sequence_mode` is currently False, running Fifo mode now. '
-        #         'Set to True for sequence mode',
-        #     )
         if self.spectrum_mode == 'sequence':
             spectrum_manager.start_card()
             spectrum_manager.start_tweezers(t)
         elif self.spectrum_mode == 'fifo':
             spectrum_manager_fifo.start_tweezer_card()
             spectrum_manager_fifo.start_tweezers(t)
+            print('global `do_sequence_mode` is currently False, running Fifo mode now. '
+                  'Set to True for sequence mode')
         else:
             raise ValueError("The spectrum_mode should only be sequence or fifo mode")
 
-        devices.dds0.synthesize(t+1e-3, freq = shot_globals.TW_y_freqs, amp = 0.95, ph = 0) # unit: MHz
+        if self.tw_y_use_dds:
+            devices.dds0.synthesize(t+1e-3, freq = shot_globals.TW_y_freqs, amp = 0.95, ph = 0) # unit: MHz
         self.aom_on(t, self.tweezer_power)
 
     def stop_tweezers(self, t):

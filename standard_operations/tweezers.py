@@ -23,7 +23,8 @@ class TweezerOperations(OpticalPumpingOperations):
         super(TweezerOperations, self).__init__(t)
 
         spectrum_mode = 'sequence' if shot_globals.do_sequence_mode else 'fifo'
-        self.TweezerLaser_obj = TweezerLaser(t, shot_globals.tw_power, spectrum_mode)
+        tw_y_use_dds = shot_globals.TW_y_use_dds
+        self.TweezerLaser_obj = TweezerLaser(t, shot_globals.tw_power, spectrum_mode, tw_y_use_dds)
 
     def ramp_to_imaging_parameters(self, t):
         """Configure laser parameters for imaging or additional cooling.

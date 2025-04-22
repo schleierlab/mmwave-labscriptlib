@@ -13,7 +13,8 @@ from labscriptlib.tweezers_phaseAmplitudeAdjustment import trap_phase, trap_ampl
 from labscriptlib.connection_table import devices
 from labscriptlib.shot_globals import shot_globals
 
-TW_y_channel = True
+if not shot_globals.TW_y_use_dds:
+    TW_y_channel = True # use spectrum card instead of dds for tweezer y channel
 
 devices.initialize()
 

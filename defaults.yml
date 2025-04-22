@@ -104,6 +104,7 @@ Tweezers:
   TW_y_amplitude: { value: 0.99, unit: ""}
   TW_y_freqs: { value: [70.75], unit: MHz }
   TW_y_power: { value: 33, unit: dBm }
+  TW_y_use_dds: { value: False, unit: bool }
   do_cooling_while_rearrange: { value: False, unit: bool }
   do_rearrange_position_check: { value: False, unit: bool }
   do_rearrangement: { value: False, unit: bool }
