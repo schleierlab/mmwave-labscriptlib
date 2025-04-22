@@ -580,6 +580,7 @@ class TweezerLaser:
 
     tweezer_power: float
     spectrum_mode: Literal['sequence', 'fifo']
+    tw_y_use_dds: bool
 
     def __init__(self, t, tweezer_power: float, spectrum_mode: Literal['sequence', 'fifo'], tw_y_use_dds: bool):
         """Initialize the tweezer laser system.
