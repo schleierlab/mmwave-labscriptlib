@@ -621,15 +621,17 @@ class TweezerLaser:
         Args:
             t (float): Time to stop the tweezers
         """
-        # stop tweezers
-        spectrum_manager.stop_tweezers(t)
+        if self.spectrum_mode == 'sequence':
+            # stop tweezers
+            spectrum_manager.stop_tweezers(t)
 
-        # dummy segment, need this to stop tweezers due to spectrum card bug
-        spectrum_manager.start_tweezers(t)
-        t += 2e-3
-        spectrum_manager.stop_tweezers(t)
-        spectrum_manager.stop_card(t)
-        # print("tweezers have been stopped... for good...")
+            # dummy segment, need this to stop tweezers due to spectrum card bug
+            spectrum_manager.start_tweezers(t)
+            t += 2e-3
+            spectrum_manager.stop_tweezers(t)
+            spectrum_manager.stop_card(t)
+        elif self.spectrum_mode == 'fifo':
+            spectrum_manager_fifo.stop_tweezers(t)
         return t
 
     def intensity_servo_keep_on(self, t):
