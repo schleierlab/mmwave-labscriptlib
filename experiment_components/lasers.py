@@ -14,10 +14,6 @@ from labscriptlib.calibration import (
 from labscriptlib.connection_table import devices
 from labscriptlib.spectrum_manager import spectrum_manager
 from labscriptlib.spectrum_manager_fifo import spectrum_manager_fifo
-from labscriptlib.shot_globals import shot_globals
-
-# from spectrum_manager_fifo import spectrum_manager_fifo
-
 
 class ShutterConfig(Flag):
     """Configuration flags for controlling various shutters in the experimental setup.
@@ -582,7 +578,7 @@ class TweezerLaser:
     spectrum_mode: Literal['sequence', 'fifo']
     tw_y_use_dds: bool
 
-    def __init__(self, t, tweezer_power: float, spectrum_mode: Literal['sequence', 'fifo'], tw_y_use_dds: bool):
+    def __init__(self, t, tweezer_power: float, spectrum_mode: Literal['sequence', 'fifo'], tw_y_use_dds: bool, tw_y_freq):
         """Initialize the tweezer laser system.
 
         Args:
@@ -591,6 +587,7 @@ class TweezerLaser:
         self.tweezer_power = tweezer_power
         self.spectrum_mode = spectrum_mode
         self.tw_y_use_dds = tw_y_use_dds
+        self.tw_y_freq = tw_y_freq
 
         # self.intensity_servo_keep_on(t)
         self.start_tweezers(t)
@@ -613,7 +610,7 @@ class TweezerLaser:
             raise ValueError("The spectrum_mode should only be sequence or fifo mode")
 
         if self.tw_y_use_dds:
-            devices.dds0.synthesize(t+1e-3, freq = shot_globals.TW_y_freqs, amp = 0.95, ph = 0) # unit: MHz
+            devices.dds0.synthesize(t+1e-3, freq = self.tw_y_freq, amp = 0.95, ph = 0) # unit: MHz
         self.aom_on(t, self.tweezer_power)
 
     def stop_tweezers(self, t):

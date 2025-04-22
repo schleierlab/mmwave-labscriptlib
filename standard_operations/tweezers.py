@@ -24,9 +24,12 @@ class TweezerOperations(OpticalPumpingOperations):
 
         spectrum_mode = 'sequence' if shot_globals.do_sequence_mode else 'fifo'
         tw_y_use_dds = shot_globals.TW_y_use_dds
-        # DDS parameters need to be set in start_tweezers function in lasers.py.
-        # Do we want to move it here since we are trying to not keep any globals in lasers.py?
-        self.TweezerLaser_obj = TweezerLaser(t, shot_globals.tw_power, spectrum_mode, tw_y_use_dds)
+        if tw_y_use_dds:
+            tw_y_freq = shot_globals.TW_y_freq
+        else:
+            tw_y_freq = None
+        # other DDS parameters need to be set in start_tweezers function in lasers.py.
+        self.TweezerLaser_obj = TweezerLaser(t, shot_globals.tw_power, spectrum_mode, tw_y_use_dds, tw_y_freq)
 
     def ramp_to_imaging_parameters(self, t):
         """Configure laser parameters for imaging or additional cooling.
