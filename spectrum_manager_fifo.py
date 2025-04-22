@@ -5,9 +5,9 @@ Modified from Rydberg lab spectrum_manager_fifo.py
 Created on March 25th 2024
 """
 import labscript
-from connection_table import devices
+from labscriptlib.connection_table import devices
 import numpy as np
-from tweezers_phaseAmplitudeAdjustment import trap_phase, trap_amplitude
+from labscriptlib.tweezers_phaseAmplitudeAdjustment import trap_phase, trap_amplitude
 from labscriptlib.shot_globals import shot_globals
 
 devices.initialize()

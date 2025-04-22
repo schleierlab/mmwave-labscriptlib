@@ -13,6 +13,8 @@ from labscriptlib.calibration import (
 )
 from labscriptlib.connection_table import devices
 from labscriptlib.spectrum_manager import spectrum_manager
+from labscriptlib.spectrum_manager_fifo import spectrum_manager_fifo
+from labscriptlib.shot_globals import shot_globals
 
 # from spectrum_manager_fifo import spectrum_manager_fifo
 
@@ -597,13 +599,21 @@ class TweezerLaser:
         Args:
             t (float): Time to start the tweezers
         """
-        if self.spectrum_mode != 'sequence':
-            raise ValueError(
-                'global `do_sequence_mode` is currently False, running Fifo mode now. '
-                'Set to True for sequence mode',
-            )
-        spectrum_manager.start_card()
-        spectrum_manager.start_tweezers(t)
+        # if self.spectrum_mode != 'sequence':0.95
+        #     raise ValueError(
+        #         'global `do_sequence_mode` is currently False, running Fifo mode now. '
+        #         'Set to True for sequence mode',
+        #     )
+        if self.spectrum_mode == 'sequence':
+            spectrum_manager.start_card()
+            spectrum_manager.start_tweezers(t)
+        elif self.spectrum_mode == 'fifo':
+            spectrum_manager_fifo.start_tweezer_card()
+            spectrum_manager_fifo.start_tweezers(t)
+        else:
+            raise ValueError("The spectrum_mode should only be sequence or fifo mode")
+
+        devices.dds0.synthesize(t+1e-3, freq = shot_globals.TW_y_freqs, amp = 0.95, ph = 0) # unit: MHz
         self.aom_on(t, self.tweezer_power)
 
     def stop_tweezers(self, t):
