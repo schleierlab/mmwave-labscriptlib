@@ -16,7 +16,7 @@ from labscriptlib.shot_globals import shot_globals
 if not shot_globals.TW_y_use_dds:
     TW_y_channel = True # use spectrum card instead of dds for tweezer y channel
 else:
-    TW_y_channel = False
+    TW_y_channel = False # use dds for tweezer y channel
 devices.initialize()
 
 class SpectrumManager():
