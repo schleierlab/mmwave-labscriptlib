@@ -32,7 +32,8 @@ class SpectrumManagerFifo():
         self.outputting_tw = False
 
         # we need to declare some runmanager variables as global so that we can reference them later
-        TW_x_freqs = shot_globals.TW_x_freqs
+        TW_x_freqs = np.asarray(shot_globals.TW_x_freqs)
+
         TW_x_power = 33.2 # Translated from old runmanager settings
         TW_x_amplitude = 1.0 # Translated from old runmanager settings
         # TW_y_freqs = shot_globals.TW_y_freqs

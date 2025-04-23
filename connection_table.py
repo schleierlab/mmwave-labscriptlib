@@ -8,8 +8,8 @@ from labscript_devices.PulseBlasterESRPro500 import PulseBlasterESRPro500
 from user_devices.DDS.AD9914 import AD9914
 
 from user_devices.DDS.AD_DDS import AD_DDS
-from user_devices.spcm.Spectrum_bk import Spectrum # Use Spectrum.py for sequence mode
-# from user_devices.spcm.Spectrum import Spectrum # Use Spectrum.py for fifo mode. The correct server to use is now spectrum_server_0_fifo
+# from user_devices.spcm.Spectrum_bk import Spectrum # Use Spectrum.py for sequence mode
+from user_devices.spcm.Spectrum import Spectrum # Use Spectrum.py for fifo mode. The correct server to use is now spectrum_server_0_fifo
 # TODO need to fix the issues in Spectrum for it to be able to run both fifo and sequence mode
 
 from user_devices.manta419b.manta419b import Manta419B  # noqa:F401
@@ -557,21 +557,21 @@ class LabDevices():
         # #==============================================================================
 
         # commenting out because 9914 temporarily not working 4/7
-        ad9914_1 = AD9914('AD9914_1', parent_device=clockline_6363, com_port=54320)
-        self.dds1 = AD_DDS(
-            name='dds1',
-            parent_device=ad9914_1,
-            connection='p1',
-            profileControls = {
-                'PS0': {'device': ni_6363_0, 'connection': 'port0/line27'},
-                'PS1': {'device': ni_6363_0, 'connection': 'port0/line28'},
-                'PS2': {'device': ni_6363_0, 'connection': 'port0/line29'},
-            },
-            sweepControls = {
-                'DRCTL': {'device': ni_6363_0, 'connection': 'port0/line30'},
-                'DRHOLD': {'device': ni_6363_0, 'connection': 'port0/line31'},
-            },
-        )
+        # ad9914_1 = AD9914('AD9914_1', parent_device=clockline_6363, com_port=54320)
+        # self.dds1 = AD_DDS(
+        #     name='dds1',
+        #     parent_device=ad9914_1,
+        #     connection='p1',
+        #     profileControls = {
+        #         'PS0': {'device': ni_6363_0, 'connection': 'port0/line27'},
+        #         'PS1': {'device': ni_6363_0, 'connection': 'port0/line28'},
+        #         'PS2': {'device': ni_6363_0, 'connection': 'port0/line29'},
+        #     },
+        #     sweepControls = {
+        #         'DRCTL': {'device': ni_6363_0, 'connection': 'port0/line30'},
+        #         'DRHOLD': {'device': ni_6363_0, 'connection': 'port0/line31'},
+        #     },
+        # )
 
     # def checkChannelParity(device):
     #     analogs = {}
