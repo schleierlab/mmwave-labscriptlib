@@ -599,7 +599,7 @@ class TweezerLaser:
             t (float): Time to start the tweezers
         """
         if self.spectrum_mode == 'sequence':
-            spectrum_manager.start_card()
+            spectrum_manager.start_tweezer_card()
             spectrum_manager.start_tweezers(t)
         elif self.spectrum_mode == 'fifo':
             spectrum_manager_fifo.start_tweezer_card()
@@ -627,9 +627,10 @@ class TweezerLaser:
             spectrum_manager.start_tweezers(t)
             t += 2e-3
             spectrum_manager.stop_tweezers(t)
-            spectrum_manager.stop_card(t)
+            spectrum_manager.stop_tweezer_card()
         elif self.spectrum_mode == 'fifo':
             spectrum_manager_fifo.stop_tweezers(t)
+            spectrum_manager_fifo.stop_tweezer_card()
         return t
 
     def intensity_servo_keep_on(self, t):

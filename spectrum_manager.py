@@ -27,7 +27,7 @@ class SpectrumManager():
     started = False
     outputting = False
 
-    def start_card(self):
+    def start_tweezer_card(self):
         # reset state variables
         self.started = False
         self.outputting = False
@@ -127,6 +127,10 @@ class SpectrumManager():
 
         return
 
+    def stop_tweezer_card(self):
+        assert not self.outputting, 'SpectrumManager: output must be stopped before card is stopped'
+        devices.spectrum_0.stop()
+
     def start_tweezers(self, t):
         assert self.started, 'SpectrumManager: must run prepare() before start()'
         assert not self.outputting, 'SpectrumManager: output has already been started'
@@ -145,10 +149,6 @@ class SpectrumManager():
             self.y_key = self.y_key + "0"
         self.outputting = False
         return t
-
-    def stop_card(self, t):
-        assert not self.outputting, 'SpectrumManager: output must be stopped before card is stopped'
-        devices.spectrum_0.stop()
 
     # def move_tweezers(self, t, loops=1):
     #     #add 0-64 ns variable delay here
