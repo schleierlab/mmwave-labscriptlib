@@ -535,22 +535,22 @@ class LabDevices():
         # #==============================================================================
         # # Y AOD DDS: AD9914 0
         # #==============================================================================
-        # ad99140 = AD9914('AD99140', parent_device=clockline_6363, com_port=54322)
-        # self.dds0 = AD_DDS(
-        #     name='dds0',
-        #     parent_device=ad99140,
-        #     connection='p0',
-        #     profileControls ={
-        #         'PS0': {'device': ni_6363_0, 'connection': 'port0/line27'},
-        #         'PS1': {'device': ni_6363_0, 'connection': 'port0/line28'},
-        #         'PS2': {'device': ni_6363_0, 'connection': 'port0/line29'},
-        #     },
-        #     sweepControls = {
-        #         'DRCTL': {'device': ni_6363_0, 'connection': 'port0/line30'},
-        #         'DRHOLD': {'device': ni_6363_0, 'connection': 'port0/line31'},
-        #     },
+        ad99140 = AD9914('AD99140', parent_device=clockline_6363, com_port=54322)
+        self.dds0 = AD_DDS(
+            name='dds0',
+            parent_device=ad99140,
+            connection='p0',
+            profileControls ={
+                'PS0': {'device': ni_6363_0, 'connection': 'port0/line27'},
+                'PS1': {'device': ni_6363_0, 'connection': 'port0/line28'},
+                'PS2': {'device': ni_6363_0, 'connection': 'port0/line29'},
+            },
+            sweepControls = {
+                'DRCTL': {'device': ni_6363_0, 'connection': 'port0/line30'},
+                'DRHOLD': {'device': ni_6363_0, 'connection': 'port0/line31'},
+            },
 
-        # )
+        )
         # #==============================================================================
         # # 456 DDS: AD9914 1
         # #==============================================================================

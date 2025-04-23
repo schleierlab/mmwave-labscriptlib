@@ -15,7 +15,8 @@ from labscriptlib.shot_globals import shot_globals
 
 if not shot_globals.TW_y_use_dds:
     TW_y_channel = True # use spectrum card instead of dds for tweezer y channel
-
+else:
+    TW_y_channel = False
 devices.initialize()
 
 class SpectrumManager():
@@ -37,23 +38,31 @@ class SpectrumManager():
         #print(f"TW_x_freqs = {TW_x_freqs}")
         TW_x_power = 33 # Translated from old runmanager settings
         TW_x_amplitude = 0.99 # Translated from old runmanager settings
+        TW_maxPulses = shot_globals.TW_maxPulses
+        TW_loopDuration = shot_globals.TW_loopDuration
+
         if TW_y_channel:
             TW_y_freqs = np.asarray(shot_globals.TW_y_freqs)
             TW_y_freqs = np.array([TW_y_freqs])
             TW_y_power = shot_globals.TW_y_power
             TW_y_amplitude = shot_globals.TW_y_amplitude
-        TW_maxPulses = shot_globals.TW_maxPulses
-        TW_loopDuration = shot_globals.TW_loopDuration
-
-        # set the card mode
-        devices.spectrum_0.set_mode(
-            replay_mode=b'sequence',
-            channels = [
+            channel_setting = [
                         {'name': 'Tweezer_X', 'power': TW_x_power, 'port': 0, 'is_amplified':True,
                          'amplifier': 1, 'calibration_power': 12, 'power_mode': 'constant_total', 'max_pulses':TW_maxPulses},
                         {'name': 'Tweezer_Y', 'power': TW_y_power, 'port': 1, 'is_amplified':True,
                          'amplifier': 2, 'calibration_power': 12, 'power_mode': 'constant_total', 'max_pulses':TW_maxPulses}
-                        ],
+                        ]
+        else:
+            channel_setting = [
+                        {'name': 'Tweezer_X', 'power': TW_x_power, 'port': 0, 'is_amplified':True,
+                         'amplifier': 1, 'calibration_power': 12, 'power_mode': 'constant_total', 'max_pulses':TW_maxPulses},
+                        ]
+
+
+        # set the card mode
+        devices.spectrum_0.set_mode(
+            replay_mode=b'sequence',
+            channels = channel_setting,
             clock_freq = 625,#625,
             use_ext_clock = True,
             export_data = False,

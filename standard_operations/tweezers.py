@@ -25,7 +25,7 @@ class TweezerOperations(OpticalPumpingOperations):
         spectrum_mode = 'sequence' if shot_globals.do_sequence_mode else 'fifo'
         tw_y_use_dds = shot_globals.TW_y_use_dds
         if tw_y_use_dds:
-            tw_y_freq = shot_globals.TW_y_freq
+            tw_y_freq = shot_globals.TW_y_freqs
         else:
             tw_y_freq = None
         # other DDS parameters need to be set in start_tweezers function in lasers.py.
