@@ -7,13 +7,14 @@ from labscript_devices.NI_DAQmx.models.NI_PXIe_6363 import NI_PXIe_6363
 from labscript_devices.PulseBlasterESRPro500 import PulseBlasterESRPro500
 from user_devices.DDS.AD9914 import AD9914
 
-# from user_devices.spcm.Spectrum import Spectrum
 from user_devices.DDS.AD_DDS import AD_DDS
+from user_devices.spcm.Spectrum_bk import Spectrum # Use Spectrum.py for sequence mode
+# from user_devices.spcm.Spectrum import Spectrum # Use Spectrum.py for fifo mode. The correct server to use is now spectrum_server_0_fifo
+# TODO need to fix the issues in Spectrum for it to be able to run both fifo and sequence mode
 
 from user_devices.manta419b.manta419b import Manta419B  # noqa:F401
 from user_devices.kinetix.Kinetix import Kinetix  # noqa:F401
 from user_devices.NI_PXIe_6739 import NI_PXIe_6739
-from user_devices.spcm.Spectrum_bk import Spectrum
 
 # please name devices with lower_case_with_underscores (uwave_absorp_switch)
 # NOT Capitalized_Words_With_Underscores

@@ -655,9 +655,8 @@ amp_dictionaries = [amp_dict_22, amp_dict_21, amp_dict_20, amp_dict_19, amp_dict
 
 def trap_phase(frequencies):
     frequencies = [float(i) for i in frequencies]
-    #print(f"TW_x_freqs = {frequencies}")
     frequencies.sort()
-    print('freq = ',frequencies)
+    # print('freq = ',frequencies)
 
     phases = None
     for phase_dict in phase_dictionaries:
@@ -667,9 +666,9 @@ def trap_phase(frequencies):
 
         # print('frequencies - dkeys: ', np.array(np.round(frequencies,2)- np.array(np.round(d_keys,2))))
         try:
-            if np.all(np.round(frequencies,6) == d_keys): #  #
-                print('frequencies: ', frequencies)
-                print('d_keys:', d_keys)
+            if np.all(np.round(frequencies,6) == d_keys):
+                # print('frequencies: ', frequencies)
+                # print('d_keys:', d_keys)
                 phases = [phase_dict[i] for i in np.round(frequencies,6)]
                 break
                 # else:
