@@ -8,9 +8,9 @@ from labscript_devices.PulseBlasterESRPro500 import PulseBlasterESRPro500
 from user_devices.DDS.AD9914 import AD9914
 
 from user_devices.DDS.AD_DDS import AD_DDS
-# from user_devices.spcm.Spectrum_bk import Spectrum # Use Spectrum.py for sequence mode
-from user_devices.spcm.Spectrum import Spectrum # Use Spectrum.py for fifo mode. The correct server to use is now spectrum_server_0_fifo
-# TODO need to fix the issues in Spectrum for it to be able to run both fifo and sequence mode
+# from user_devices.spcm.Spectrum_sequence import Spectrum # Use Spectrum.py for when we don't run tweezer or when we run sequence mode. This is the old Spectrum.py code before we added fifo capability
+from user_devices.spcm.Spectrum import Spectrum # Use Spectrum.py for fifo mode or sequence mode.
+# TODO need to fix the issues in Spectrum for it to be able to run when we don't assign any waveform to specturm card
 
 from user_devices.manta419b.manta419b import Manta419B  # noqa:F401
 from user_devices.kinetix.Kinetix import Kinetix  # noqa:F401
