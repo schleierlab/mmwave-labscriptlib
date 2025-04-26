@@ -255,6 +255,7 @@ class TweezerOperations(OpticalPumpingOperations):
         t = self.image_tweezers(t, shot_number=1)
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
+        t += shot_globals.img_wait_time_between_shots
 
         self.TweezerLaser_obj.aom_off(t)
         t, _ = self.kill_all(t, close_all_shutters=False)
