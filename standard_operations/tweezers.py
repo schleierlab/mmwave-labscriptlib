@@ -250,7 +250,7 @@ class TweezerOperations(OpticalPumpingOperations):
 
         return t
 
-    def _do_tweezer_check(self, t, check_with_vimba = False) -> float:
+    def _do_tweezer_check(self, t, check_rearrangement_position = False) -> float:
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
         t += shot_globals.img_wait_time_between_shots
@@ -264,8 +264,8 @@ class TweezerOperations(OpticalPumpingOperations):
         t = self.image_tweezers(t, shot_number=3)
         t = self.reset_mot(t)
 
-        # Here is the check with vimba to make sure the tweezer rearrangement waveform is correct
-        if check_with_vimba:
+        # Here is the check with manta camera to make sure the tweezer rearrangement waveform is correct
+        if check_rearrangement_position:
             t_rearrangement = (
                 t
                 - shot_globals.TW_rearrangement_time_offset
