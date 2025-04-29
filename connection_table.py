@@ -210,11 +210,11 @@ class LabDevices():
         )
 
         # Dummy digital out to keep even number for Blacs
-        self.digital_out_ch22 = DigitalOut(
-            name='digital_out_ch22',
-            parent_device=ni_6363_0,
-            connection='port0/line22',
-        )
+        # self.digital_out_ch22 = DigitalOut(
+        #     name='digital_out_ch22',
+        #     parent_device=ni_6363_0,
+        #     connection='port0/line22',
+        # )
 
         self.mmwave_switch = DigitalOut(
             name='mmwave_switch',
@@ -436,9 +436,9 @@ class LabDevices():
             connection='ao29'
         )
 
-        self.runner = labscript_devices.FunctionRunner.labscript_devices.FunctionRunner(
-            name = 'runner'
-        )
+        # self.runner = labscript_devices.FunctionRunner.labscript_devices.FunctionRunner(
+        #     name = 'runner'
+        # )
 
         #==============================================================================
         # Analog Inputs
@@ -462,12 +462,12 @@ class LabDevices():
         #     BIAS_port=54321,
         # )
 
-        # self.manta419b_tweezer = Manta419B(
-        #     'manta419b_tweezer',
-        #     parent_device=ni_6363_0,
-        #     connection="port0/line13",
-        #     BIAS_port=54324,
-        # )
+        self.manta419b_tweezer = Manta419B(
+            'manta419b_tweezer',
+            parent_device=ni_6363_0,
+            connection="port0/line13",
+            BIAS_port=54324,
+        )
 
         # self.manta419b_blue_laser = Manta419B(
         #     'manta419b_blue_laser',
