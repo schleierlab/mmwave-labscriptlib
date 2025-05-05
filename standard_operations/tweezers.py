@@ -254,6 +254,7 @@ class TweezerOperations(OpticalPumpingOperations):
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
         # t += shot_globals.img_wait_time_between_shots
+        #TODO: the bare time 95ms needs to be replaced in the future with a global
         t += 95e-3
         t = self.image_tweezers(t, shot_number=2)
         t += shot_globals.img_wait_time_between_shots
