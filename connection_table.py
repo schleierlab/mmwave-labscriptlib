@@ -7,13 +7,14 @@ from labscript_devices.NI_DAQmx.models.NI_PXIe_6363 import NI_PXIe_6363
 from labscript_devices.PulseBlasterESRPro500 import PulseBlasterESRPro500
 from user_devices.DDS.AD9914 import AD9914
 
-# from user_devices.spcm.Spectrum import Spectrum
 from user_devices.DDS.AD_DDS import AD_DDS
+# from user_devices.spcm.Spectrum_sequence import Spectrum # Use Spectrum.py for when we don't run tweezers or when we run sequence mode. This is the old Spectrum.py code before we added fifo capability
+from user_devices.spcm.Spectrum import Spectrum # Use Spectrum.py for fifo mode or sequence mode. This doesn't work when we don't run tweezers.
+# TODO need to fix the issues in Spectrum for it to be able to run when we don't assign any waveform to specturm card
 
 from user_devices.manta419b.manta419b import Manta419B  # noqa:F401
 from user_devices.kinetix.Kinetix import Kinetix  # noqa:F401
 from user_devices.NI_PXIe_6739 import NI_PXIe_6739
-from user_devices.spcm.Spectrum_bk import Spectrum
 
 # please name devices with lower_case_with_underscores (uwave_absorp_switch)
 # NOT Capitalized_Words_With_Underscores
@@ -435,9 +436,9 @@ class LabDevices():
             connection='ao29'
         )
 
-        self.runner = labscript_devices.FunctionRunner.labscript_devices.FunctionRunner(
-            name = 'runner'
-        )
+        # self.runner = labscript_devices.FunctionRunner.labscript_devices.FunctionRunner(
+        #     name = 'runner'
+        # )
 
         #==============================================================================
         # Analog Inputs
@@ -535,33 +536,12 @@ class LabDevices():
         # #==============================================================================
         # # Y AOD DDS: AD9914 0
         # #==============================================================================
-        # ad99140 = AD9914('AD99140', parent_device=clockline_6363, com_port=54322)
-        # self.dds0 = AD_DDS(
-        #     name='dds0',
-        #     parent_device=ad99140,
-        #     connection='p0',
-        #     profileControls ={
-        #         'PS0': {'device': ni_6363_0, 'connection': 'port0/line27'},
-        #         'PS1': {'device': ni_6363_0, 'connection': 'port0/line28'},
-        #         'PS2': {'device': ni_6363_0, 'connection': 'port0/line29'},
-        #     },
-        #     sweepControls = {
-        #         'DRCTL': {'device': ni_6363_0, 'connection': 'port0/line30'},
-        #         'DRHOLD': {'device': ni_6363_0, 'connection': 'port0/line31'},
-        #     },
-
-        # )
-        # #==============================================================================
-        # # 456 DDS: AD9914 1
-        # #==============================================================================
-
-        # commenting out because 9914 temporarily not working 4/7
-        ad9914_1 = AD9914('AD9914_1', parent_device=clockline_6363, com_port=54320)
-        self.dds1 = AD_DDS(
-            name='dds1',
-            parent_device=ad9914_1,
-            connection='p1',
-            profileControls = {
+        ad99140 = AD9914('AD99140', parent_device=clockline_6363, com_port=54322)
+        self.dds0 = AD_DDS(
+            name='dds0',
+            parent_device=ad99140,
+            connection='p0',
+            profileControls ={
                 'PS0': {'device': ni_6363_0, 'connection': 'port0/line27'},
                 'PS1': {'device': ni_6363_0, 'connection': 'port0/line28'},
                 'PS2': {'device': ni_6363_0, 'connection': 'port0/line29'},
@@ -570,7 +550,28 @@ class LabDevices():
                 'DRCTL': {'device': ni_6363_0, 'connection': 'port0/line30'},
                 'DRHOLD': {'device': ni_6363_0, 'connection': 'port0/line31'},
             },
+
         )
+        # #==============================================================================
+        # # 456 DDS: AD9914 1
+        # #==============================================================================
+
+        # commenting out because 9914 temporarily not working 4/7
+        # ad9914_1 = AD9914('AD9914_1', parent_device=clockline_6363, com_port=54320)
+        # self.dds1 = AD_DDS(
+        #     name='dds1',
+        #     parent_device=ad9914_1,
+        #     connection='p1',
+        #     profileControls = {
+        #         'PS0': {'device': ni_6363_0, 'connection': 'port0/line27'},
+        #         'PS1': {'device': ni_6363_0, 'connection': 'port0/line28'},
+        #         'PS2': {'device': ni_6363_0, 'connection': 'port0/line29'},
+        #     },
+        #     sweepControls = {
+        #         'DRCTL': {'device': ni_6363_0, 'connection': 'port0/line30'},
+        #         'DRHOLD': {'device': ni_6363_0, 'connection': 'port0/line31'},
+        #     },
+        # )
 
     # def checkChannelParity(device):
     #     analogs = {}

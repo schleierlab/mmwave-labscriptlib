@@ -5,9 +5,9 @@ Modified from Rydberg lab spectrum_manager_fifo.py
 Created on March 25th 2024
 """
 import labscript
-from connection_table import devices
+from labscriptlib.connection_table import devices
 import numpy as np
-from tweezers_phaseAmplitudeAdjustment import trap_phase, trap_amplitude
+from labscriptlib.tweezers_phaseAmplitudeAdjustment import trap_phase, trap_amplitude
 from labscriptlib.shot_globals import shot_globals
 
 devices.initialize()
@@ -32,7 +32,8 @@ class SpectrumManagerFifo():
         self.outputting_tw = False
 
         # we need to declare some runmanager variables as global so that we can reference them later
-        TW_x_freqs = shot_globals.TW_x_freqs
+        TW_x_freqs = np.asarray(shot_globals.TW_x_freqs)
+
         TW_x_power = 33.2 # Translated from old runmanager settings
         TW_x_amplitude = 1.0 # Translated from old runmanager settings
         # TW_y_freqs = shot_globals.TW_y_freqs

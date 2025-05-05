@@ -13,8 +13,10 @@ from labscriptlib.tweezers_phaseAmplitudeAdjustment import trap_phase, trap_ampl
 from labscriptlib.connection_table import devices
 from labscriptlib.shot_globals import shot_globals
 
-TW_y_channel = True
-
+if not shot_globals.TW_y_use_dds:
+    TW_y_channel = True # use spectrum card instead of dds for tweezer y channel
+else:
+    TW_y_channel = False # use dds for tweezer y channel
 devices.initialize()
 
 class SpectrumManager():
@@ -25,7 +27,7 @@ class SpectrumManager():
     started = False
     outputting = False
 
-    def start_card(self):
+    def start_tweezer_card(self):
         # reset state variables
         self.started = False
         self.outputting = False
@@ -36,23 +38,31 @@ class SpectrumManager():
         #print(f"TW_x_freqs = {TW_x_freqs}")
         TW_x_power = 33 # Translated from old runmanager settings
         TW_x_amplitude = 0.99 # Translated from old runmanager settings
+        TW_maxPulses = shot_globals.TW_maxPulses
+        TW_loopDuration = shot_globals.TW_loopDuration
+
         if TW_y_channel:
             TW_y_freqs = np.asarray(shot_globals.TW_y_freqs)
             TW_y_freqs = np.array([TW_y_freqs])
             TW_y_power = shot_globals.TW_y_power
             TW_y_amplitude = shot_globals.TW_y_amplitude
-        TW_maxPulses = shot_globals.TW_maxPulses
-        TW_loopDuration = shot_globals.TW_loopDuration
-
-        # set the card mode
-        devices.spectrum_0.set_mode(
-            replay_mode=b'sequence',
-            channels = [
+            channel_setting = [
                         {'name': 'Tweezer_X', 'power': TW_x_power, 'port': 0, 'is_amplified':True,
                          'amplifier': 1, 'calibration_power': 12, 'power_mode': 'constant_total', 'max_pulses':TW_maxPulses},
                         {'name': 'Tweezer_Y', 'power': TW_y_power, 'port': 1, 'is_amplified':True,
                          'amplifier': 2, 'calibration_power': 12, 'power_mode': 'constant_total', 'max_pulses':TW_maxPulses}
-                        ],
+                        ]
+        else:
+            channel_setting = [
+                        {'name': 'Tweezer_X', 'power': TW_x_power, 'port': 0, 'is_amplified':True,
+                         'amplifier': 1, 'calibration_power': 12, 'power_mode': 'constant_total', 'max_pulses':TW_maxPulses},
+                        ]
+
+
+        # set the card mode
+        devices.spectrum_0.set_mode(
+            replay_mode=b'sequence',
+            channels = channel_setting,
             clock_freq = 625,#625,
             use_ext_clock = True,
             export_data = False,
@@ -117,6 +127,10 @@ class SpectrumManager():
 
         return
 
+    def stop_tweezer_card(self):
+        assert not self.outputting, 'SpectrumManager: output must be stopped before card is stopped'
+        devices.spectrum_0.stop()
+
     def start_tweezers(self, t):
         assert self.started, 'SpectrumManager: must run prepare() before start()'
         assert not self.outputting, 'SpectrumManager: output has already been started'
@@ -135,10 +149,6 @@ class SpectrumManager():
             self.y_key = self.y_key + "0"
         self.outputting = False
         return t
-
-    def stop_card(self, t):
-        assert not self.outputting, 'SpectrumManager: output must be stopped before card is stopped'
-        devices.spectrum_0.stop()
 
     # def move_tweezers(self, t, loops=1):
     #     #add 0-64 ns variable delay here

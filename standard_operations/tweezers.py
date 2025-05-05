@@ -23,7 +23,13 @@ class TweezerOperations(OpticalPumpingOperations):
         super(TweezerOperations, self).__init__(t)
 
         spectrum_mode = 'sequence' if shot_globals.do_sequence_mode else 'fifo'
-        self.TweezerLaser_obj = TweezerLaser(t, shot_globals.tw_power, spectrum_mode)
+        tw_y_use_dds = shot_globals.TW_y_use_dds
+        if tw_y_use_dds:
+            tw_y_freq = shot_globals.TW_y_freqs
+        else:
+            tw_y_freq = None
+        # other DDS parameters need to be set in start_tweezers function in lasers.py.
+        self.TweezerLaser_obj = TweezerLaser(t, shot_globals.tw_power, spectrum_mode, tw_y_use_dds, tw_y_freq)
 
     def ramp_to_imaging_parameters(self, t):
         """Configure laser parameters for imaging or additional cooling.
@@ -244,11 +250,14 @@ class TweezerOperations(OpticalPumpingOperations):
 
         return t
 
-    def _do_tweezer_check(self, t) -> float:
+    def _do_tweezer_check(self, t, check_rearrangement_position = False) -> float:
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
-        t += shot_globals.img_wait_time_between_shots
+        # t += shot_globals.img_wait_time_between_shots
+        #TODO: the bare time 95ms needs to be replaced in the future with a global
+        t += 95e-3
         t = self.image_tweezers(t, shot_number=2)
+        t += shot_globals.img_wait_time_between_shots
 
         self.TweezerLaser_obj.aom_off(t)
         t, _ = self.kill_all(t, close_all_shutters=False)
@@ -256,6 +265,17 @@ class TweezerOperations(OpticalPumpingOperations):
 
         t = self.image_tweezers(t, shot_number=3)
         t = self.reset_mot(t)
+
+        # Here is the check with manta camera to make sure the tweezer rearrangement waveform is correct
+        if check_rearrangement_position:
+            t_rearrangement = (
+                t
+                - shot_globals.TW_rearrangement_time_offset
+                + shot_globals.TW_rearrangement_fine_time_offset)
+
+            self.Camera_obj.set_type("tweezer_manta")
+            self.Camera_obj.expose(t_rearrangement,
+                                shot_globals.tw_exposure_time)
 
         return t
 

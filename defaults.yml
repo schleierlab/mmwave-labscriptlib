@@ -26,7 +26,7 @@ Bright_Molasses:
   bm_repump_power: { value: 1.0, unit: V }
   bm_robust_loading_pulse_dur: { value: 80e-3, unit: s }
   bm_ta_detuning: { value: -100, unit: MHz }
-  bm_ta_power: { value: 0.13, unit: V }
+  bm_ta_power: { value: 0.18, unit: V } # last updated 05/01/2025
   bm_time: { value: 10e-3, unit: s }
   bm_tof_imaging_delay: { value: 7e-3, unit: s }
   bm_beam_choice: { value: "\"mot\"", unit: "" } # "mot" or "img"
@@ -104,6 +104,7 @@ Tweezers:
   TW_y_amplitude: { value: 0.99, unit: ""}
   TW_y_freqs: { value: [70.75], unit: MHz }
   TW_y_power: { value: 33, unit: dBm }
+  TW_y_use_dds: { value: True, unit: bool }
   do_cooling_while_rearrange: { value: False, unit: bool }
   do_rearrange_position_check: { value: False, unit: bool }
   do_rearrangement: { value: False, unit: bool }
