@@ -753,7 +753,7 @@ class RydLasers:
         # Initialize 456nm laser detuning
         # the initial detuning every ramp start and end to
         self.detuning_456 = init_blue_detuning
-        devices.dds1.synthesize(t, freq = self.detuning_456, amp = 0.5, ph = 0)
+        # devices.dds1.synthesize(t, freq = self.detuning_456, amp = 0.5, ph = 0)
         # Initialize shutter state
         self.shutter_open = False
 
