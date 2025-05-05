@@ -26,7 +26,7 @@ Bright_Molasses:
   bm_repump_power: { value: 1.0, unit: V }
   bm_robust_loading_pulse_dur: { value: 80e-3, unit: s }
   bm_ta_detuning: { value: -100, unit: MHz }
-  bm_ta_power: { value: 0.13, unit: V }
+  bm_ta_power: { value: 0.18, unit: V } # last updated 05/01/2025
   bm_time: { value: 10e-3, unit: s }
   bm_tof_imaging_delay: { value: 7e-3, unit: s }
   bm_beam_choice: { value: "\"mot\"", unit: "" } # "mot" or "img"
