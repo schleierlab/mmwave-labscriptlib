@@ -253,11 +253,8 @@ class TweezerOperations(OpticalPumpingOperations):
     def _do_tweezer_check(self, t, check_rearrangement_position = False) -> float:
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
-        # t += shot_globals.img_wait_time_between_shots
-        #TODO: the bare time 95ms needs to be replaced in the future with a global
-        t += 95e-3
-        t = self.image_tweezers(t, shot_number=2)
         t += shot_globals.img_wait_time_between_shots
+        t = self.image_tweezers(t, shot_number=2)
 
         self.TweezerLaser_obj.aom_off(t)
         t, _ = self.kill_all(t, close_all_shutters=False)
@@ -275,7 +272,7 @@ class TweezerOperations(OpticalPumpingOperations):
 
             self.Camera_obj.set_type("tweezer_manta")
             self.Camera_obj.expose(t_rearrangement,
-                                shot_globals.tw_exposure_time)
+                                shot_globals.tw_manta_exposure_time)
 
         return t
 
