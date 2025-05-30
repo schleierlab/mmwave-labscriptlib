@@ -299,12 +299,12 @@ class TweezerOperations(OpticalPumpingOperations):
             t += 10
         else:
             t += 1e-3
-            t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
+            t = self.do_molasses_dipole_trap_imaging(t, exposure_time=shot_globals.tw_manta_exposure_time, close_all_shutters=True)
 
             # taking background images
             t += 1e-1
             self.TweezerLaser_obj.aom_off(t)
-            t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
+            t = self.do_molasses_dipole_trap_imaging(t, exposure_time=shot_globals.tw_manta_exposure_time, close_all_shutters=True)
             t += 1e-2
 
         t += 1
