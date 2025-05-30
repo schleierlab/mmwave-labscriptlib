@@ -181,6 +181,7 @@ Sequence:
   do_F4_microwave_spec_dipole_trap: { value: False, unit: bool }
   do_dipole_trap_B_calib: { value: False, unit: bool }
   do_dipole_trap_dark_state_measurement: { value: False, unit: bool }
+  do_dipole_trap_state_sensitive_img_check: { value: False, unit: bool }
   do_ryd_tweezer_check: { value: False, unit: bool }
   do_ryd_multipulse_check: { value: False, unit: bool }
   do_456_check: { value: False, unit: bool }
