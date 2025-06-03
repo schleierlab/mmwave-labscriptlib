@@ -438,6 +438,12 @@ class TweezerOperations(OpticalPumpingOperations):
         # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
+
+        self.TweezerLaser_obj.aom_off(t)
+        t, _ = self.kill_all(t, close_all_shutters=False)
+        self.TweezerLaser_obj.aom_on(t, const=1)
+
+        t = self.image_tweezers(t, shot_number=3)
         t = self.reset_mot(t)
 
         return t
@@ -473,7 +479,6 @@ class TweezerOperations(OpticalPumpingOperations):
             t, t_aom_off = self.pump_to_F4(
                 t, shot_globals.op_label, close_all_shutters=True
             )
-
 
         # Making sure the ramp ends right as the pumping is starting
         t_start_ramp = (
@@ -556,12 +561,11 @@ class TweezerOperations(OpticalPumpingOperations):
 
         t = self.image_tweezers(t, shot_number=2)
 
-        # TODO: the following code unlock the D2 laser, need to debug
-        # self.TweezerLaser_obj.aom_off(t)
-        # t, _ = self.kill_all(t, close_all_shutters=False)
-        # self.TweezerLaser_obj.aom_on(t, const=1)
-        # t = self.image_tweezers(t, shot_number=3) # take in shot background
+        self.TweezerLaser_obj.aom_off(t)
+        t, _ = self.kill_all(t, close_all_shutters=False)
+        self.TweezerLaser_obj.aom_on(t, const=1)
 
+        t = self.image_tweezers(t, shot_number=3)
         t = self.reset_mot(t)
 
         return t
