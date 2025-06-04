@@ -209,9 +209,9 @@ class TweezerOperations(OpticalPumpingOperations):
     def take_in_shot_background(self, t):
         """
         Taking background in the shot,
-        the tweezer will be turned off first
-        and a kill all pulse will be applied to remove all atoms
-        then tweezer back on for same imaging condition
+        the tweezers will be turned off first
+        and a kill all pulse will be applied to remove all atoms in F = 3 and 4
+        then tweezers are turned back on for the same imaging condition
         """
         self.TweezerLaser_obj.aom_off(t)
         t, _ = self.kill_all(t, close_all_shutters=False)
@@ -255,12 +255,7 @@ class TweezerOperations(OpticalPumpingOperations):
         t = self.image_tweezers(t, shot_number=1)
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
-
-        self.TweezerLaser_obj.aom_off(t)
-        t, _ = self.kill_all(t, close_all_shutters=False)
-        self.TweezerLaser_obj.aom_on(t, const=1)
-
-        t = self.image_tweezers(t, shot_number=3)
+        t = self.take_in_shot_background(t)
         t = self.reset_mot(t)
 
         # Here is the check with manta camera to make sure the tweezer rearrangement waveform is correct
@@ -439,11 +434,7 @@ class TweezerOperations(OpticalPumpingOperations):
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
 
-        self.TweezerLaser_obj.aom_off(t)
-        t, _ = self.kill_all(t, close_all_shutters=False)
-        self.TweezerLaser_obj.aom_on(t, const=1)
-
-        t = self.image_tweezers(t, shot_number=3)
+        t = self.take_in_shot_background(t)
         t = self.reset_mot(t)
 
         return t
@@ -561,11 +552,7 @@ class TweezerOperations(OpticalPumpingOperations):
 
         t = self.image_tweezers(t, shot_number=2)
 
-        self.TweezerLaser_obj.aom_off(t)
-        t, _ = self.kill_all(t, close_all_shutters=False)
-        self.TweezerLaser_obj.aom_on(t, const=1)
-
-        t = self.image_tweezers(t, shot_number=3)
+        t = self.take_in_shot_background(t)
         t = self.reset_mot(t)
 
         return t
