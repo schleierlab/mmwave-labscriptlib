@@ -219,6 +219,29 @@ class TweezerOperations(OpticalPumpingOperations):
         t = self.image_tweezers(t, shot_number=3)
         return t
 
+    def release_and_recapture(self, t):
+        """
+        Ramp trap down, turn trap off, then ramp trap back on.
+        Release atoms from tweezers and recapture them after a specified time.
+        Used for temperature measurement.
+        """
+        # ramp down the tweezer power to the loading power
+        t = self.TweezerLaser_obj.ramp_power(
+            t, shot_globals.tw_ramp_dur, shot_globals.tw_power
+        )
+
+        # turn traps off after a while and then turn them back on
+        self.TweezerLaser_obj.aom_off(t)
+        t+= shot_globals.tw_turn_off_time
+        self.TweezerLaser_obj.aom_on(t, const = shot_globals.tw_power)
+
+        # ramp tweezer power back to full power for imaging
+        t = self.TweezerLaser_obj.ramp_power(
+            t, shot_globals.tw_ramp_dur, final_power=1
+        )
+
+        return t
+
     def pump_then_rotate(self, t, B_field, polar = False):
         """Pumps to stretched state then rotates the field
         Also lowers the trap, but doesn't raise it back.
@@ -254,12 +277,13 @@ class TweezerOperations(OpticalPumpingOperations):
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
         t += shot_globals.img_wait_time_between_shots
+        if shot_globals.do_tw_release_and_recapture: # ramp and turn traps off for temperature measurement
+            t = self.release_and_recapture(t)
         t = self.image_tweezers(t, shot_number=2)
         t = self.take_in_shot_background(t)
         t = self.reset_mot(t)
 
-        # Here is the check with manta camera to make sure the tweezer rearrangement waveform is correct
-        if check_rearrangement_position:
+        if check_rearrangement_position: #check with manta camera to make sure the tweezer rearrangement waveform is correct
             t_rearrangement = (
                 t
                 - shot_globals.TW_rearrangement_time_offset
@@ -305,17 +329,6 @@ class TweezerOperations(OpticalPumpingOperations):
         t += 1
 
         return t
-
-    def _tweezer_release_recapture_sequence(self, t):
-        """Execute a release and recapture sequence.
-
-        Not yet implemented. Will provide functionality to release atoms
-        from tweezers and recapture them after a specified time.
-
-        Args:
-            t (float): Start time for the sequence
-        """
-        raise NotImplementedError
 
     def _tweezer_modulation_sequence(self, t):
         """Execute a tweezer modulation sequence.

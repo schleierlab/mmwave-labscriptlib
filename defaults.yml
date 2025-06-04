@@ -110,7 +110,8 @@ Tweezers:
   do_rearrangement: { value: False, unit: bool }
   do_sequence_mode: { value: True, unit: bool }
   do_tw_power_ramp: { value: False, unit: bool }
-  do_tw_trap_off: { value: True, unit: bool }
+  do_tw_release_and_recapture: { value: False, unit: bool }
+  do_tw_trap_off: { value: True, unit: bool } # This one is used in rydberg
   do_tweezer_modulation: { value: False, unit: bool }
   do_tweezers: { value: True, unit: bool }
   tw_img_exposure_time: { value: 80e-3, unit: s }
@@ -123,6 +124,7 @@ Tweezers:
   tw_power: { value: 0.25, unit: V }
   tw_ramp_dur: { value: 10e-3, unit: s }
   tw_ramp_power: { value: 0.14, unit: V }
+  tw_turn_off_time: { value: 0, unit: s}
 
 Rydberg:
   do_blue: { value: False, unit: bool }
