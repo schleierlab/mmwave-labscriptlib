@@ -125,17 +125,6 @@ class TweezerOperations(OpticalPumpingOperations):
     def tweezer_modulation(self, t, label="sine"):
         pass
 
-    def rearrange_to_dense(self, t):
-        """Rearrange atoms into a dense configuration.
-
-        Not yet implemented. Will provide functionality to rearrange atoms
-        in tweezers to form dense arrays or specific patterns.
-
-        Args:
-            t (float): Start time for rearrangement
-        """
-        pass
-
     # TODO make Camera object intelligently bump camera exposures in quick succession
     def image_tweezers(self, t, shot_number):
         """Image atoms in optical tweezers.
