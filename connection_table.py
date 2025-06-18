@@ -230,6 +230,7 @@ class LabDevices():
             open_state=1,
         )
 
+        # dummy channel. Not connected to anything but enable/ disable to meet the even-number-channel requirement
         self.digital_out_ch26 = DigitalOut(
             name='digital_out_ch26',
             parent_device=ni_6363_0,
@@ -557,21 +558,21 @@ class LabDevices():
         # #==============================================================================
 
         # commenting out because 9914 temporarily not working 4/7
-        # ad9914_1 = AD9914('AD9914_1', parent_device=clockline_6363, com_port=54320)
-        # self.dds1 = AD_DDS(
-        #     name='dds1',
-        #     parent_device=ad9914_1,
-        #     connection='p1',
-        #     profileControls = {
-        #         'PS0': {'device': ni_6363_0, 'connection': 'port0/line27'},
-        #         'PS1': {'device': ni_6363_0, 'connection': 'port0/line28'},
-        #         'PS2': {'device': ni_6363_0, 'connection': 'port0/line29'},
-        #     },
-        #     sweepControls = {
-        #         'DRCTL': {'device': ni_6363_0, 'connection': 'port0/line30'},
-        #         'DRHOLD': {'device': ni_6363_0, 'connection': 'port0/line31'},
-        #     },
-        # )
+        ad9914_1 = AD9914('AD9914_1', parent_device=clockline_6363, com_port=54320)
+        self.dds1 = AD_DDS(
+            name='dds1',
+            parent_device=ad9914_1,
+            connection='p1',
+            profileControls = {
+                'PS0': {'device': ni_6363_0, 'connection': 'port0/line27'},
+                'PS1': {'device': ni_6363_0, 'connection': 'port0/line28'},
+                'PS2': {'device': ni_6363_0, 'connection': 'port0/line29'},
+            },
+            sweepControls = {
+                'DRCTL': {'device': ni_6363_0, 'connection': 'port0/line30'},
+                'DRHOLD': {'device': ni_6363_0, 'connection': 'port0/line31'},
+            },
+        )
 
     # def checkChannelParity(device):
     #     analogs = {}
