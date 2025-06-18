@@ -249,7 +249,14 @@ class MOTOperations:
         self.BField_obj.switch_mot_coils(t)
         self.BField_obj.ramp_bias_field(t, bias_field_vector=(0, 0, 0))
 
-        return t
+        return t + 1e-3
+
+    def ramp_to_GMC(self, t, dur):
+        self.D2Lasers_obj.ramp_ta_freq(t, dur, shot_globals.gm_ta_detuning)
+        self.D2Lasers_obj.ramp_repump_freq(t, dur, shot_globals.gm_repump_detuning)
+        self.D2Lasers_obj.ramp_ta_aom(t, dur, shot_globals.gm_ta_power)
+        self.D2Lasers_obj.ramp_repump_aom(t, dur, shot_globals.gm_repump_power)
+        return t + dur
 
     def do_molasses(self, t, dur, close_all_shutters=False):
         """Execute optical molasses cooling sequence.
@@ -272,25 +279,49 @@ class MOTOperations:
 
         _ = self.ramp_to_molasses(t)
 
-        if shot_globals.bm_beam_choice == "mot":
+        if shot_globals.do_GMC:
+            if shot_globals.bm_beam_choice == "mot":
+                t, _ = self.D2Lasers_obj.do_pulse(
+                    t,
+                    dur,
+                    ShutterConfig.MOT_FULL,
+                    shot_globals.bm_ta_power,
+                    shot_globals.bm_repump_power,
+                    close_all_shutters=close_all_shutters,
+                    aom_leave_on= True
+                )
+            t = self.ramp_to_GMC(t, 1e-3)
             t, _ = self.D2Lasers_obj.do_pulse(
                 t,
-                dur,
+                shot_globals.gmc_dur,
                 ShutterConfig.MOT_FULL,
-                shot_globals.bm_ta_power,
-                shot_globals.bm_repump_power,
+                shot_globals.gm_ta_power,
+                shot_globals.gm_repump_power,
                 close_all_shutters=close_all_shutters,
             )
 
-        if shot_globals.bm_beam_choice == "img":
-            t, _ = self.D2Lasers_obj.do_pulse(
-                t,
-                dur,
-                ShutterConfig.IMG_FULL,
-                shot_globals.bm_ta_power,
-                shot_globals.bm_repump_power,
-                close_all_shutters=close_all_shutters,
-            )
+        else:
+            if shot_globals.bm_beam_choice == "mot":
+                t, _ = self.D2Lasers_obj.do_pulse(
+                    t,
+                    dur,
+                    ShutterConfig.MOT_FULL,
+                    shot_globals.bm_ta_power,
+                    shot_globals.bm_repump_power,
+                    close_all_shutters=close_all_shutters,
+                )
+
+            if shot_globals.bm_beam_choice == "img":
+                t, _ = self.D2Lasers_obj.do_pulse(
+                    t,
+                    dur,
+                    ShutterConfig.IMG_FULL,
+                    shot_globals.bm_ta_power,
+                    shot_globals.bm_repump_power,
+                    close_all_shutters=close_all_shutters,
+                )
+
+
         return t
 
     # Which arguments are actually necessary to pass or even set as a defualt?

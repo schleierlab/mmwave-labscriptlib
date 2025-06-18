@@ -433,7 +433,7 @@ class D2Lasers:
         return t
 
     def do_pulse(
-        self, t, dur, shutter_config, ta_power, repump_power, close_all_shutters=False
+        self, t, dur, shutter_config, ta_power, repump_power, close_all_shutters=False, aom_leave_on = False
     ):
         """Perform a laser pulse with specified parameters.
 
@@ -474,8 +474,9 @@ class D2Lasers:
 
         t_aom_start = t
         t += dur
-        self.ta_aom_off(t)
-        self.repump_aom_off(t)
+        if not aom_leave_on:
+            self.ta_aom_off(t)
+            self.repump_aom_off(t)
         # Remember that even if you don't close the shutters, the beam will turn off
         # at the end of the pulse duration. Plan accordingly and don't leave long wait
         # times between pulses accidentally.
@@ -753,7 +754,7 @@ class RydLasers:
         # Initialize 456nm laser detuning
         # the initial detuning every ramp start and end to
         self.detuning_456 = init_blue_detuning
-        # devices.dds1.synthesize(t, freq = self.detuning_456, amp = 0.5, ph = 0)
+        devices.dds1.synthesize(t, freq = self.detuning_456, amp = 0.5, ph = 0)
         # Initialize shutter state
         self.shutter_open = False
 
