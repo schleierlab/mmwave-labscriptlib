@@ -147,7 +147,7 @@ Rydberg:
   ryd_1064_mirror_2_h: { value: 3.7, unit: V }
   ryd_1064_mirror_2_v: { value: 1.5, unit: V }
   ryd_1064_power: { value: 0.5, unit: V }
-  ryd_456_detuning: { value: 530, unit: MHz }
+  ryd_456_detuning: { value: 575, unit: MHz } #530
   ryd_456_duration: { value: 15e-6, unit: s }
   ryd_456_mirror_1_h: { value: 5, unit: V }
   ryd_456_mirror_1_v: { value: 7, unit: V }

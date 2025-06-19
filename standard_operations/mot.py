@@ -195,7 +195,7 @@ class MOTOperations:
 
         return t
 
-    def _do_mot_in_situ_sequence(self, t, reset_mot=False):
+    def _do_mot_in_situ_sequence(self, t, reset_mot=False, use_vimba = False):
         """Perform in-situ MOT loading and imaging sequence.
 
         This standalone sequence loads a MOT and images it in-situ, optionally
@@ -214,12 +214,13 @@ class MOTOperations:
 
         t = self.do_mot(t, mot_load_dur)
 
-        t = self.image_mot(t)
-        # Shutter does not need to be held open
+        if not use_vimba:
+            t = self.image_mot(t)
+            # Shutter does not need to be held open
 
-        # Wait until the MOT disappear for background image
-        t += 0.1
-        t = self.image_mot(t)
+            # Wait until the MOT disappear for background image
+            t += 0.1
+            t = self.image_mot(t)
 
         # Reset laser frequency so lasers do not jump frequency and come unlocked
         t = self.D2Lasers_obj.reset_to_mot_freq(t)
@@ -447,7 +448,7 @@ class MOTOperations:
 
         return t
 
-    def _do_molasses_tof_sequence(self, t, reset_mot=False):
+    def _do_molasses_tof_sequence(self, t, reset_mot=False, use_vimba = False):
         """Perform time-of-flight molasses imaging sequence.
 
         This sequence loads a molasses, releases it, and images after a time-of-flight
@@ -466,15 +467,18 @@ class MOTOperations:
 
         t = self.do_molasses(t, shot_globals.bm_time)
 
+
         if shot_globals.bm_tof_imaging_delay <= D2Lasers.CONST_MIN_SHUTTER_OFF_TIME:
             raise ValueError("time of flight too short for shutter")
         t += shot_globals.bm_tof_imaging_delay
-        t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
 
-        # Turn off MOT for taking background images
-        t += 100e-3
+        if not use_vimba:
+            t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
 
-        t = self.do_molasses_dipole_trap_imaging(t)
+            # Turn off MOT for taking background images
+            t += 100e-3
+
+            t = self.do_molasses_dipole_trap_imaging(t)
 
         t += 10e-3
         if reset_mot:
