@@ -195,7 +195,7 @@ class MOTOperations:
 
         return t
 
-    def _do_mot_in_situ_sequence(self, t, reset_mot=False, use_vimba = False):
+    def _do_mot_in_situ_sequence(self, t, reset_mot=False, check_with_vimba = False):
         """Perform in-situ MOT loading and imaging sequence.
 
         This standalone sequence loads a MOT and images it in-situ, optionally
@@ -214,7 +214,7 @@ class MOTOperations:
 
         t = self.do_mot(t, mot_load_dur)
 
-        if not use_vimba:
+        if not check_with_vimba:
             t = self.image_mot(t)
             # Shutter does not need to be held open
 
@@ -448,7 +448,7 @@ class MOTOperations:
 
         return t
 
-    def _do_molasses_tof_sequence(self, t, reset_mot=False, use_vimba = False):
+    def _do_molasses_tof_sequence(self, t, reset_mot=False, check_with_vimba = False):
         """Perform time-of-flight molasses imaging sequence.
 
         This sequence loads a molasses, releases it, and images after a time-of-flight
@@ -472,7 +472,7 @@ class MOTOperations:
             raise ValueError("time of flight too short for shutter")
         t += shot_globals.bm_tof_imaging_delay
 
-        if not use_vimba:
+        if not check_with_vimba:
             t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
 
             # Turn off MOT for taking background images
