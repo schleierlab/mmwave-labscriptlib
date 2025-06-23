@@ -445,11 +445,17 @@ class LabDevices():
         # Analog Inputs
         #==============================================================================
 
-        # self.test_analog_in = AnalogIn(
-        #     name='test_analog_in',
-        #     parent_device=ni_6363_0,
-        #     connection='ai0',
-        # )
+        self.monitor_1064 = AnalogIn(
+            name='monitor_1064',
+            parent_device=ni_6363_0,
+            connection='ai0',
+        )
+
+        self.monitor_456 = AnalogIn(
+            name='monitor_456',
+            parent_device=ni_6363_0,
+            connection='ai1',
+        )
 
 
         #==============================================================================

@@ -19,6 +19,7 @@ if __name__ == "__main__":
     if shot_globals.do_test_analog_in:
         duration = devices.test_analog_in.acquire('test_analog_in', t+1e-3, t+2e-3)
         print("Duration was:", duration)
+        print("acquisitions: ",devices.test_analog_in.acquisitions)
         t += 2e-3
 
     if shot_globals.do_mot_in_situ_check:
