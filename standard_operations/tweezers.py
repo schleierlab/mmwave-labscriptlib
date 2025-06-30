@@ -125,17 +125,6 @@ class TweezerOperations(OpticalPumpingOperations):
     def tweezer_modulation(self, t, label="sine"):
         pass
 
-    def rearrange_to_dense(self, t):
-        """Rearrange atoms into a dense configuration.
-
-        Not yet implemented. Will provide functionality to rearrange atoms
-        in tweezers to form dense arrays or specific patterns.
-
-        Args:
-            t (float): Start time for rearrangement
-        """
-        pass
-
     # TODO make Camera object intelligently bump camera exposures in quick succession
     def image_tweezers(self, t, shot_number):
         """Image atoms in optical tweezers.
@@ -209,14 +198,37 @@ class TweezerOperations(OpticalPumpingOperations):
     def take_in_shot_background(self, t):
         """
         Taking background in the shot,
-        the tweezer will be turned off first
-        and a kill all pulse will be applied to remove all atoms
-        then tweezer back on for same imaging condition
+        the tweezers will be turned off first
+        and a kill all pulse will be applied to remove all atoms in F = 3 and 4
+        then tweezers are turned back on for the same imaging condition
         """
         self.TweezerLaser_obj.aom_off(t)
         t, _ = self.kill_all(t, close_all_shutters=False)
         self.TweezerLaser_obj.aom_on(t, const=1)
         t = self.image_tweezers(t, shot_number=3)
+        return t
+
+    def release_and_recapture(self, t):
+        """
+        Ramp trap down, turn trap off, then ramp trap back on.
+        Release atoms from tweezers and recapture them after a specified time.
+        Used for temperature measurement.
+        """
+        # ramp down the tweezer power to the loading power
+        t = self.TweezerLaser_obj.ramp_power(
+            t, shot_globals.tw_ramp_dur, shot_globals.tw_power
+        )
+
+        # turn traps off after a while and then turn them back on
+        self.TweezerLaser_obj.aom_off(t)
+        t+= shot_globals.tw_turn_off_time
+        self.TweezerLaser_obj.aom_on(t, const = shot_globals.tw_power)
+
+        # ramp tweezer power back to full power for imaging
+        t = self.TweezerLaser_obj.ramp_power(
+            t, shot_globals.tw_ramp_dur, final_power=1
+        )
+
         return t
 
     def pump_then_rotate(self, t, B_field, polar = False):
@@ -253,21 +265,14 @@ class TweezerOperations(OpticalPumpingOperations):
     def _do_tweezer_check(self, t, check_rearrangement_position = False) -> float:
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
-        # t += shot_globals.img_wait_time_between_shots
-        #TODO: the bare time 95ms needs to be replaced in the future with a global
-        t += 95e-3
-        t = self.image_tweezers(t, shot_number=2)
         t += shot_globals.img_wait_time_between_shots
-
-        self.TweezerLaser_obj.aom_off(t)
-        t, _ = self.kill_all(t, close_all_shutters=False)
-        self.TweezerLaser_obj.aom_on(t, const=1)
-
-        t = self.image_tweezers(t, shot_number=3)
+        if shot_globals.do_tw_release_and_recapture: # ramp and turn traps off for temperature measurement
+            t = self.release_and_recapture(t)
+        t = self.image_tweezers(t, shot_number=2)
+        t = self.take_in_shot_background(t)
         t = self.reset_mot(t)
 
-        # Here is the check with manta camera to make sure the tweezer rearrangement waveform is correct
-        if check_rearrangement_position:
+        if check_rearrangement_position: #check with manta camera to make sure the tweezer rearrangement waveform is correct
             t_rearrangement = (
                 t
                 - shot_globals.TW_rearrangement_time_offset
@@ -275,7 +280,7 @@ class TweezerOperations(OpticalPumpingOperations):
 
             self.Camera_obj.set_type("tweezer_manta")
             self.Camera_obj.expose(t_rearrangement,
-                                shot_globals.tw_exposure_time)
+                                shot_globals.tw_manta_exposure_time)
 
         return t
 
@@ -302,28 +307,17 @@ class TweezerOperations(OpticalPumpingOperations):
             t += 10
         else:
             t += 1e-3
-            t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
+            t = self.do_molasses_dipole_trap_imaging(t, exposure_time=shot_globals.tw_manta_exposure_time, close_all_shutters=True)
 
             # taking background images
             t += 1e-1
             self.TweezerLaser_obj.aom_off(t)
-            t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
+            t = self.do_molasses_dipole_trap_imaging(t, exposure_time=shot_globals.tw_manta_exposure_time, close_all_shutters=True)
             t += 1e-2
 
         t += 1
 
         return t
-
-    def _tweezer_release_recapture_sequence(self, t):
-        """Execute a release and recapture sequence.
-
-        Not yet implemented. Will provide functionality to release atoms
-        from tweezers and recapture them after a specified time.
-
-        Args:
-            t (float): Start time for the sequence
-        """
-        raise NotImplementedError
 
     def _tweezer_modulation_sequence(self, t):
         """Execute a tweezer modulation sequence.
@@ -441,6 +435,8 @@ class TweezerOperations(OpticalPumpingOperations):
         # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
+
+        t = self.take_in_shot_background(t)
         t = self.reset_mot(t)
 
         return t
@@ -476,7 +472,6 @@ class TweezerOperations(OpticalPumpingOperations):
             t, t_aom_off = self.pump_to_F4(
                 t, shot_globals.op_label, close_all_shutters=True
             )
-
 
         # Making sure the ramp ends right as the pumping is starting
         t_start_ramp = (
@@ -559,12 +554,7 @@ class TweezerOperations(OpticalPumpingOperations):
 
         t = self.image_tweezers(t, shot_number=2)
 
-        # TODO: the following code unlock the D2 laser, need to debug
-        # self.TweezerLaser_obj.aom_off(t)
-        # t, _ = self.kill_all(t, close_all_shutters=False)
-        # self.TweezerLaser_obj.aom_on(t, const=1)
-        # t = self.image_tweezers(t, shot_number=3) # take in shot background
-
+        t = self.take_in_shot_background(t)
         t = self.reset_mot(t)
 
         return t

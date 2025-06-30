@@ -433,7 +433,7 @@ class D2Lasers:
         return t
 
     def do_pulse(
-        self, t, dur, shutter_config, ta_power, repump_power, close_all_shutters=False
+        self, t, dur, shutter_config, ta_power, repump_power, close_all_shutters=False, aom_leave_on = False
     ):
         """Perform a laser pulse with specified parameters.
 
@@ -474,8 +474,9 @@ class D2Lasers:
 
         t_aom_start = t
         t += dur
-        self.ta_aom_off(t)
-        self.repump_aom_off(t)
+        if not aom_leave_on:
+            self.ta_aom_off(t)
+            self.repump_aom_off(t)
         # Remember that even if you don't close the shutters, the beam will turn off
         # at the end of the pulse duration. Plan accordingly and don't leave long wait
         # times between pulses accidentally.
@@ -753,7 +754,7 @@ class RydLasers:
         # Initialize 456nm laser detuning
         # the initial detuning every ramp start and end to
         self.detuning_456 = init_blue_detuning
-        # devices.dds1.synthesize(t, freq = self.detuning_456, amp = 0.5, ph = 0)
+        devices.dds1.synthesize(t, freq = self.detuning_456, amp = 0.5, ph = 0)
         # Initialize shutter state
         self.shutter_open = False
 
@@ -1102,6 +1103,18 @@ class RydLasers:
             self.pulse_456_aom_on(t, 1)
 
         # t = self.do_456_freq_sweep(t, self.CONST_DEFAULT_DETUNING_456)
+        # logging the photodiode signal to analog in
+        devices.monitor_1064.acquire(
+            label = '1064',
+            start_time = t_aom_start - 10e-6,
+            end_time = t
+            )
+
+        devices.monitor_456.acquire(
+            label = '456',
+            start_time = t_aom_start - 10e-6,
+            end_time = t
+            )
 
         return t, t_aom_start
 
@@ -1151,6 +1164,19 @@ class RydLasers:
             # self.pulse_1064_aom_on(t,1)
             t_end = t
 
+        # logging the photodiode signal to analog in
+        devices.monitor_1064.acquire(
+            label = '1064',
+            start_time = pulse_start_times[0] - 10e-6,
+            end_time = t
+            )
+
+        devices.monitor_456.acquire(
+            label = '456',
+            start_time = pulse_start_times[0] - 10e-6,
+            end_time = t
+            )
+
         return t_end, pulse_start_times
 
     def do_rydberg_pulse_short(
@@ -1161,9 +1187,13 @@ class RydLasers:
             power_1064: float,
             close_shutter: bool = False,
             in_dipole_trap: bool = False,
+            long_1064: bool = False,
+            pd_analog_in: bool = True # monitor pd signal through photodetector analog in
     ):
         '''
         turn analog on 10 us earlier than the digital so there won't be pulseblaster related errors from the labscript
+        when long_1064 set to true, the 1064 pulse is turned on earlier and turned off later than the blue pulse.
+        In this case, we use the blue pulse to do the pulse shaping.
         '''
         if not dur >= 0:
             raise ValueError(f'duration must be nonnegative, was {dur}')
@@ -1194,7 +1224,10 @@ class RydLasers:
         else:
             if power_1064 != 0:
                 devices.pulse_1064_aom_analog.constant(t - aom_analog_ctrl_anticipation, power_1064)
-                self.pulse_1064_aom_on(t, power_1064, digital_only=True)
+                if long_1064:
+                    self.pulse_1064_aom_on(t - aom_analog_ctrl_anticipation, power_1064, digital_only=True)
+                else:
+                    self.pulse_1064_aom_on(t, power_1064, digital_only=True)
 
         t_aom_start = t
 
@@ -1205,12 +1238,30 @@ class RydLasers:
         if in_dipole_trap:
             self.pulse_1064_aom_on(t, 1, digital_only=True)
         else:
-            self.pulse_1064_aom_off(t, digital_only=True)
+            if long_1064:
+                self.pulse_1064_aom_off(t + aom_analog_ctrl_anticipation, digital_only=True)
+            else:
+                self.pulse_1064_aom_off(t, digital_only=True)
             devices.pulse_1064_aom_analog.constant(t + aom_analog_ctrl_anticipation, 0)
 
         if close_shutter:
             if power_456 != 0:
                 t = self.update_blue_456_shutter(t, "close")
             self.pulse_456_aom_on(t, 1, digital_only=True)
+
+
+        # logging the photodiode signal to analog in
+        if pd_analog_in:
+            devices.monitor_1064.acquire(
+                label = '1064',
+                start_time = t_aom_start - 50e-6,
+                end_time = t_aom_start + dur + 10e-6
+                )
+
+            devices.monitor_456.acquire(
+                label = '456',
+                start_time = t_aom_start - 50e-6,
+                end_time = t_aom_start + dur + 10e-6
+                )
 
         return t, t_aom_start

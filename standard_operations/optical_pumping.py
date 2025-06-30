@@ -89,7 +89,7 @@ class OpticalPumpingOperations(MOTOperations):
             _ = self.BField_obj.ramp_bias_field(
                 t, bias_field_vector = op_total_field
             )
-            # ramp detuning to 4 -> 4, 3 -> 4
+            # ramp detuning to TA 4 -> 4', repump 3 -> 4'
             self.D2Lasers_obj.ramp_ta_freq(
                 t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ta_pumping_detuning
             )
@@ -119,7 +119,7 @@ class OpticalPumpingOperations(MOTOperations):
                 shot_globals.op_ta_power,
                 shot_globals.op_repump_power,
                 close_all_shutters=close_all_shutters,
-            )
+            ) # repump time must be longer than ta time to pump atoms to F = 4
 
             t_aom_off = t_aom_start + shot_globals.op_repump_time
 
@@ -235,40 +235,46 @@ class OpticalPumpingOperations(MOTOperations):
             return t, t_aom_off
 
         elif label == "sigma":
-            # Use the sigma+ beam for optical pumping
-            op_biasx_field, op_biasy_field, op_biasz_field = (
-                self.BField_obj.get_op_bias_fields()
+            # Use the sigma+ beam for optical depumping
+            # This method uses both TA 4  -> 4' and repump 3 -> 4', but with longer TA time
+            # Since this is sigma+ beam, atoms at F = 4, mF = 4 (stretched state) will not be affected, and will not decay back to F = 3
+            # so we disable this method for now
+            raise NotImplementedError(
+                "This optical depumping method is not implemented"
             )
-            _ = self.BField_obj.ramp_bias_field(
-                t, bias_field_vector=(op_biasx_field, op_biasy_field, op_biasz_field)
-            )
-            # ramp detuning to 4 -> 4, 3 -> 4
-            self.D2Lasers_obj.ramp_ta_freq(
-                t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ta_pumping_detuning
-            )
-            self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
-            # 3-> 3
-            # self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_REPUMP_DEPUMPING_DETUNING)
-            # Do a sigma+ pulse
-            # TODO: is shot_globals.op_ramp_delay just extra fudge time? can it be eliminated?
-            t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
-            t, t_aom_start = self.D2Lasers_obj.do_pulse(
-                t,
-                shot_globals.odp_ta_time,
-                ShutterConfig.OPTICAL_PUMPING_FULL,
-                shot_globals.odp_ta_power,
-                shot_globals.odp_repump_power,
-                close_all_shutters=close_all_shutters,
-            )
+            # op_biasx_field, op_biasy_field, op_biasz_field = (
+            #     self.BField_obj.get_op_bias_fields()
+            # )
+            # _ = self.BField_obj.ramp_bias_field(
+            #     t, bias_field_vector=(op_biasx_field, op_biasy_field, op_biasz_field)
+            # )
+            # # ramp detuning to 4 -> 4, 3 -> 4
+            # self.D2Lasers_obj.ramp_ta_freq(
+            #     t, D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ta_pumping_detuning
+            # )
+            # self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
+            # # 3-> 3
+            # # self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, CONST_REPUMP_DEPUMPING_DETUNING)
+            # # Do a sigma+ pulse
+            # # TODO: is shot_globals.op_ramp_delay just extra fudge time? can it be eliminated?
+            # t += max(D2Lasers.CONST_TA_VCO_RAMP_TIME, shot_globals.op_ramp_delay)
+            # t, t_aom_start = self.D2Lasers_obj.do_pulse(
+            #     t,
+            #     shot_globals.odp_ta_time,
+            #     ShutterConfig.OPTICAL_PUMPING_FULL,
+            #     shot_globals.odp_ta_power,
+            #     shot_globals.odp_repump_power,
+            #     close_all_shutters=close_all_shutters,
+            # )
 
-            t_aom_off = t_aom_start + shot_globals.odp_ta_time
+            # t_aom_off = t_aom_start + shot_globals.odp_ta_time
 
-            if shot_globals.odp_ta_time <= shot_globals.odp_repump_time:
-                raise ValueError("TA time should be longer than repump for depumping to F = 3")
-            # TODO: test this timing
-            self.D2Lasers_obj.repump_aom_off(t_aom_start + shot_globals.odp_repump_time)
+            # if shot_globals.odp_ta_time <= shot_globals.odp_repump_time:
+            #     raise ValueError("TA time should be longer than repump for depumping to F = 3")
+            # # TODO: test this timing
+            # self.D2Lasers_obj.repump_aom_off(t_aom_start + shot_globals.odp_repump_time)
 
-            return t, t_aom_off
+            # return t, t_aom_off
 
         else:
             raise NotImplementedError(

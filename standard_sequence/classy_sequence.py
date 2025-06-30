@@ -19,15 +19,16 @@ if __name__ == "__main__":
     if shot_globals.do_test_analog_in:
         duration = devices.test_analog_in.acquire('test_analog_in', t+1e-3, t+2e-3)
         print("Duration was:", duration)
+        print("acquisitions: ",devices.test_analog_in.acquisitions)
         t += 2e-3
 
     if shot_globals.do_mot_in_situ_check:
         MOTSeq_obj = MOTOperations(t)
         sequence_objects.append(MOTSeq_obj)
-        t = MOTSeq_obj._do_mot_in_situ_sequence(t, reset_mot=True)
+        t = MOTSeq_obj._do_mot_in_situ_sequence(t, reset_mot=True, check_with_vimba=False)
 
     elif shot_globals.do_molasses_in_situ_check:
-        if shot_globals.do_molasses_in_situ_check and shot_globals.imaging_beam_choice() != 'mot':
+        if shot_globals.do_molasses_in_situ_check and shot_globals.imaging_beam_choice != "mot":
             raise ValueError
 
         MOTSeq_obj = MOTOperations(t)
@@ -37,7 +38,7 @@ if __name__ == "__main__":
     elif shot_globals.do_molasses_tof_check:
         MOTSeq_obj = MOTOperations(t)
         sequence_objects.append(MOTSeq_obj)
-        t = MOTSeq_obj._do_molasses_tof_sequence(t, reset_mot=True)
+        t = MOTSeq_obj._do_molasses_tof_sequence(t, reset_mot=True, check_with_vimba=False)
 
     elif shot_globals.do_optical_pump_in_molasses_check:
         OPSeq_obj = OpticalPumpingOperations(t)
@@ -62,7 +63,7 @@ if __name__ == "__main__":
     elif shot_globals.do_tweezer_position_check:
         TweezerSequence_obj = TweezerOperations(t)
         sequence_objects.append(TweezerSequence_obj)
-        t = TweezerSequence_obj._do_tweezer_position_check_sequence(t, check_with_vimba=True)
+        t = TweezerSequence_obj._do_tweezer_position_check_sequence(t, check_with_vimba=False)
 
     elif shot_globals.do_F4_microwave_spec_dipole_trap or shot_globals.do_dipole_trap_B_calib:
         RydSequence_obj = RydbergOperations(t)

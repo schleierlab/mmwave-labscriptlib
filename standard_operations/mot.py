@@ -195,7 +195,7 @@ class MOTOperations:
 
         return t
 
-    def _do_mot_in_situ_sequence(self, t, reset_mot=False):
+    def _do_mot_in_situ_sequence(self, t, reset_mot=False, check_with_vimba = False):
         """Perform in-situ MOT loading and imaging sequence.
 
         This standalone sequence loads a MOT and images it in-situ, optionally
@@ -214,12 +214,13 @@ class MOTOperations:
 
         t = self.do_mot(t, mot_load_dur)
 
-        t = self.image_mot(t)
-        # Shutter does not need to be held open
+        if not check_with_vimba:
+            t = self.image_mot(t)
+            # Shutter does not need to be held open
 
-        # Wait until the MOT disappear for background image
-        t += 0.1
-        t = self.image_mot(t)
+            # Wait until the MOT disappear for background image
+            t += 0.1
+            t = self.image_mot(t)
 
         # Reset laser frequency so lasers do not jump frequency and come unlocked
         t = self.D2Lasers_obj.reset_to_mot_freq(t)
@@ -249,7 +250,14 @@ class MOTOperations:
         self.BField_obj.switch_mot_coils(t)
         self.BField_obj.ramp_bias_field(t, bias_field_vector=(0, 0, 0))
 
-        return t
+        return t + 1e-3
+
+    def ramp_to_GMC(self, t, dur):
+        self.D2Lasers_obj.ramp_ta_freq(t, dur, shot_globals.gm_ta_detuning)
+        self.D2Lasers_obj.ramp_repump_freq(t, dur, shot_globals.gm_repump_detuning)
+        self.D2Lasers_obj.ramp_ta_aom(t, dur, shot_globals.gm_ta_power)
+        self.D2Lasers_obj.ramp_repump_aom(t, dur, shot_globals.gm_repump_power)
+        return t + dur
 
     def do_molasses(self, t, dur, close_all_shutters=False):
         """Execute optical molasses cooling sequence.
@@ -272,25 +280,49 @@ class MOTOperations:
 
         _ = self.ramp_to_molasses(t)
 
-        if shot_globals.bm_beam_choice == "mot":
+        if shot_globals.do_GMC:
+            if shot_globals.bm_beam_choice == "mot":
+                t, _ = self.D2Lasers_obj.do_pulse(
+                    t,
+                    dur,
+                    ShutterConfig.MOT_FULL,
+                    shot_globals.bm_ta_power,
+                    shot_globals.bm_repump_power,
+                    close_all_shutters=close_all_shutters,
+                    aom_leave_on= True
+                )
+            t = self.ramp_to_GMC(t, 1e-3)
             t, _ = self.D2Lasers_obj.do_pulse(
                 t,
-                dur,
+                shot_globals.gmc_dur,
                 ShutterConfig.MOT_FULL,
-                shot_globals.bm_ta_power,
-                shot_globals.bm_repump_power,
+                shot_globals.gm_ta_power,
+                shot_globals.gm_repump_power,
                 close_all_shutters=close_all_shutters,
             )
 
-        if shot_globals.bm_beam_choice == "img":
-            t, _ = self.D2Lasers_obj.do_pulse(
-                t,
-                dur,
-                ShutterConfig.IMG_FULL,
-                shot_globals.bm_ta_power,
-                shot_globals.bm_repump_power,
-                close_all_shutters=close_all_shutters,
-            )
+        else:
+            if shot_globals.bm_beam_choice == "mot":
+                t, _ = self.D2Lasers_obj.do_pulse(
+                    t,
+                    dur,
+                    ShutterConfig.MOT_FULL,
+                    shot_globals.bm_ta_power,
+                    shot_globals.bm_repump_power,
+                    close_all_shutters=close_all_shutters,
+                )
+
+            if shot_globals.bm_beam_choice == "img":
+                t, _ = self.D2Lasers_obj.do_pulse(
+                    t,
+                    dur,
+                    ShutterConfig.IMG_FULL,
+                    shot_globals.bm_ta_power,
+                    shot_globals.bm_repump_power,
+                    close_all_shutters=close_all_shutters,
+                )
+
+
         return t
 
     # Which arguments are actually necessary to pass or even set as a defualt?
@@ -416,7 +448,7 @@ class MOTOperations:
 
         return t
 
-    def _do_molasses_tof_sequence(self, t, reset_mot=False):
+    def _do_molasses_tof_sequence(self, t, reset_mot=False, check_with_vimba = False):
         """Perform time-of-flight molasses imaging sequence.
 
         This sequence loads a molasses, releases it, and images after a time-of-flight
@@ -435,15 +467,18 @@ class MOTOperations:
 
         t = self.do_molasses(t, shot_globals.bm_time)
 
+
         if shot_globals.bm_tof_imaging_delay <= D2Lasers.CONST_MIN_SHUTTER_OFF_TIME:
             raise ValueError("time of flight too short for shutter")
         t += shot_globals.bm_tof_imaging_delay
-        t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
 
-        # Turn off MOT for taking background images
-        t += 100e-3
+        if not check_with_vimba:
+            t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
 
-        t = self.do_molasses_dipole_trap_imaging(t)
+            # Turn off MOT for taking background images
+            t += 100e-3
+
+            t = self.do_molasses_dipole_trap_imaging(t)
 
         t += 10e-3
         if reset_mot:

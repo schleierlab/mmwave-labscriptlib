@@ -32,6 +32,8 @@ Bright_Molasses:
   bm_beam_choice: { value: "\"mot\"", unit: "" } # "mot" or "img"
   do_parity_projection_pulse: { value: False, unit: bool }
   do_robust_loading_pulse: { value: True, unit: bool }
+  do_GMC: {value: False, unit: bool}
+
 
 Microwaves:
   do_mw_pulse: { value: False, unit: bool }
@@ -93,14 +95,15 @@ Optical_pumping:
 
 Tweezers:
   TW_loopDuration: { value: 0.96e-3, unit: s }
+  # TODO this loop duration is for np.arange(60,88,0.7). Need to use different ones if we run sequence mode with different frequencies
   TW_maxPulses: { value: 1, unit: "" }
   TW_post_select_img_row_index: { value: 0, unit: "" }
   # TODO: are these needed if they are zero? What do they do? why are there two offsets?
   TW_rearrangement_fine_time_offset: { value: 0, unit: s }
-  TW_rearrangement_time_offset: { value: 0, unit: s }
+  TW_rearrangement_time_offset: { value: 0e-3, unit: s }
   # TODO: how do we eval strings
-  TW_target_array: { value: "tuple(np.arange(0,20,1))", unit: "" }
-  TW_x_freqs: { value: "tuple(np.arange(60,88,0.7))", unit: MHz }
+  TW_target_array: { value: "tuple(np.arange(12,38,1))", unit: "" }
+  TW_x_freqs: { value: "tuple(np.arange(58,88,0.6))", unit: MHz } #np.arange(60,88,0.7)
   TW_y_amplitude: { value: 0.99, unit: ""}
   TW_y_freqs: { value: [70.75], unit: MHz }
   TW_y_power: { value: 33, unit: dBm }
@@ -108,21 +111,23 @@ Tweezers:
   do_cooling_while_rearrange: { value: False, unit: bool }
   do_rearrange_position_check: { value: False, unit: bool }
   do_rearrangement: { value: False, unit: bool }
-  do_sequence_mode: { value: True, unit: bool }
+  do_sequence_mode: { value: False, unit: bool }
   do_tw_power_ramp: { value: False, unit: bool }
-  do_tw_trap_off: { value: True, unit: bool }
+  do_tw_release_and_recapture: { value: False, unit: bool }
+  do_tw_trap_off: { value: True, unit: bool } # This one is used in rydberg
   do_tweezer_modulation: { value: False, unit: bool }
   do_tweezers: { value: True, unit: bool }
-  tw_img_exposure_time: { value: 80e-3, unit: s }
-  tw_img_repump_power: { value: 0.3, unit: V }
-  tw_img_ta_detuning: { value: -47, unit: MHz}
-  tw_img_ta_power: { value: 0.2, unit: V }
+  tw_img_exposure_time: { value: 40e-3, unit: s } #80e-3
+  tw_img_repump_power: { value: 0.19, unit: V } #0.3
+  tw_img_ta_detuning: { value: -35, unit: MHz} #-47
+  tw_img_ta_power: { value: 0.19, unit: V }
   tw_img_tof_imaging_delay: { value: 50e-3, unit: s }
   kinetix_roi_row: { value: "tuple((1150,110))", unit: pixels }
   tw_modulation_freq: { value: 0, unit: Hz }
   tw_power: { value: 0.25, unit: V }
   tw_ramp_dur: { value: 10e-3, unit: s }
   tw_ramp_power: { value: 0.14, unit: V }
+  tw_turn_off_time: { value: 0, unit: s}
 
 Rydberg:
   do_blue: { value: False, unit: bool }
@@ -142,7 +147,7 @@ Rydberg:
   ryd_1064_mirror_2_h: { value: 3.7, unit: V }
   ryd_1064_mirror_2_v: { value: 1.5, unit: V }
   ryd_1064_power: { value: 0.5, unit: V }
-  ryd_456_detuning: { value: 530, unit: MHz }
+  ryd_456_detuning: { value: 575, unit: MHz } #530
   ryd_456_duration: { value: 15e-6, unit: s }
   ryd_456_mirror_1_h: { value: 5, unit: V }
   ryd_456_mirror_1_v: { value: 7, unit: V }
@@ -158,6 +163,7 @@ Rydberg:
   ryd_bias_theta: { value: 134, unit: deg }
   ryd_n_pulses: { value: 5, unit: ""}
   ryd_pulse_wait_dur: { value: 1e-6, unit: s }
+  do_ramsey: {value: False, unit: bool}
 
 Imaging:
   camera_type: { value: "\"MOT_manta\"", unit: "" }
@@ -181,6 +187,7 @@ Sequence:
   do_F4_microwave_spec_dipole_trap: { value: False, unit: bool }
   do_dipole_trap_B_calib: { value: False, unit: bool }
   do_dipole_trap_dark_state_measurement: { value: False, unit: bool }
+  do_dipole_trap_state_sensitive_img_check: { value: False, unit: bool }
   do_ryd_tweezer_check: { value: False, unit: bool }
   do_ryd_multipulse_check: { value: False, unit: bool }
   do_456_check: { value: False, unit: bool }
