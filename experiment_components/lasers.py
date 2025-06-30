@@ -1188,6 +1188,7 @@ class RydLasers:
             close_shutter: bool = False,
             in_dipole_trap: bool = False,
             long_1064: bool = False,
+            pd_analog_in: bool = True # monitor pd signal through photodetector analog in
     ):
         '''
         turn analog on 10 us earlier than the digital so there won't be pulseblaster related errors from the labscript
@@ -1236,9 +1237,9 @@ class RydLasers:
             self.pulse_1064_aom_on(t, 1, digital_only=True)
         else:
             if long_1064:
-                self.pulse_1064_aom_off(t, digital_only=True)
+                self.pulse_1064_aom_off(t + aom_analog_ctrl_anticipation, digital_only=True)
             else:
-                self.pulse_1064_aom_off(t , digital_only=True)
+                self.pulse_1064_aom_off(t, digital_only=True)
             devices.pulse_1064_aom_analog.constant(t + aom_analog_ctrl_anticipation, 0)
 
         if close_shutter:
@@ -1248,16 +1249,17 @@ class RydLasers:
 
 
         # logging the photodiode signal to analog in
-        devices.monitor_1064.acquire(
-            label = '1064',
-            start_time = t_aom_start - 10e-6,
-            end_time = t
-            )
+        if pd_analog_in:
+            devices.monitor_1064.acquire(
+                label = '1064',
+                start_time = t_aom_start - 50e-6,
+                end_time = t_aom_start + dur + 10e-6
+                )
 
-        devices.monitor_456.acquire(
-            label = '456',
-            start_time = t_aom_start - 10e-6,
-            end_time = t
-            )
+            devices.monitor_456.acquire(
+                label = '456',
+                start_time = t_aom_start - 50e-6,
+                end_time = t_aom_start + dur + 10e-6
+                )
 
         return t, t_aom_start

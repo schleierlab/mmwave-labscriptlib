@@ -433,7 +433,7 @@ class RydbergOperations(TweezerOperations):
              shot_globals.ryd_bias_theta),
              polar=True) # trap is lowered when optical pump happens
 
-        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, shot_globals.tw_repulsion_power) # ramp trap power back
+        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99) # ramp trap power back
         # Apply Rydberg pulse with both 456 and 1064 active
         t+=2.5e-6
 
@@ -455,7 +455,9 @@ class RydbergOperations(TweezerOperations):
                 dur=shot_globals.ryd_456_duration,
                 power_456 = shot_globals.ryd_456_power,
                 power_1064 = shot_globals.ryd_1064_power,
-                close_shutter=True)
+                close_shutter=True,
+                long_1064 = True,
+                pd_analog_in = True)
             t_aom_stop = t_aom_start + shot_globals.ryd_456_duration
         else:
             t, pulse_start_times = self.RydLasers_obj.do_rydberg_multipulses(
@@ -478,7 +480,7 @@ class RydbergOperations(TweezerOperations):
 
 
         # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
-        t += 2e-3  # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
+        t += 10e-3  # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
         # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
         # t += shot_globals.img_wait_time_between_shots
         # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99) # ramp trap power back
