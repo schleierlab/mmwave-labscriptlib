@@ -1192,6 +1192,8 @@ class RydLasers:
     ):
         '''
         turn analog on 10 us earlier than the digital so there won't be pulseblaster related errors from the labscript
+        when long_1064 set to true, the 1064 pulse is turned on earlier and turned off later than the blue pulse.
+        In this case, we use the blue pulse to do the pulse shaping.
         '''
         if not dur >= 0:
             raise ValueError(f'duration must be nonnegative, was {dur}')
