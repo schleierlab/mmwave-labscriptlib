@@ -4,9 +4,10 @@ Modified from Rydberg lab spectrum_manager_fifo.py
 
 Created on March 25th 2024
 """
-import labscript
-from labscriptlib.connection_table import devices
+import logging
 import numpy as np
+
+from labscriptlib.connection_table import devices
 from labscriptlib.tweezers_phaseAmplitudeAdjustment import trap_phase, trap_amplitude
 from labscriptlib.shot_globals import shot_globals
 
@@ -15,7 +16,7 @@ devices.initialize()
 
 def dbm_to_vpeak(power):
     # Converts power in dbm to peak voltage (not Vpp or Vrms)
-    r = 50 # Ohms
+    # r = 50 # Ohms
     exponent = (power - 10) / 20
     return 10**exponent
 
@@ -48,15 +49,24 @@ class SpectrumManagerFifo():
         devices.spectrum_0.set_mode(
             replay_mode= b'fifo_single',
             channels = [
-                        {'name': 'Tweezer_X', 'power': TW_x_power, 'port': 0, 'is_amplified':True,
-                         'amplifier': 1, 'calibration_power': 15, 'power_mode': 'constant_total', 'max_pulses': 1}#'do_rearrangement': b_rearrangement} #, 'static_atten': 12}
-                        # {'name': 'Tweezer_Y', 'power': TW_y_power, 'port': 0, 'is_amplified':False,
-                        #  'amplifier': 2, 'calibration_power': 15, 'power_mode': 'constant_total', 'max_pulses': 1}
-                          # power_mode and max_pulses are not included in power calculation here.
-                          # calibration_power is only used to identify which calibration to use.
-                          # It is set to 15 here because 15 dBm is the max output from the spectrum card (w/o any attenuation) but it can be set to any number as long as it is distinguishable from other calibrations.
-                          # We have 12 dB attenuation for both chaneels of spectrum card 19620 (spectrum_0)
-                        ],
+                {
+                    'name': 'Tweezer_X',
+                    'power': TW_x_power,
+                    'port': 0,
+                    'is_amplified': True,
+                    'amplifier': 1,
+                    'calibration_power': 15,
+                    'power_mode': 'constant_total',
+                    'max_pulses': 1,
+                },
+                #'do_rearrangement': b_rearrangement} #, 'static_atten': 12}
+                # {'name': 'Tweezer_Y', 'power': TW_y_power, 'port': 0, 'is_amplified':False,
+                #  'amplifier': 2, 'calibration_power': 15, 'power_mode': 'constant_total', 'max_pulses': 1}
+                    # power_mode and max_pulses are not included in power calculation here.
+                    # calibration_power is only used to identify which calibration to use.
+                    # It is set to 15 here because 15 dBm is the max output from the spectrum card (w/o any attenuation) but it can be set to any number as long as it is distinguishable from other calibrations.
+                    # We have 12 dB attenuation for both chaneels of spectrum card 19620 (spectrum_0)
+            ],
             clock_freq = 625,#350,#625,
             use_ext_clock = True,
             # export_data = True, #export data function not yet exists in fifo mode
@@ -92,11 +102,13 @@ class SpectrumManagerFifo():
         #     TW_y_amps = TW_y_amplitude * trap_amplitude(TW_y_freqs) # amplitude set to 0.99 to aviod calculation error
 
         # instantiate dictionary to carry tweezer options
-        self.x_kwargs = {'freq': TW_x_freqs*1e6,
-                          'output_voltage': dbm_to_vpeak(TW_x_power),
-                          'amplitude': TW_x_amps,
-                          'phase': TW_x_phases,
-                          'ch': 0}
+        self.x_kwargs = {
+            'freq': TW_x_freqs * 1e+6,
+            'output_voltage': dbm_to_vpeak(TW_x_power),
+            'amplitude': TW_x_amps,
+            'phase': TW_x_phases,
+            'ch': 0,
+        }
 
         self.x_key = 'x_fifo'
 
@@ -113,13 +125,18 @@ class SpectrumManagerFifo():
         return
 
     def stop_tweezer_card(self):
-        assert not self.outputting_tw, 'SpectrumManager: output must be stopped before card is stopped'
+        if self.outputting_tw:
+            raise RuntimeError('SpectrumManager: output must be stopped before card is stopped')
         devices.spectrum_0.stop()
 
-        # fifo_single_freq(t_start, total_time, freq, output_voltage, amplitude, phase, ch)
+        # fifo_single_freq(t_start, total_time, freq, output_voltasge, amplitude, phase, ch)
+
     def start_tweezers(self, t):
-        assert self.started_tw, 'SpectrumManager: must run prepare() before start()'
-        assert not self.outputting_tw, 'SpectrumManager: output has already been started'
+        if not self.started_tw:
+            raise RuntimeError('SpectrumManager: must run prepare() before start()')
+        if self.outputting_tw:
+            raise RuntimeError('SpectrumManager: output has already been started')
+
         devices.spectrum_0.start_flexible_loop(t, devices.spectrum_0.fifo_multi_freq, self.x_key, **self.x_kwargs)
         # devices.spectrum_0.start_flexible_loop(t, devices.spectrum_0.fifo_single_freq, self.x_key, **self.x_kwargs)
         # devices.spectrum_0.start_flexible_loop(t, devices.spectrum_0.fifo_single_freq, self.y_key, **self.y_kwargs)
@@ -127,8 +144,10 @@ class SpectrumManagerFifo():
         return t
 
     def stop_tweezers(self, t):
-        assert self.outputting_tw, 'SpectrumManager: must run start() before stop()'
-        print(f'Ending last static period at time t = {t}')
+        if not self.outputting_tw:
+            raise ValueError('SpectrumManager: must run start() before stop()')
+
+        logging.info(f'Ending last static period at time t = {t}')
         devices.spectrum_0.stop_flexible_loop(t, self.x_key, fifo=True)
         # devices.spectrum_0.stop_flexible_loop(t, self.y_key, fifo=True)
         self.outputting_tw = False
@@ -137,9 +156,7 @@ class SpectrumManagerFifo():
         return t
 
     def start_mw_card(self):
-        print('Microwave not implemented in FIFO.')
-
-        return
+        raise NotImplementedError('Microwave not implemented in FIFO.')
 
     # Note: This function assumes CP used for cubic transport sweep
     def start_cp_card(self):
@@ -193,7 +210,7 @@ class SpectrumManagerFifo():
 
     def stop_cp(self, t):
         assert self.outputting_cp, 'SpectrumManager: must run start() before stop()'
-        print(f'Ending last static period at time t = {t}')
+        logging.info(f'Ending last static period at time t = {t}')
         Spectrum6631.stop_flexible_loop(t, self.cp_key, fifo=True)
         self.outputting_cp = False
         return t
