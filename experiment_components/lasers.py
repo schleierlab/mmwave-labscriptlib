@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from enum import Flag, auto
 from typing import ClassVar, Literal
@@ -229,7 +230,7 @@ class D2Lasers:
         """
         # TODO: check that duration statement here is valid for optical pumping
         if self.ta_freq == final:
-            print("ta freq is same for initial and final, skip ramp")
+            logging.debug("ta freq is same for initial and final, skip ramp")
             return t
         else:
             duration = max(self.CONST_TA_VCO_RAMP_TIME, duration)
@@ -260,7 +261,7 @@ class D2Lasers:
         """
         # TODO: check that duration statement here is valid for optical pumping
         if self.repump_freq == final:
-            print("repump freq is same for initial and final, skip ramp")
+            logging.debug("repump freq is same for initial and final, skip ramp")
             return t
         else:
             duration = max(self.CONST_TA_VCO_RAMP_TIME, duration)
@@ -605,8 +606,10 @@ class TweezerLaser:
         elif self.spectrum_mode == 'fifo':
             spectrum_manager_fifo.start_tweezer_card()
             spectrum_manager_fifo.start_tweezers(t)
-            print('global `do_sequence_mode` is currently False, running Fifo mode now. '
-                  'Set to True for sequence mode')
+            logging.info(
+                'global `do_sequence_mode` is currently False, running Fifo mode now. '
+                'Set to True for sequence mode',
+            )
         else:
             raise ValueError("The spectrum_mode should only be sequence or fifo mode")
 

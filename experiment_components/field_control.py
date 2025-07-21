@@ -1,5 +1,6 @@
 from typing import ClassVar, Literal
 
+import logging
 import numpy as np
 
 from labscript import AnalogOut, DigitalOut
@@ -185,7 +186,7 @@ class BField:
             )
 
         if np.all(self.bias_voltages == voltage_vector):
-            print("bias field initial and final are the same, skip ramp")
+            logging.debug("bias field initial and final are the same, skip ramp")
             return t
 
         sign_flip_in_ramp = voltage_vector * np.asarray(self.bias_voltages) < 0

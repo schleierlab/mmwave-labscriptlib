@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 import labscript
 
 from labscriptlib.connection_table import devices
@@ -63,7 +65,7 @@ if __name__ == "__main__":
     elif shot_globals.do_tweezer_position_check:
         TweezerSequence_obj = TweezerOperations(t)
         sequence_objects.append(TweezerSequence_obj)
-        t = TweezerSequence_obj._do_tweezer_position_check_sequence(t, check_with_vimba=False)
+        t = TweezerSequence_obj._do_tweezer_position_check_sequence(t, check_with_vimba=True)
 
     elif shot_globals.do_F4_microwave_spec_dipole_trap or shot_globals.do_dipole_trap_B_calib:
         RydSequence_obj = RydbergOperations(t)
@@ -132,6 +134,14 @@ if __name__ == "__main__":
         else:
             raise NotImplementedError
 
+    elif shot_globals.do_456_hyperfine_light_shift_check:
+        RydSequence_obj = RydbergOperations(t)
+        sequence_objects.append(RydSequence_obj)
+        if shot_globals.op_label == "sigma":
+            t = RydSequence_obj._do_456_light_shift_on_hyperfine_ground_states_check(t)
+        else:
+            raise NotImplementedError
+
     elif shot_globals.do_1064_light_shift_check:
         RydSequence_obj = RydbergOperations(t)
         sequence_objects.append(RydSequence_obj)
@@ -146,7 +156,7 @@ if __name__ == "__main__":
 
     # Stop tweezers if the object has a TweezerLaser_obj
     if hasattr(current_obj, 'TweezerLaser_obj'):
-        print("current_obj has TweezerLaser_obj")
+        logging.debug("current_obj has TweezerLaser_obj")
         t = current_obj.TweezerLaser_obj.stop_tweezers(t)
 
     # Reset spectrum if the object has Microwave_obj and if we use microwave in the sequence
