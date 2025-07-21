@@ -475,8 +475,8 @@ class TweezerOperations(OpticalPumpingOperations):
 
         # Making sure the ramp ends right as the pumping is starting
         t_start_ramp = (
-            t_aom_off - shot_globals.tw_ramp_dur - shot_globals.op_repump_time
-        )
+            t_aom_off - shot_globals.tw_ramp_dur - shot_globals.op_repump_time - 10e-6
+        ) # added time to separate the pulse and the b field more (should still work without out this -10e-6)
 
         # ramp down the tweezer power before optical pumping
         _ = self.TweezerLaser_obj.ramp_power(
@@ -500,13 +500,13 @@ class TweezerOperations(OpticalPumpingOperations):
         # ]
 
         t = self.BField_obj.ramp_bias_field(
-            t, # extra time to wait for 5e-3s extra time in optical pumping field
+            t + 200e-6, # extra time to wait for 5e-3s extra time in optical pumping field
             bias_field_vector=(shot_globals.mw_bias_amp,
                                    shot_globals.mw_bias_phi,
                                    shot_globals.mw_bias_theta),
             # dur=shot_globals.mw_bias_ramp_dur,
             polar = True,
-        )
+        ) # added time to separate the pulse and the b field more (should still work without out this 200e-6)
 
         t += shot_globals.mw_field_wait_dur  # 400e-6
         # t = self.TweezerLaser_obj.ramp_power(
