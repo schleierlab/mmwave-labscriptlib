@@ -741,6 +741,8 @@ class RydLasers:
     # this is only really a problem for devices that use both (ryd lasers, tweezers, local addressing)
     CONST_NI_ANALOG_DELAY: ClassVar[float] = 0
 
+    CONST_EXTRA_TIME_1064: ClassVar[float] = 0.2e-6
+
 
     def __init__(self, t, blue_pointing: PointingConfig, ir_pointing: PointingConfig, init_blue_detuning: float):
         """Initialize the Rydberg laser system.
@@ -1121,7 +1123,15 @@ class RydLasers:
 
         return t, t_aom_start
 
-    def do_rydberg_multipulses(self, t, n_pulses, pulse_dur, pulse_wait_dur, power_456, power_1064, just_456=False, close_shutter=False):
+    def do_rydberg_multipulses(self, t,
+                               n_pulses,
+                               pulse_dur,
+                               pulse_wait_dur,
+                               power_456,
+                               power_1064,
+                               just_456=False,
+                               long_1064 = False,
+                               close_shutter=False):
 
         pulse_start_times = []
 
@@ -1129,6 +1139,7 @@ class RydLasers:
         # workaround for timing limitation on pulseblaster due to labscript
         # https://groups.google.com/g/labscriptsuite/c/QdW6gUGNwQ0
         aom_analog_ctrl_anticipation = 1e-5
+        extra_time_1064 = self.CONST_EXTRA_TIME_1064*long_1064
 
         if not self.shutter_open:
             if power_1064 != 0:
@@ -1151,10 +1162,10 @@ class RydLasers:
                 t+= pulse_wait_dur
             else:
                 self.pulse_456_aom_on(t, power_456, digital_only=True)
-                self.pulse_1064_aom_on(t, power_1064, digital_only=True)
+                self.pulse_1064_aom_on(t - extra_time_1064, power_1064, digital_only=True)
                 t += pulse_dur
                 self.pulse_456_aom_off(t, digital_only=True)
-                self.pulse_1064_aom_off(t, digital_only=True)
+                self.pulse_1064_aom_off(t + extra_time_1064, digital_only=True)
                 t += pulse_wait_dur
 
             pulse_start_times.append(t - pulse_wait_dur-pulse_dur)
@@ -1209,6 +1220,7 @@ class RydLasers:
         # workaround for timing limitation on pulseblaster due to labscript
         # https://groups.google.com/g/labscriptsuite/c/QdW6gUGNwQ0
         aom_analog_ctrl_anticipation = 10e-6
+        extra_time_1064 = self.CONST_EXTRA_TIME_1064*long_1064
         if not self.shutter_open:
             if power_456 != 0:
                 t = self.update_blue_456_shutter(t, "open")
@@ -1228,7 +1240,7 @@ class RydLasers:
             if power_1064 != 0:
                 devices.pulse_1064_aom_analog.constant(t - aom_analog_ctrl_anticipation, power_1064)
                 if long_1064:
-                    self.pulse_1064_aom_on(t - aom_analog_ctrl_anticipation, power_1064, digital_only=True)
+                    self.pulse_1064_aom_on(t - extra_time_1064, power_1064, digital_only=True)
                 else:
                     self.pulse_1064_aom_on(t, power_1064, digital_only=True)
 
@@ -1242,7 +1254,7 @@ class RydLasers:
             self.pulse_1064_aom_on(t, 1, digital_only=True)
         else:
             if long_1064:
-                self.pulse_1064_aom_off(t + aom_analog_ctrl_anticipation, digital_only=True)
+                self.pulse_1064_aom_off(t + extra_time_1064, digital_only=True)
             else:
                 self.pulse_1064_aom_off(t, digital_only=True)
             devices.pulse_1064_aom_analog.constant(t + aom_analog_ctrl_anticipation, 0)
