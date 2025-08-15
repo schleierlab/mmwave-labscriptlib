@@ -556,23 +556,24 @@ class RydbergOperations(TweezerOperations):
                 long_1064=True,
             )
         t_aom_start = pulse_start_times[0]
-        t_aom_stop = t_aom_start + shot_globals.ryd_456_duration * 2 + shot_globals.ryd_state_wait_time
+        t_aom_stop_0 = t_aom_start + shot_globals.ryd_456_duration
+        t_aom_stop_1 = t_aom_start + shot_globals.ryd_456_duration * 2 + shot_globals.ryd_state_wait_time
         self.TweezerLaser_obj.aom_off(t_aom_start - 0.6e-6, digital_only=True)
-        self.TweezerLaser_obj.aom_on(t_aom_stop, 0.99, digital_only=True)
+        self.TweezerLaser_obj.aom_on(t_aom_stop_1, 0.99, digital_only=True)
 
         #Timing?
         mmwave_offset_t = (shot_globals.ryd_state_wait_time - shot_globals.mmwave_pulse_time)/2
-        _ = self.Microwave_obj.do_mmwave_pulse(t_aom_stop-self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET+5.04e-6 + mmwave_offset_t, shot_globals.mmwave_pulse_time)
+        _ = self.Microwave_obj.do_mmwave_pulse(t_aom_stop_0 -self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET + 6.7e-6 + mmwave_offset_t, shot_globals.mmwave_pulse_time)
 
         if shot_globals.do_mmwave_kill:
             # start microwaves as soon as blue is off
             # 10 ms pulse length is unimportant
             # (just needs to be >> Rydberg lifetime)
             # detuning should just be away from any resonances
-            self.Microwave_obj.do_mmwave_pulse(t_aom_stop-self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET+7e-6, 50e-6)
+            self.Microwave_obj.do_mmwave_pulse(t_aom_stop_1-self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET+7e-6, 50e-6)
 
         if shot_globals.do_microwave_kill:
-            _ = self.Microwave_obj.do_pulse(t_aom_stop-self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET+1e-6, 50e-6)
+            _ = self.Microwave_obj.do_pulse(t_aom_stop_1-self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET+1e-6, 50e-6)
 
         # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
         t += 10e-3  # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
