@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import ClassVar, Optional
 
 from labscriptlib.calibration import spec_freq_calib
 from labscriptlib.connection_table import devices
@@ -19,7 +19,7 @@ class Microwave:
     CONST_SPECTRUM_CARD_OFFSET: ClassVar[float] = 52.8e-6
     CONST_SPECTRUM_UWAVE_CABLE_ATTEN: ClassVar[float] = 4.4
 
-    def __init__(self, t, init_detuning):
+    def __init__(self, t, init_detuning, init_mmwave_detuning):
         """Initialize the microwave system.
 
         Sets up the spectrum card configuration for microwave
@@ -34,6 +34,7 @@ class Microwave:
         """
 
         self.mw_detuning = init_detuning
+        self.mmwave_spcm_freq = init_mmwave_detuning
         self.uwave_dds_switch_on = True
         self.uwave_absorp_switch_on = False
         self.spectrum_uwave_power = -1
@@ -64,7 +65,7 @@ class Microwave:
                 },
                 {
                     "name": "mmwaves",
-                    "power": -11,
+                    "power": 16,
                     "port": 1,
                     "is_amplified": False,
                     "amplifier": None,
@@ -78,7 +79,7 @@ class Microwave:
             ext_clock_freq=10,
         )
 
-    def do_pulse(self, t, dur):
+    def do_pulse(self, t, dur, detuning: Optional[float] = None):
         """Generate a single-frequency microwave pulse.
 
         Produces a microwave pulse at the current detuning frequency with specified duration.
@@ -87,6 +88,9 @@ class Microwave:
         Args:
             t (float): Start time for the pulse
             dur (float): Duration of the pulse
+            detuning (float, optional):
+                Detuning of the pulse from the cesium clock transition, in MHz.
+                Defaults to default detuning of this object if not specified.
 
         Returns:
             float: End time after the pulse is complete
@@ -94,11 +98,13 @@ class Microwave:
         t += self.CONST_SPECTRUM_CARD_OFFSET
         devices.uwave_absorp_switch.go_high(t)
         self.uwave_absorp_switch_on = True
+
+        pulse_detuning = self.mw_detuning if detuning is None else detuning
         devices.spectrum_uwave.single_freq(
             t - self.CONST_SPECTRUM_CARD_OFFSET,
             duration=dur,
-            freq=spec_freq_calib(self.mw_detuning),
-            amplitude=0.99,  # the amplitude can not be 1 due to the bug in spectrum card server
+            freq=spec_freq_calib(pulse_detuning),
+            amplitude=0.99,  # the amplitude cannot be 1 due to bug in spectrum card server
             phase=0,  # initial phase = 0
             ch=0,  # using channel 0
             loops=1,  # doing 1 loop
@@ -107,6 +113,45 @@ class Microwave:
         t += dur
         devices.uwave_absorp_switch.go_low(t)
         self.uwave_absorp_switch_on = False
+
+        return t
+
+    def do_mmwave_pulse(self, t, dur, detuning: Optional[float] = None):
+        """Generate a single-frequency microwave pulse.
+
+        Produces a microwave pulse at the current detuning frequency with specified duration.
+        Handles timing offsets and switch control automatically.
+
+        Args:
+            t (float): Start time for the pulse
+            dur (float): Duration of the pulse
+            detuning (float, optional):
+                Detuning of the pulse from the cesium clock transition, in MHz.
+                Defaults to default detuning of this object if not specified.
+
+        Returns:
+            float: End time after the pulse is complete
+        """
+        switch_rise_buffer_t = 10e-3
+        devices.mmwave_switch.go_high(t - switch_rise_buffer_t)
+        devices.mmwave_switch.go_low(t - switch_rise_buffer_t + 5e-6)
+        self.mmwave_switch_on = True
+
+        pulse_detuning = self.mmwave_spcm_freq if detuning is None else detuning
+        devices.spectrum_uwave.single_freq(
+            t,
+            duration=dur,
+            freq=pulse_detuning,
+            amplitude=0.1,  # the amplitude cannot be 1 due to bug in spectrum card server
+            phase=0,  # initial phase = 0
+            ch=1,  # using channel 0
+            loops=1,  # doing 1 loop
+        )
+
+        t += dur
+        devices.mmwave_switch.go_high(t + switch_rise_buffer_t)
+        devices.mmwave_switch.go_low(t + switch_rise_buffer_t + 5e-6)
+        self.mmwave_switch_on = False
 
         return t
 
@@ -203,7 +248,11 @@ class Microwave:
         # dummy segment ####
         devices.spectrum_uwave.single_freq(
             t, duration=100e-6, freq=10**6, amplitude=0.99, phase=0, ch=0, loops=1
-        )  # dummy segment
+        )
+        devices.spectrum_uwave.single_freq(
+            t, duration=100e-6, freq=10**6, amplitude=0.99, phase=0, ch=1, loops=1
+        )
+        # dummy segment
         devices.spectrum_uwave.stop()
 
         return t

@@ -22,7 +22,7 @@ class OpticalPumpingOperations(MOTOperations):
             t (float): Initial time for the sequence
         """
         super(OpticalPumpingOperations, self).__init__(t)
-        self.Microwave_obj = Microwave(t, init_detuning=shot_globals.mw_detuning)
+        self.Microwave_obj = Microwave(t, init_detuning=shot_globals.mw_detuning, init_mmwave_detuning=shot_globals.mmwave_spectrum_freq)
 
     def pump_to_F4(self, t, label: Literal['mot', 'sigma'], close_all_shutters=True):
         """Pump atoms from F=3 to F=4 hyperfine state.
