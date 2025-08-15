@@ -171,6 +171,14 @@ class BField:
                     bias_field_vector[2],
                 )
             )
+
+            # print('bias field:', bias_field_vector[0], '\n',
+            #         bias_field_vector[1], '\n',
+            #         bias_field_vector[2],'\n','after conversion:',
+            #         biasx_calib(field_vector[0]),
+            #         biasy_calib(field_vector[1]),
+            #         biasz_calib(field_vector[2]),
+            #     )
         else:
             field_vector = bias_field_vector
 
