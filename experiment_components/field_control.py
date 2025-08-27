@@ -8,6 +8,9 @@ from labscriptlib.calibration import (
     biasx_calib,
     biasy_calib,
     biasz_calib,
+    Ex_calib,
+    Ey_calib,
+    Ez_calib,
 )
 from labscriptlib.connection_table import devices
 
@@ -312,7 +315,7 @@ class EField:
 
     def __init__(self, t, init_voltage_diffs: tuple[float, float, float]):
 
-        self.voltage_diffs = init_voltage_diffs
+        self.voltage_diffs = (0,0,0)
 
         self.electrodes = (
             devices.electrode_T1,
@@ -325,7 +328,34 @@ class EField:
             devices.electrode_B4,
         )
 
-        self.set_electric_field(t, self.voltage_diffs)
+        self.set_efield_shift(t, init_voltage_diffs)
+
+    def convert_fields_sph_to_cart(self, amp, theta, phi):
+        """Convert spherical coordinates to Cartesian for bias field control.
+
+        Args:
+            bias_amp (float): Amplitude of the bias field
+            bias_phi (float): Azimuthal angle in radians
+            bias_theta (float): Polar angle in radians
+
+        Returns:
+            tuple: Cartesian coordinates (x, y, z) for the bias field
+        """
+        x_field = (
+            amp
+            * np.cos(np.deg2rad(phi))
+            * np.sin(np.deg2rad(theta))
+        )
+        y_field = (
+            amp
+            * np.sin(np.deg2rad(phi))
+            * np.sin(np.deg2rad(theta))
+        )
+        z_field = amp * np.cos(
+            np.deg2rad(theta),
+        )
+
+        return (x_field, y_field, z_field)
 
     def convert_electrodes_voltages(self, voltage_diff_vector: tuple[float, float, float]):
         """
@@ -364,3 +394,27 @@ class EField:
             electrode.constant(t, voltage)
 
         self.voltage_diffs = tuple(voltage_diff_vector)
+
+    def set_efield_shift(self, t, shift_vector: tuple[float, float, float], polar = False):
+        if polar:
+            shift_vec_cart = self.convert_fields_sph_to_cart(shift_vector[0], shift_vector[1], shift_vector[2])
+        else:
+            shift_vec_cart = shift_vector
+        print(shift_vec_cart)
+        voltage_vec = np.array(
+                [
+                    Ex_calib(shift_vec_cart[0]),
+                    Ey_calib(shift_vec_cart[1]),
+                    Ez_calib(shift_vec_cart[2]),
+                ]
+            )
+        print(voltage_vec)
+
+        self.set_electric_field(t, voltage_vec)
+
+
+
+
+
+
+
