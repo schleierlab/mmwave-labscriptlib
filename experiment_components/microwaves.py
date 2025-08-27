@@ -74,7 +74,7 @@ class Microwave:
                     "max_pulses": 1,
                 },
             ],
-            clock_freq=625,
+            clock_freq = 1250,
             use_ext_clock=True,
             ext_clock_freq=10,
         )
@@ -142,7 +142,7 @@ class Microwave:
             t,
             duration=dur,
             freq=pulse_detuning,
-            amplitude=0.1,  # the amplitude cannot be 1 due to bug in spectrum card server
+            amplitude=0.1,  # the amplitude cannot be 1 due to bug in spectrum card server, at most 0.99
             phase=0,  # initial phase = 0
             ch=1,  # using channel 0
             loops=1,  # doing 1 loop
