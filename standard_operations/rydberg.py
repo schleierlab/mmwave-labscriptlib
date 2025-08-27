@@ -1,5 +1,7 @@
 import numpy as np
 
+import labscript.labscript as ls
+
 from labscriptlib.experiment_components import PointingConfig, RydLasers, ShutterConfig
 from labscriptlib.shot_globals import shot_globals
 
@@ -452,6 +454,19 @@ class RydbergOperations(TweezerOperations):
         t += 3.1e-6
         # added to allow the short duration < 3us pulse
         # because the analog change from tweezer ramp power
+
+        #Switch E_field
+        if shot_globals.do_Efield_calib:
+            voltage_diff_vector = (shot_globals.Efield_Vx,
+                                   shot_globals.Efield_Vy,
+                                   shot_globals.Efield_Vz)
+            self.EField_obj.set_electric_field(t, voltage_diff_vector)
+        else:
+            E_field_shift_vec = (shot_globals.ryd_E_shift_amp,
+                                 shot_globals.ryd_E_shift_theta,
+                                 shot_globals.ryd_E_shift_phi)
+            self.EField_obj.set_efield_shift(t, E_field_shift_vec, polar = True)
+
         t+= 50e-3
 
 
@@ -542,8 +557,16 @@ class RydbergOperations(TweezerOperations):
              polar=True) # trap is lowered when optical pump happens
 
         t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99) # ramp trap power back
-        t+= 55e-3
+        t += 5e-3
 
+        E_field_shift_vec = (shot_globals.ryd_E_shift_amp,
+                             shot_globals.ryd_E_shift_theta,
+                             shot_globals.ryd_E_shift_phi)
+        self.EField_obj.set_efield_shift(t, E_field_shift_vec, polar = True)
+
+        t += 50e-3
+
+        ls.add_time_marker(t, 'Rydberg pulses')
 
         t, pulse_start_times = self.RydLasers_obj.do_rydberg_multipulses(
                 t,
@@ -563,7 +586,8 @@ class RydbergOperations(TweezerOperations):
 
         #Timing?
         mmwave_offset_t = (shot_globals.ryd_state_wait_time - shot_globals.mmwave_pulse_time)/2
-        _ = self.Microwave_obj.do_mmwave_pulse(t_aom_stop_0 -self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET + 6.7e-6 + mmwave_offset_t, shot_globals.mmwave_pulse_time)
+        # _ = self.Microwave_obj.do_mmwave_pulse(t_aom_stop_0 -self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET + 6.7e-6 + mmwave_offset_t, shot_globals.mmwave_pulse_time)
+        _ = self.Microwave_obj.do_mmwave_pulse(t_aom_stop_0 -self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET + 32.95e-6 + mmwave_offset_t, shot_globals.mmwave_pulse_time)
 
         if shot_globals.do_mmwave_kill:
             # start microwaves as soon as blue is off
