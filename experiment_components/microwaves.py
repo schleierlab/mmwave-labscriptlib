@@ -47,15 +47,15 @@ class Microwave:
             t
         )  # absorp switch only on when sending pulse
 
-        # spectrum setup for microwaves & mmwaves, 1st channel for
-        # Hyperfine splitting of ground state, 2nd channel for mmwaves on Rydberg levels
+        # spectrum setup for microwaves & mmwaves
+        # Channel 0 for 9.2 GHz microwaves (lower-sideband mixed with ~9.4 GHz LO)
+        # Channel 1 for mm-waves (upper-sideband mixed with mm-wave LO)
         devices.spectrum_uwave.set_mode(
             replay_mode=b"sequence",
             channels=[
                 {
                     "name": "microwaves",
-                    "power": self.spectrum_uwave_power
-                    + self.CONST_SPECTRUM_UWAVE_CABLE_ATTEN,
+                    "power": self.spectrum_uwave_power + self.CONST_SPECTRUM_UWAVE_CABLE_ATTEN,
                     "port": 0,
                     "is_amplified": False,
                     "amplifier": None,
@@ -74,7 +74,7 @@ class Microwave:
                     "max_pulses": 1,
                 },
             ],
-            clock_freq = 1250,
+            clock_freq=1250,
             use_ext_clock=True,
             ext_clock_freq=10,
         )
@@ -142,7 +142,7 @@ class Microwave:
             t,
             duration=dur,
             freq=pulse_detuning,
-            amplitude=0.1,  # the amplitude cannot be 1 due to bug in spectrum card server, at most 0.99
+            amplitude = 0.25,  # the amplitude cannot be 1 due to bug in spectrum card server, at most 0.99
             phase=0,  # initial phase = 0
             ch=1,  # using channel 0
             loops=1,  # doing 1 loop
