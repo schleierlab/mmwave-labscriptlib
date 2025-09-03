@@ -6,7 +6,7 @@ MOT:
   mot_exposure_time: { value: 1e-3, unit: s }
   mot_load_dur: { value: 0, unit: s }
   mot_repump_power: { value: 1, unit: V }
-  mot_ta_detuning: { value: -24, unit: MHz }
+  mot_ta_detuning: { value: -21, unit: MHz }
   mot_ta_power: { value: 0.7, unit: V }
   mot_tof_imaging_delay: { value: 7e-3, unit: s }
   mot_uv_duration: { value: 200e-3, unit: s }
@@ -26,7 +26,7 @@ Bright_Molasses:
   bm_repump_power: { value: 1.0, unit: V }
   bm_robust_loading_pulse_dur: { value: 80e-3, unit: s }
   bm_ta_detuning: { value: -100, unit: MHz }
-  bm_ta_power: { value: 0.18, unit: V } # last updated 05/01/2025
+  bm_ta_power: { value: 0.2, unit: V }
   bm_time: { value: 10e-3, unit: s }
   bm_tof_imaging_delay: { value: 7e-3, unit: s }
   bm_beam_choice: { value: "\"mot\"", unit: "" } # "mot" or "img"
@@ -92,7 +92,7 @@ Optical_pumping:
   # TODO: Does this name make sense?
   op_repump_pumping_detuning: { value: 8, unit: MHz }
   op_repump_time: { value: 260e-6, unit: s }
-  op_ta_power: { value: 0.1, unit: V }
+  op_ta_power: { value: 0.15, unit: V }
   op_ta_pumping_detuning: { value: -235.81, unit: MHz }
   op_ta_time: { value: 250e-6, unit: s }
 
@@ -121,9 +121,9 @@ Tweezers:
   do_tweezer_modulation: { value: False, unit: bool }
   do_tweezers: { value: True, unit: bool }
   tw_img_exposure_time: { value: 40e-3, unit: s } #80e-3
-  tw_img_repump_power: { value: 0.22, unit: V } #0.19
+  tw_img_repump_power: { value: 0.26, unit: V }
   tw_img_ta_detuning: { value: -30, unit: MHz} #-35#-47
-  tw_img_ta_power: { value: 0.22, unit: V }
+  tw_img_ta_power: { value: 0.26, unit: V }
   tw_img_tof_imaging_delay: { value: 50e-3, unit: s }
   kinetix_roi_row: { value: "tuple((1150,110))", unit: pixels }
   tw_modulation_freq: { value: 0, unit: Hz }
