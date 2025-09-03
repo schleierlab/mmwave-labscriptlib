@@ -1,3 +1,4 @@
+import labscript.labscript as ls
 
 from labscriptlib.experiment_components import D2Lasers, ShutterConfig, TweezerLaser
 from labscriptlib.shot_globals import shot_globals
@@ -79,10 +80,11 @@ class TweezerOperations(OpticalPumpingOperations):
         Raises:
             ValueError: If time-of-flight delay is too short
         """
-        # TODO this still spends some time loading the MOT;
-        # figure out whether we even need this here at all.
-        t = self.do_mot(t, dur=1)  # MOT loads between shots, don't need to spend extra time
+        # TODO this still spends some time loading the MOT
+        # even with dur=0; see if we can get rid of this line completely
+        t = self.do_mot(t, dur=shot_globals.mot_load_dur)
 
+        ls.add_time_marker(t, 'Start molasses')
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
 
         # TODO: does making this delay longer make the background better when using UV?
@@ -140,6 +142,7 @@ class TweezerOperations(OpticalPumpingOperations):
         Returns:
             float: End time of the imaging sequence
         """
+        ls.add_time_marker(t, 'Tweezer imaging')
         t = self.ramp_to_imaging_parameters(t)
         if shot_number == 1:
             t = self.do_tweezer_imaging(
@@ -148,7 +151,8 @@ class TweezerOperations(OpticalPumpingOperations):
         elif shot_number > 1:
             # pulse for the second shots and wait for the first shot to finish the
             # first reading
-            kinetix_readout_time = shot_globals.kinetix_roi_row[1] * 4.7065e-6
+            # TODO readout time is a very conservative upper bound; see if we can optimize
+            kinetix_readout_time = shot_globals.kinetix_roi_row[1] * 4.7065e-6 * shot_number
             t += kinetix_readout_time
             t = self.do_tweezer_imaging(t, close_all_shutters=True)
         return t
@@ -239,6 +243,7 @@ class TweezerOperations(OpticalPumpingOperations):
             t (float): Start time (modulo shutter handling)
             B_field (tuple): Final B field. Must be in cartesian form
         """
+        ls.add_time_marker(t, 'Optical pumping')
 
         t, t_aom_off = self.pump_to_F4(
             t, shot_globals.op_label, close_all_shutters=True
@@ -269,6 +274,8 @@ class TweezerOperations(OpticalPumpingOperations):
         if shot_globals.do_tw_release_and_recapture: # ramp and turn traps off for temperature measurement
             t = self.release_and_recapture(t)
         t = self.image_tweezers(t, shot_number=2)
+        if shot_globals.do_rearrangement:
+            t = self.image_tweezers(t, shot_number=3) # this adds 46 ms time offset
         t = self.take_in_shot_background(t)
         t = self.reset_mot(t)
 
@@ -475,8 +482,8 @@ class TweezerOperations(OpticalPumpingOperations):
 
         # Making sure the ramp ends right as the pumping is starting
         t_start_ramp = (
-            t_aom_off - shot_globals.tw_ramp_dur - shot_globals.op_repump_time
-        )
+            t_aom_off - shot_globals.tw_ramp_dur - shot_globals.op_repump_time - 10e-6
+        ) # added time to separate the pulse and the b field more (should still work without out this -10e-6)
 
         # ramp down the tweezer power before optical pumping
         _ = self.TweezerLaser_obj.ramp_power(
@@ -500,13 +507,13 @@ class TweezerOperations(OpticalPumpingOperations):
         # ]
 
         t = self.BField_obj.ramp_bias_field(
-            t, # extra time to wait for 5e-3s extra time in optical pumping field
+            t + 200e-6, # extra time to wait for 5e-3s extra time in optical pumping field
             bias_field_vector=(shot_globals.mw_bias_amp,
                                    shot_globals.mw_bias_phi,
                                    shot_globals.mw_bias_theta),
             # dur=shot_globals.mw_bias_ramp_dur,
             polar = True,
-        )
+        ) # added time to separate the pulse and the b field more (should still work without out this 200e-6)
 
         t += shot_globals.mw_field_wait_dur  # 400e-6
         # t = self.TweezerLaser_obj.ramp_power(
@@ -626,6 +633,7 @@ class TweezerOperations(OpticalPumpingOperations):
         # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
         t += shot_globals.img_wait_time_between_shots
         t = self.image_tweezers(t, shot_number=2)
+        t = self.take_in_shot_background(t)
         t = self.reset_mot(t)
 
         return t

@@ -6,16 +6,16 @@ MOT:
   mot_exposure_time: { value: 1e-3, unit: s }
   mot_load_dur: { value: 0, unit: s }
   mot_repump_power: { value: 1, unit: V }
-  mot_ta_detuning: { value: -24, unit: MHz }
+  mot_ta_detuning: { value: -21, unit: MHz }
   mot_ta_power: { value: 0.7, unit: V }
   mot_tof_imaging_delay: { value: 7e-3, unit: s }
   mot_uv_duration: { value: 200e-3, unit: s }
   mot_x_coil_voltage: { value: 0.75, unit: V }
   mot_y_coil_voltage: { value: -1.1, unit: V }
   mot_z_coil_voltage: { value: -1.1, unit: V }
-  zero_Efield_Vx: { value: 0.1, unit: V }
-  zero_Efield_Vy: { value: -0.18, unit: V }
-  zero_Efield_Vz: { value: 0.14, unit: V }
+  zero_Efield_Vx: { value: 0.29, unit: V }
+  zero_Efield_Vy: { value: 0, unit: V }
+  zero_Efield_Vz: { value: -0.01, unit: V }
 
 Bright_Molasses:
   bm_exposure_time: { value: 1e-3, unit: s }
@@ -26,7 +26,7 @@ Bright_Molasses:
   bm_repump_power: { value: 1.0, unit: V }
   bm_robust_loading_pulse_dur: { value: 80e-3, unit: s }
   bm_ta_detuning: { value: -100, unit: MHz }
-  bm_ta_power: { value: 0.18, unit: V } # last updated 05/01/2025
+  bm_ta_power: { value: 0.2, unit: V }
   bm_time: { value: 10e-3, unit: s }
   bm_tof_imaging_delay: { value: 7e-3, unit: s }
   bm_beam_choice: { value: "\"mot\"", unit: "" } # "mot" or "img"
@@ -38,6 +38,12 @@ Bright_Molasses:
 Microwaves:
   do_mw_pulse: { value: False, unit: bool }
   do_mw_sweep: { value: False, unit: bool }
+  do_microwave_kill: { value: False, unit: bool }
+  do_mmwave_kill: { value: False, unit: bool }
+  do_mmwave_ramsey: { value: False, unit: bool }
+  mmwave_pulse_time: { value: 2.013e-7, unit: s }  # pi pulse time
+  mmwave_ramsey_wait_time: { value: 0.8e-6, unit: s }
+  mmwave_spectrum_freq: { value: 300e6, unit: Hz }
   mw_bias_amp: { value: 1000, unit: mG }
   mw_bias_phi: { value: 90, unit: deg }
   mw_bias_theta: { value: 90, unit: deg }
@@ -81,15 +87,15 @@ Optical_pumping:
   # TODO: this should probably be removed
   op_extra_fudge_time: { value: 0, unit: s }
   op_killing_pulse_time: { value: 20e-6, unit: s }
-  op_killing_ta_power: { value: 0.05, unit: V }
+  op_killing_ta_power: { value: 0.2, unit: V }
   # TODO: do we use this anymore?
   op_label: { value: "\"sigma\"", unit: "" }
   op_ramp_delay: { value: 0, unit: s }
   op_repump_power: { value: 1, unit: V }
   # TODO: Does this name make sense?
   op_repump_pumping_detuning: { value: 8, unit: MHz }
-  op_repump_time: { value: 253e-6, unit: s }
-  op_ta_power: { value: 0.05, unit: V }
+  op_repump_time: { value: 260e-6, unit: s }
+  op_ta_power: { value: 0.15, unit: V }
   op_ta_pumping_detuning: { value: -235.81, unit: MHz }
   op_ta_time: { value: 250e-6, unit: s }
 
@@ -103,9 +109,9 @@ Tweezers:
   TW_rearrangement_time_offset: { value: 0e-3, unit: s }
   # TODO: how do we eval strings
   TW_target_array: { value: "tuple(np.arange(12,38,1))", unit: "" }
-  TW_x_freqs: { value: "tuple(np.arange(58,88,0.6))", unit: MHz } #np.arange(60,88,0.7)
+  TW_x_freqs: { value: "tuple(np.arange(58,88,0.6))", unit: MHz } #np.arange(60,88,0.7) #np.arange(58,88,0.6)
   TW_y_amplitude: { value: 0.99, unit: ""}
-  TW_y_freqs: { value: [70.75], unit: MHz }
+  TW_y_freqs: { value: [69], unit: MHz } #70.75
   TW_y_power: { value: 33, unit: dBm }
   TW_y_use_dds: { value: True, unit: bool }
   do_cooling_while_rearrange: { value: False, unit: bool }
@@ -118,9 +124,9 @@ Tweezers:
   do_tweezer_modulation: { value: False, unit: bool }
   do_tweezers: { value: True, unit: bool }
   tw_img_exposure_time: { value: 40e-3, unit: s } #80e-3
-  tw_img_repump_power: { value: 0.19, unit: V } #0.3
-  tw_img_ta_detuning: { value: -35, unit: MHz} #-47
-  tw_img_ta_power: { value: 0.19, unit: V }
+  tw_img_repump_power: { value: 0.26, unit: V }
+  tw_img_ta_detuning: { value: -30, unit: MHz} #-35#-47
+  tw_img_ta_power: { value: 0.26, unit: V }
   tw_img_tof_imaging_delay: { value: 50e-3, unit: s }
   kinetix_roi_row: { value: "tuple((1150,110))", unit: pixels }
   tw_modulation_freq: { value: 0, unit: Hz }
@@ -144,23 +150,23 @@ Rydberg:
   local_addr_ramp_power: { value: 0.3, unit: V }
   ryd_1064_mirror_1_h: { value: 5, unit: V }
   ryd_1064_mirror_1_v: { value: 5, unit: V }
-  ryd_1064_mirror_2_h: { value: 3.7, unit: V }
-  ryd_1064_mirror_2_v: { value: 1.5, unit: V }
+  ryd_1064_mirror_2_h: { value: 4.75, unit: V }
+  ryd_1064_mirror_2_v: { value: 3.73, unit: V }
   ryd_1064_power: { value: 0.5, unit: V }
   ryd_456_detuning: { value: 575, unit: MHz } #530
   ryd_456_duration: { value: 15e-6, unit: s }
   ryd_456_mirror_1_h: { value: 5, unit: V }
-  ryd_456_mirror_1_v: { value: 7, unit: V }
-  ryd_456_mirror_2_h: { value: 3, unit: V }
-  ryd_456_mirror_2_v: { value: 1, unit: V }
+  ryd_456_mirror_1_v: { value: 5, unit: V }
+  ryd_456_mirror_2_h: { value: 4.5, unit: V }
+  ryd_456_mirror_2_v: { value: 4.5, unit: V }
   ryd_456_power: { value: 1, unit: V }
   ryd_456_repump_power: { value: 1, unit: V }
   ryd_Efield_Vx: { value: 0.1, unit: V }
   ryd_Efield_Vy: { value: -0.18, unit: V }
   ryd_Efield_Vz: { value: 0.14, unit: V }
   ryd_bias_amp: { value: 2800, unit: mG }
-  ryd_bias_phi: { value: -3, unit: deg }
-  ryd_bias_theta: { value: 134, unit: deg }
+  ryd_bias_phi: { value: 0, unit: deg } #-3
+  ryd_bias_theta: { value: 122, unit: deg }
   ryd_n_pulses: { value: 5, unit: ""}
   ryd_pulse_wait_dur: { value: 1e-6, unit: s }
   do_ramsey: {value: False, unit: bool}
@@ -189,6 +195,7 @@ Sequence:
   do_dipole_trap_dark_state_measurement: { value: False, unit: bool }
   do_dipole_trap_state_sensitive_img_check: { value: False, unit: bool }
   do_ryd_tweezer_check: { value: False, unit: bool }
+  do_ryd_mmwave_check: { value: False, unit: bool }
   do_ryd_multipulse_check: { value: False, unit: bool }
   do_456_check: { value: False, unit: bool }
   do_dipole_trap_check: { value: False, unit: bool }
@@ -196,4 +203,5 @@ Sequence:
   do_dark_state_lifetime_in_tweezer_check: { value: False, unit: bool }
   do_456_with_dark_state_check: { value: False, unit: bool }
   do_456_light_shift_check: { value: False, unit: bool }
+  do_456_hyperfine_light_shift_check: {value: False, unit: bool}
   do_1064_light_shift_check: { value: False, unit: bool }

@@ -24,7 +24,6 @@ class MOTConfig:
     bm_parity_projection_ta_detuning: float
     mot_bias_coil_ctrl_voltages: tuple[float, float, float]
     mot_do_coil: bool
-    zero_efield_voltages: tuple[float, float, float]
 
     @property
     def mot_d2_config(self) -> D2Config:
@@ -81,11 +80,7 @@ class MOTOperations:
             enable_mot_coils=shot_globals.mot_do_coil,
         )
 
-        init_electrode_voltage_diffs = (
-            shot_globals.zero_Efield_Vx,
-            shot_globals.zero_Efield_Vy,
-            shot_globals.zero_Efield_Vz,
-        )
+        init_electrode_voltage_diffs = (0, 0, 0)
         self.EField_obj = EField(t, init_electrode_voltage_diffs)
 
         self.UVLamps_obj = UVLamps(t)

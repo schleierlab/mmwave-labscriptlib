@@ -218,8 +218,8 @@ class LabDevices():
 
         self.mmwave_switch = DigitalOut(
             name='mmwave_switch',
-            parent_device=ni_6363_0,
-            connection='port0/line23',
+            parent_device = pb.direct_outputs,
+            connection='flag 18',
         )
 
         self.blue_456_shutter = Shutter(
@@ -500,12 +500,15 @@ class LabDevices():
         #================================================================================
         # Spectrum Instrumentation Cards for microwaves
         #================================================================================
-        self.spectrum_uwave = Spectrum(name='spectrum_uwave', parent_device=clockline_6363,
-                    trigger={'device': ni_6363_0, 'connection': 'port0/line21'},
-                    BIAS_port = 8771,
-                    serial_number = 19621,
-                    handle_name = b'/dev/spcm0',
-                    triggerDur=10e-3
+
+        self.spectrum_uwave = Spectrum(
+            name='spectrum_uwave',
+            parent_device=clockline_6363,
+            trigger={'device': pb.direct_outputs, 'connection': 'flag 19'},
+            BIAS_port = 8771,
+            serial_number = 19621,
+            handle_name = b'/dev/spcm0',
+            triggerDur=10e-3
         )
 
         #==============================================================================
@@ -606,4 +609,9 @@ devices = LabDevices()
 if __name__ == '__main__':
     devices.initialize()
     labscript.start()
+
+    # relock the TA
+    devices.ta_relock.go_high(0.1)
+    devices.ta_relock.go_low(0.9)
+
     labscript.stop(1.0)

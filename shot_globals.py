@@ -35,6 +35,7 @@ class ParameterSpec(TypedDict):
 
 class ShotGlobals(SimpleNamespace):
     # declare globals here!
+    do_mw_kill: bool
     repetition_index: int
     manta_exposure: float
 
