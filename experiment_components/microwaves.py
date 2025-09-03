@@ -106,8 +106,8 @@ class Microwave:
             freq=spec_freq_calib(pulse_detuning),
             amplitude=0.99,  # the amplitude cannot be 1 due to bug in spectrum card server
             phase=0,  # initial phase = 0
-            ch=0,  # using channel 0
-            loops=1,  # doing 1 loop
+            ch=0,
+            loops=1,
         )
 
         t += dur
@@ -116,44 +116,63 @@ class Microwave:
 
         return t
 
-    def do_mmwave_pulse(self, t, dur, detuning: Optional[float] = None):
+    def do_mmwave_pulse(
+            self,
+            t0: float,
+            duration: float,
+            detuning: Optional[float] = None,
+            phase: float = 0,
+            keep_switch_on: bool = False
+    ):
         """Generate a single-frequency microwave pulse.
 
         Produces a microwave pulse at the current detuning frequency with specified duration.
         Handles timing offsets and switch control automatically.
 
-        Args:
-            t (float): Start time for the pulse
-            dur (float): Duration of the pulse
-            detuning (float, optional):
-                Detuning of the pulse from the cesium clock transition, in MHz.
-                Defaults to default detuning of this object if not specified.
+        The output IF waveform will be of the form cos(phase + omega * (t - t0)).
 
-        Returns:
-            float: End time after the pulse is complete
+        Parameters
+        ----------
+        t0: float
+            Start time for the pulse
+        dur: float
+            Duration of the pulse
+        detuning: float, optional
+            Output frequency (IF) from the Spectrum card, in Hz.
+            The final mm-wave frequency is then mm-wave LO frequency + IF frequency
+        phase: float
+            Phase of the waveform at the beginning of the pulse, in degrees.
+            For phase coherence between pulses, one must manually compute
+            the accumulated phase between the pulses.
+
+        Returns
+        -------
+        float
+            End time of the pulse
         """
         switch_rise_buffer_t = 10e-3
-        devices.mmwave_switch.go_high(t - switch_rise_buffer_t)
-        devices.mmwave_switch.go_low(t - switch_rise_buffer_t + 5e-6)
+        devices.mmwave_switch.go_high(t0 - switch_rise_buffer_t)
+        devices.mmwave_switch.go_low(t0 - switch_rise_buffer_t + 5e-6)
         self.mmwave_switch_on = True
 
         pulse_detuning = self.mmwave_spcm_freq if detuning is None else detuning
         devices.spectrum_uwave.single_freq(
-            t,
-            duration=dur,
+            t0,
+            duration=duration,
             freq=pulse_detuning,
-            amplitude = 0.25,  # the amplitude cannot be 1 due to bug in spectrum card server, at most 0.99
-            phase=0,  # initial phase = 0
-            ch=1,  # using channel 0
-            loops=1,  # doing 1 loop
+            amplitude=0.25,  # the amplitude cannot be 1 due to bug in spectrum card server, at most 0.99
+            phase=phase,
+            ch=1,
+            loops=1,
         )
 
-        t += dur
-        devices.mmwave_switch.go_high(t + switch_rise_buffer_t)
-        devices.mmwave_switch.go_low(t + switch_rise_buffer_t + 5e-6)
-        self.mmwave_switch_on = False
+        t0 += duration
+        if not keep_switch_on:
+            devices.mmwave_switch.go_high(t0 + switch_rise_buffer_t)
+            devices.mmwave_switch.go_low(t0 + switch_rise_buffer_t + 5e-6)
+            self.mmwave_switch_on = False
 
-        return t
+        return t0
 
     # TODO: This function is not tested yet
     def do_ramsey_pulse(self, t, dur, dur_between_pulse):

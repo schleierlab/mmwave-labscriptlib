@@ -467,11 +467,20 @@ class RydbergOperations(TweezerOperations):
                                  shot_globals.ryd_E_shift_phi)
             self.EField_obj.set_efield_shift(t, E_field_shift_vec, polar = True)
 
-        t+= 50e-3
-
-
-
-        if not shot_globals.do_ramsey:
+        t += 50e-3
+        ls.add_time_marker(t, 'Rydberg physics')
+        if shot_globals.do_ramsey:
+            t, pulse_start_times = self.RydLasers_obj.do_rydberg_multipulses(
+                t,
+                n_pulses=2,
+                pulse_dur= shot_globals.ryd_456_duration/2,
+                pulse_wait_dur = shot_globals.t_ramsey_wait,
+                power_456 = shot_globals.ryd_456_power,
+                power_1064 = shot_globals.ryd_1064_power,
+                close_shutter=True)
+            t_aom_start = pulse_start_times[0]
+            t_aom_stop = t_aom_start + shot_globals.ryd_456_duration + shot_globals.t_ramsey_wait
+        else:
             t, t_aom_start = self.RydLasers_obj.do_rydberg_pulse_short(
                 t,
                 dur=shot_globals.ryd_456_duration,
@@ -481,20 +490,6 @@ class RydbergOperations(TweezerOperations):
                 long_1064 = True,
                 pd_analog_in = True)
             t_aom_stop = t_aom_start + shot_globals.ryd_456_duration
-        else:
-            t, pulse_start_times = self.RydLasers_obj.do_rydberg_multipulses(
-                t,
-                n_pulses=2,
-                pulse_dur= shot_globals.ryd_456_duration/2,
-                pulse_wait_dur = shot_globals.t_ramsey_wait,
-                power_456 = shot_globals.ryd_456_power,
-                power_1064 = shot_globals.ryd_1064_power,
-                close_shutter=True
-
-            )
-            t_aom_start = pulse_start_times[0]
-            t_aom_stop = t_aom_start + shot_globals.ryd_456_duration + shot_globals.t_ramsey_wait
-
 
         if shot_globals.do_tw_trap_off:
             self.TweezerLaser_obj.aom_off(t_aom_start - 0.6e-6, digital_only=True)
@@ -584,10 +579,30 @@ class RydbergOperations(TweezerOperations):
         self.TweezerLaser_obj.aom_off(t_aom_start - 0.6e-6, digital_only=True)
         self.TweezerLaser_obj.aom_on(t_aom_stop_1, 0.99, digital_only=True)
 
-        #Timing?
-        mmwave_offset_t = (shot_globals.ryd_state_wait_time - shot_globals.mmwave_pulse_time)/2
-        # _ = self.Microwave_obj.do_mmwave_pulse(t_aom_stop_0 -self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET + 6.7e-6 + mmwave_offset_t, shot_globals.mmwave_pulse_time)
-        _ = self.Microwave_obj.do_mmwave_pulse(t_aom_stop_0 -self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET + 32.95e-6 + mmwave_offset_t, shot_globals.mmwave_pulse_time)
+        spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET - 29.30e-6
+        if shot_globals.do_mmwave_ramsey:
+            ramsey_time = shot_globals.mmwave_pulse_time*2 + shot_globals.mmwave_ramsey_wait_time
+            mmwave_offset_t = (shot_globals.ryd_state_wait_time - ramsey_time)/2
+
+            first_pulse_end_time = self.Microwave_obj.do_mmwave_pulse(
+                t_aom_stop_0 - spectrum_card_delay + mmwave_offset_t,
+                shot_globals.mmwave_pulse_time,
+                detuning=shot_globals.mmwave_spectrum_freq,
+                phase=0,
+                keep_switch_on=True,
+            )
+            phase_accumulation_degrees = 360 * shot_globals.mmwave_spectrum_freq * (shot_globals.mmwave_pulse_time + shot_globals.mmwave_ramsey_wait_time)
+
+            self.Microwave_obj.do_mmwave_pulse(
+                first_pulse_end_time + shot_globals.mmwave_ramsey_wait_time,
+                shot_globals.mmwave_pulse_time,
+                detuning=shot_globals.mmwave_spectrum_freq,
+                phase= phase_accumulation_degrees,
+            )
+        else:
+            #Timing?
+            mmwave_offset_t = (shot_globals.ryd_state_wait_time - shot_globals.mmwave_pulse_time) / 2
+            _ = self.Microwave_obj.do_mmwave_pulse(t_aom_stop_0 - spectrum_card_delay + mmwave_offset_t, shot_globals.mmwave_pulse_time)
 
         if shot_globals.do_mmwave_kill:
             # start microwaves as soon as blue is off

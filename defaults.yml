@@ -40,6 +40,9 @@ Microwaves:
   do_mw_sweep: { value: False, unit: bool }
   do_microwave_kill: { value: False, unit: bool }
   do_mmwave_kill: { value: False, unit: bool }
+  do_mmwave_ramsey: { value: False, unit: bool }
+  mmwave_pulse_time: { value: 2.013e-7, unit: s }  # pi pulse time
+  mmwave_ramsey_wait_time: { value: 0.8e-6, unit: s }
   mmwave_spectrum_freq: { value: 300e6, unit: Hz }
   mw_bias_amp: { value: 1000, unit: mG }
   mw_bias_phi: { value: 90, unit: deg }
