@@ -1178,19 +1178,6 @@ class RydLasers:
             # self.pulse_1064_aom_on(t,1)
             t_end = t
 
-        # logging the photodiode signal to analog in
-        # devices.monitor_1064.acquire(
-        #     label = '1064',
-        #     start_time = pulse_start_times[0] - 10e-6,
-        #     end_time = t
-        #     )
-
-        # devices.monitor_456.acquire(
-        #     label = '456',
-        #     start_time = pulse_start_times[0] - 10e-6,
-        #     end_time = t
-        #     )
-
         return t_end, pulse_start_times
 
     def do_rydberg_pulse_short(
