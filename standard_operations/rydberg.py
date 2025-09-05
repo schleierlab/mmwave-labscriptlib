@@ -1,6 +1,6 @@
 import numpy as np
 
-import labscript.labscript as ls
+import labscript.labscript as ls  # type:ignore
 
 from labscriptlib.experiment_components import PointingConfig, RydLasers, ShutterConfig
 from labscriptlib.shot_globals import shot_globals
@@ -597,10 +597,10 @@ class RydbergOperations(TweezerOperations):
                 first_pulse_end_time + shot_globals.mmwave_ramsey_wait_time,
                 shot_globals.mmwave_pulse_time,
                 detuning=shot_globals.mmwave_spectrum_freq,
-                phase= phase_accumulation_degrees,
+                phase=phase_accumulation_degrees,
             )
         else:
-            #Timing?
+            # Timing?
             mmwave_offset_t = (shot_globals.ryd_state_wait_time - shot_globals.mmwave_pulse_time) / 2
             _ = self.Microwave_obj.do_mmwave_pulse(t_aom_stop_0 - spectrum_card_delay + mmwave_offset_t, shot_globals.mmwave_pulse_time)
 
