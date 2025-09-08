@@ -602,7 +602,11 @@ class RydbergOperations(TweezerOperations):
         else:
             # Timing?
             mmwave_offset_t = (shot_globals.ryd_state_wait_time - shot_globals.mmwave_pulse_time) / 2
-            _ = self.Microwave_obj.do_mmwave_pulse(t_aom_stop_0 - spectrum_card_delay + mmwave_offset_t, shot_globals.mmwave_pulse_time)
+            self.Microwave_obj.do_mmwave_pulse(
+                t_aom_stop_0 - spectrum_card_delay + mmwave_offset_t,
+                shot_globals.mmwave_pulse_time,
+                switch_offset = spectrum_card_delay,
+            )
 
         if shot_globals.do_mmwave_kill:
             # start microwaves as soon as blue is off

@@ -46,6 +46,7 @@ class Microwave:
         devices.uwave_absorp_switch.go_low(
             t
         )  # absorp switch only on when sending pulse
+        devices.mmwave_switch.go_high(t)
 
         # spectrum setup for microwaves & mmwaves
         # Channel 0 for 9.2 GHz microwaves (lower-sideband mixed with ~9.4 GHz LO)
@@ -122,7 +123,8 @@ class Microwave:
             duration: float,
             detuning: Optional[float] = None,
             phase: float = 0,
-            keep_switch_on: bool = False
+            keep_switch_on: bool = False,
+            switch_offset: float = 0
     ):
         """Generate a single-frequency microwave pulse.
 
@@ -150,9 +152,9 @@ class Microwave:
         float
             End time of the pulse
         """
-        switch_rise_buffer_t = 10e-3
-        devices.mmwave_switch.go_high(t0 - switch_rise_buffer_t)
-        devices.mmwave_switch.go_low(t0 - switch_rise_buffer_t + 5e-6)
+        buffer_time = 0.25e-6
+        switch_spectrum_offset = switch_offset + 2.5e-7
+        devices.mmwave_switch.go_low(t0 + switch_spectrum_offset - buffer_time)
         self.mmwave_switch_on = True
 
         pulse_detuning = self.mmwave_spcm_freq if detuning is None else detuning
@@ -160,7 +162,7 @@ class Microwave:
             t0,
             duration=duration,
             freq=pulse_detuning,
-            amplitude=0.25,  # the amplitude cannot be 1 due to bug in spectrum card server, at most 0.99
+            amplitude=0.2,  # the amplitude cannot be 1 due to bug in spectrum card server, at most 0.99
             phase=phase,
             ch=1,
             loops=1,
@@ -168,8 +170,7 @@ class Microwave:
 
         t0 += duration
         if not keep_switch_on:
-            devices.mmwave_switch.go_high(t0 + switch_rise_buffer_t)
-            devices.mmwave_switch.go_low(t0 + switch_rise_buffer_t + 5e-6)
+            devices.mmwave_switch.go_high(t0 + switch_spectrum_offset + buffer_time)
             self.mmwave_switch_on = False
 
         return t0
