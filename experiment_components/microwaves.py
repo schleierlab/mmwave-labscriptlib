@@ -52,7 +52,7 @@ class Microwave:
         # Channel 0 for 9.2 GHz microwaves (lower-sideband mixed with ~9.4 GHz LO)
         # Channel 1 for mm-waves (upper-sideband mixed with mm-wave LO)
         devices.spectrum_uwave.set_mode(
-            replay_mode=b"sequence",
+            replay_mode="sequence",
             channels=[
                 {
                     "name": "microwaves",

@@ -47,7 +47,7 @@ class SpectrumManagerFifo():
 
         # set the card mode
         devices.spectrum_0.set_mode(
-            replay_mode= b'fifo_single',
+            replay_mode='fifo_single',
             channels = [
                 {
                     'name': 'Tweezer_X',
