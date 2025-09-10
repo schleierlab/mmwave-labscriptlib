@@ -590,14 +590,16 @@ class RydbergOperations(TweezerOperations):
                 detuning=shot_globals.mmwave_spectrum_freq,
                 phase=0,
                 keep_switch_on=True,
+                switch_offset = spectrum_card_delay,
             )
-            phase_accumulation_degrees = 360 * shot_globals.mmwave_spectrum_freq * (shot_globals.mmwave_pulse_time + shot_globals.mmwave_ramsey_wait_time)
+            phase_accumulation_degrees = 360 * (shot_globals.mmwave_spectrum_freq) * (shot_globals.mmwave_pulse_time + shot_globals.mmwave_ramsey_wait_time)
 
             self.Microwave_obj.do_mmwave_pulse(
                 first_pulse_end_time + shot_globals.mmwave_ramsey_wait_time,
                 shot_globals.mmwave_pulse_time,
                 detuning=shot_globals.mmwave_spectrum_freq,
                 phase=phase_accumulation_degrees,
+                switch_offset = spectrum_card_delay,
             )
         else:
             # Timing?
