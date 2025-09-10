@@ -162,7 +162,7 @@ class Microwave:
             t0,
             duration=duration,
             freq=pulse_detuning,
-            amplitude=0.2,  # the amplitude cannot be 1 due to bug in spectrum card server, at most 0.99
+            amplitude=0.98,  # the amplitude cannot be 1 due to bug in spectrum card server, at most 0.99
             phase=phase,
             ch=1,
             loops=1,
