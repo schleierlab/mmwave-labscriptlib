@@ -87,6 +87,11 @@ if __name__ == "__main__":
         sequence_objects.append(RydSequence_obj)
         t = RydSequence_obj._do_ryd_mmwave_check_sequence(t)
 
+    elif shot_globals.do_ryd_mmwave_ramsey_check:
+        RydSequence_obj = RydbergOperations(t)
+        sequence_objects.append(RydSequence_obj)
+        t = RydSequence_obj._do_ryd_mmwave_ramsey_check_sequence(t)
+
     elif shot_globals.do_ryd_multipulse_check:
         RydSequence_obj = RydbergOperations(t)
         sequence_objects.append(RydSequence_obj)
@@ -166,7 +171,7 @@ if __name__ == "__main__":
         # print('tweezer is stopped at time ', t)
 
     # Reset spectrum if the object has Microwave_obj and if we use microwave in the sequence
-    do_mw = shot_globals.do_mw_pulse or shot_globals.do_mw_sweep or shot_globals.do_microwave_kill or shot_globals.do_mmwave_kill
+    do_mw = shot_globals.do_mw_pulse or shot_globals.do_mw_sweep or shot_globals.do_microwave_kill or shot_globals.do_mmwave_pulse or shot_globals.do_mmwave_kill
     for obj in sequence_objects:
         if obj is not None and hasattr(obj, 'Microwave_obj') and do_mw:
             t = obj.Microwave_obj.reset_spectrum(t)
