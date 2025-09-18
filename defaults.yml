@@ -38,6 +38,7 @@ Microwaves:
   do_mw_pulse: { value: False, unit: bool }
   do_mw_sweep: { value: False, unit: bool }
   do_microwave_kill: { value: False, unit: bool }
+  do_mmwave_pulse: { value: False, unit: bool }
   do_mmwave_kill: { value: False, unit: bool }
   do_mmwave_ramsey: { value: False, unit: bool }
   mmwave_pulse_time: { value: 2.013e-7, unit: s }  # pi pulse time

@@ -2,6 +2,7 @@ from typing import ClassVar, Optional
 
 from labscriptlib.calibration import spec_freq_calib
 from labscriptlib.connection_table import devices
+from labscriptlib.shot_globals import shot_globals
 
 
 class Microwave:
@@ -158,15 +159,17 @@ class Microwave:
         self.mmwave_switch_on = True
 
         pulse_detuning = self.mmwave_spcm_freq if detuning is None else detuning
-        devices.spectrum_uwave.single_freq(
-            t0,
-            duration=duration,
-            freq=pulse_detuning,
-            amplitude=0.98,  # the amplitude cannot be 1 due to bug in spectrum card server, at most 0.99
-            phase=phase,
-            ch=1,
-            loops=1,
-        )
+
+        if shot_globals.do_mmwave_pulse:
+            devices.spectrum_uwave.single_freq(
+                t0,
+                duration=duration,
+                freq=pulse_detuning,
+                amplitude= 0.965,#0.98,  # the amplitude cannot be 1 due to bug in spectrum card server, at most 0.99
+                phase=phase,
+                ch=1,
+                loops=1,
+            )
 
         t0 += duration
         if not keep_switch_on:
