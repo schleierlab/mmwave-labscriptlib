@@ -1165,7 +1165,7 @@ class RydLasers:
                 self.pulse_1064_aom_on(t - extra_time_1064, power_1064, digital_only=True)
                 t += pulse_dur
                 self.pulse_456_aom_off(t, digital_only=True)
-                self.pulse_1064_aom_off(t + extra_time_1064, digital_only=True)
+                self.pulse_1064_aom_off(t + extra_time_1064 , digital_only=True)
                 t += pulse_wait_dur
 
             pulse_start_times.append(t - pulse_wait_dur-pulse_dur)

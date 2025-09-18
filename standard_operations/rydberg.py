@@ -732,7 +732,7 @@ class RydbergOperations(TweezerOperations):
             pulse_start_time,
             shot_globals.mmwave_pi_half_pulse_t,
             detuning=shot_globals.mmwave_spectrum_freq,
-            phase=phase_accumulation_degrees + 180,
+            phase=phase_accumulation_degrees,
             switch_offset = spectrum_card_delay,
         )
 
