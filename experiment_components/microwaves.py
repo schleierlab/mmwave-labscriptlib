@@ -1,5 +1,7 @@
+from pathlib import Path
 from typing import ClassVar, Optional
 
+from labscript import compiler as ls_compiler
 from labscriptlib.calibration import spec_freq_calib
 from labscriptlib.connection_table import devices
 from labscriptlib.shot_globals import shot_globals
@@ -49,6 +51,8 @@ class Microwave:
         )  # absorp switch only on when sending pulse
         devices.mmwave_switch.go_high(t)
 
+        hdf5_path = Path(ls_compiler.hdf5_filename)
+
         # spectrum setup for microwaves & mmwaves
         # Channel 0 for 9.2 GHz microwaves (lower-sideband mixed with ~9.4 GHz LO)
         # Channel 1 for mm-waves (upper-sideband mixed with mm-wave LO)
@@ -79,6 +83,8 @@ class Microwave:
             clock_freq=1250,
             use_ext_clock=True,
             ext_clock_freq=10,
+            export_data=shot_globals.mmwave_export_spectrum_segments,
+            export_path=str(hdf5_path.parent),
         )
 
     def do_pulse(self, t, dur, detuning: Optional[float] = None):
