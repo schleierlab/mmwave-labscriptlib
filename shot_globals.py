@@ -36,6 +36,7 @@ class ParameterSpec(TypedDict):
 class ShotGlobals(SimpleNamespace):
     # declare globals here!
     do_mw_kill: bool
+    mmwave_export_spectrum_segments: bool
     repetition_index: int
     manta_exposure: float
 
