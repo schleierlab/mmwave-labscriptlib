@@ -159,9 +159,10 @@ class Microwave:
         float
             End time of the pulse
         """
-        buffer_time = 0.25e-6
+        turn_on_buffer_time = 0.75e-6 #0.25e-6
+        turn_off_buffer_time = 0.1e-6
         switch_spectrum_offset = switch_offset + 2.5e-7
-        devices.mmwave_switch.go_low(t0 + switch_spectrum_offset - buffer_time)
+        devices.mmwave_switch.go_low(t0 + switch_spectrum_offset - turn_on_buffer_time)
         self.mmwave_switch_on = True
 
         pulse_detuning = self.mmwave_spcm_freq if detuning is None else detuning
@@ -179,7 +180,7 @@ class Microwave:
 
         t0 += duration
         if not keep_switch_on:
-            devices.mmwave_switch.go_high(t0 + switch_spectrum_offset + buffer_time)
+            devices.mmwave_switch.go_high(t0 + switch_spectrum_offset + turn_off_buffer_time)
             self.mmwave_switch_on = False
 
         return t0
