@@ -731,7 +731,8 @@ class RydbergOperations(TweezerOperations):
 
         self.Microwave_obj.do_mmwave_pulse(
             pulse_start_time,
-            shot_globals.mmwave_pi_half_pulse_t,
+            shot_globals.ramsey_2nd_pulse_t,
+            # shot_globals.mmwave_pi_half_pulse_t,
             detuning=shot_globals.mmwave_spectrum_freq,
             phase= phase_accumulation_degrees + shot_globals.mmwave_ramsey_extraphase,
             switch_offset = spectrum_card_delay,
