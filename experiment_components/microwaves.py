@@ -5,6 +5,7 @@ from labscript import compiler as ls_compiler
 from labscriptlib.calibration import spec_freq_calib
 from labscriptlib.connection_table import devices
 from labscriptlib.shot_globals import shot_globals
+import numpy as np
 
 
 class Microwave:
@@ -123,13 +124,13 @@ class Microwave:
         self.uwave_absorp_switch_on = False
 
         return t
-
+    
     def do_mmwave_pulse(
             self,
             t0: float,
             duration: float,
-            detuning: Optional[float] = None,
-            phase: float = 0,
+            detuning: Optional[list] = None,
+            phase: Optional[list] = None,
             keep_switch_on: bool = False,
             switch_offset: float = 0
     ):
@@ -159,21 +160,35 @@ class Microwave:
         float
             End time of the pulse
         """
-        turn_on_buffer_time = 0.75e-6 #0.25e-6
+        def ensure_list(param):
+            if np.isscalar(param):
+                return [param]
+            else:
+                return list(param)
+            
+        turn_on_buffer_time = shot_globals.mmwave_switch_turn_on_buffer_time #1.15e-6 #0.75e-6
         turn_off_buffer_time = 0.1e-6
         switch_spectrum_offset = switch_offset + 2.5e-7
         devices.mmwave_switch.go_low(t0 + switch_spectrum_offset - turn_on_buffer_time)
         self.mmwave_switch_on = True
 
         pulse_detuning = self.mmwave_spcm_freq if detuning is None else detuning
-
+        pulse_detuning = ensure_list(pulse_detuning)
+        phase = [0]*len(pulse_detuning) if phase is None else phase
+        if len(pulse_detuning) == 1:
+            amplitude = 0.965
+        elif len(pulse_detuning) == 2:
+            amplitude = [0.5,0.5]
+        else:
+            raise ValueError("This function cannot handle more than two tones now. Need optimized phases and duration for that. ")
+    
         if shot_globals.do_mmwave_pulse:
-            devices.spectrum_uwave.single_freq(
+            devices.spectrum_uwave.comb(
                 t0,
                 duration=duration,
-                freq=pulse_detuning,
-                amplitude= 0.965,#0.98,  # the amplitude cannot be 1 due to bug in spectrum card server, at most 0.99
-                phase=phase,
+                freqs=pulse_detuning,
+                amplitudes= ensure_list(amplitude),#0.965,#0.98,  # the amplitude cannot be 1 due to bug in spectrum card server, at most 0.99
+                phases= ensure_list(phase),
                 ch=1,
                 loops=1,
             )

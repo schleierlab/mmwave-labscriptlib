@@ -5,7 +5,7 @@ import labscript.labscript as ls  # type:ignore
 from labscriptlib.experiment_components import PointingConfig, RydLasers, ShutterConfig
 from labscriptlib.shot_globals import shot_globals
 
-from .tweezers import TweezerOperations
+from labscriptlib.standard_operations.tweezers import TweezerOperations
 
 
 class RydbergOperations(TweezerOperations):
@@ -703,11 +703,19 @@ class RydbergOperations(TweezerOperations):
         ramsey_time = shot_globals.mmwave_pi_half_pulse_t*2 + shot_globals.mmwave_ramsey_wait_time
         mmwave_offset_t = (shot_globals.ryd_state_wait_time - ramsey_time)/2
 
+        def ensure_list(param):
+            if np.isscalar(param):
+                return [param]
+            else:
+                return list(param)
+        
+        num_of_tone= len(ensure_list(shot_globals.mmwave_spectrum_freq))
+
         first_pulse_end_time = self.Microwave_obj.do_mmwave_pulse(
             t_aom_stop_0 - spectrum_card_delay + mmwave_offset_t,
             shot_globals.mmwave_pi_half_pulse_t,
             detuning=shot_globals.mmwave_spectrum_freq,
-            phase=0,
+            phase= [0]*num_of_tone,
             keep_switch_on=True,
             switch_offset = spectrum_card_delay,
         )
@@ -727,14 +735,15 @@ class RydbergOperations(TweezerOperations):
             pulse_start_time = first_pulse_end_time + shot_globals.mmwave_ramsey_wait_time
             accumulated_time = (shot_globals.mmwave_pi_half_pulse_t + shot_globals.mmwave_ramsey_wait_time)
 
-        phase_accumulation_degrees = 360 * (shot_globals.mmwave_spectrum_freq) * accumulated_time
+        phase_accumulation_degrees = 360 * (ensure_list(shot_globals.mmwave_spectrum_freq)[0]) * accumulated_time
+        end_pulse_phase = phase_accumulation_degrees+shot_globals.mmwave_ramsey_extraphase if num_of_tone ==1 else [0, phase_accumulation_degrees+shot_globals.mmwave_ramsey_extraphase]
 
         self.Microwave_obj.do_mmwave_pulse(
             pulse_start_time,
-            shot_globals.ramsey_2nd_pulse_t,
-            # shot_globals.mmwave_pi_half_pulse_t,
+            # shot_globals.ramsey_2nd_pulse_t,
+            shot_globals.mmwave_pi_half_pulse_t,
             detuning=shot_globals.mmwave_spectrum_freq,
-            phase= phase_accumulation_degrees + shot_globals.mmwave_ramsey_extraphase,
+            phase= end_pulse_phase,
             switch_offset = spectrum_card_delay,
         )
 
