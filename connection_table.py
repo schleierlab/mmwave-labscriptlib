@@ -26,6 +26,9 @@ class LabDevices():
     def __getattr__(self, name):
         raise AttributeError(f'Device {name} not defined. Did you forget to call initialize()?')
 
+    def initialized(self) -> bool:
+        return hasattr(self, 'pb')
+
     def initialize(self):
         print('Initializing connection table')
 
@@ -189,6 +192,12 @@ class LabDevices():
             connection='flag 11',
         )
 
+        self.pulse_local_addr_1064_aom_digital = DigitalOut(
+            name='pulse_local_addr_1064_aom_digital',
+            parent_device=pb.direct_outputs,
+            connection='flag 20',
+        )
+
         self.ta_relock = DigitalOut(
             name='ta_relock',
             parent_device=ni_6363_0,
@@ -295,8 +304,8 @@ class LabDevices():
             connection='ao8',
             limits=(0, 1)
         )
-        self.servo_1064_aom_analog = AnalogOut(
-            name='notconnected_servo_1064_aom_analog',
+        self.pulse_local_addr_1064_aom_analog = AnalogOut(
+            name='pulse_local_addr_1064_aom_analog',
             parent_device=ni_6739_0,
             connection='ao9',
             limits=(0, 1)
