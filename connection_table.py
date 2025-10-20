@@ -537,8 +537,8 @@ class LabDevices():
         #     name='spectrum_1',
         #     parent_device=clockline_6363,
         #     trigger={'device': ni_6363_0, 'connection': 'port0/line21'},
-        #     BIAS_port=8771,
-        #     serial_number=19621,
+        #     BIAS_port=8772,
+        #     serial_number=22134,
         #     handle_name = b'/dev/spcm1',
         # )
 
