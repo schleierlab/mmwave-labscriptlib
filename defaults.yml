@@ -127,9 +127,9 @@ Tweezers:
   do_tweezer_modulation: { value: False, unit: bool }
   do_tweezers: { value: True, unit: bool }
   tw_img_exposure_time: { value: 40e-3, unit: s } #80e-3
-  tw_img_repump_power: { value: 0.23, unit: V }
+  tw_img_repump_power: { value: 0.2, unit: V }
   tw_img_ta_detuning: { value: -30, unit: MHz} #-35#-47
-  tw_img_ta_power: { value: 0.23, unit: V } #0.27
+  tw_img_ta_power: { value: 0.2, unit: V } 
   tw_img_tof_imaging_delay: { value: 50e-3, unit: s }
   kinetix_roi_row: { value: "tuple((1150,110))", unit: pixels }
   tw_modulation_freq: { value: 0, unit: Hz }
