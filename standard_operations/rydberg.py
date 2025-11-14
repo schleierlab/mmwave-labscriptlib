@@ -6,8 +6,6 @@ from labscriptlib.experiment_components import PointingConfig, RydLasers, Shutte
 from labscriptlib.shot_globals import shot_globals
 
 from labscriptlib.standard_operations.tweezers import TweezerOperations
-from labscriptlib.connection_table import devices # temperal
-
 
 
 class RydbergOperations(TweezerOperations):
@@ -656,14 +654,6 @@ class RydbergOperations(TweezerOperations):
         Returns:
             float: End time of the sequence
         """
-        # devices.local_addr_1064_aom_digital.go_high(t) # temp
-        # devices.local_addr_1064_aom_analog.constant(t, 0.05) # temp
-        # devices.pulse_local_addr_1064_aom_digital.go_high(t) # temp
-        # devices.pulse_local_addr_1064_aom_analog.constant(t, 1) # temp
-        # devices.analog_test_32.constant(t, 1)
-        # devices.analog_test_33.constant(t, -1)
-        # devices.pb_test_9.go_high(t+50e-6)
-        # devices.pb_test_9.go_low(t+250e-6)
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
 
