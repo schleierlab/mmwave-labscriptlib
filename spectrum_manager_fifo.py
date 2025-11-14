@@ -86,10 +86,10 @@ class SpectrumManagerFifo():
             # TW_x_freqs = np.round(TW_x_freqs* 1e6 * SpectrumDuration) / SpectrumDuration / 1e6 #FIXME: this is bad mojo without phase optimization
             # TW_y_freqs = np.round(TW_y_freqs* 1e6 * SpectrumDuration) / SpectrumDuration / 1e6
 
-
-        if len(TW_x_freqs)==1: # TW_x single freq input
-            TW_x_phases  = [SpectrumPhase for i in TW_x_freqs]
-            TW_x_amps = [TW_x_amplitude for i in TW_x_freqs]
+        if np.size(TW_x_freqs)==1:
+        # if len(TW_x_freqs)==1: # TW_x single freq input
+            TW_x_phases  = SpectrumPhase #[SpectrumPhase for i in TW_x_freqs]
+            TW_x_amps = TW_x_amplitude #[TW_x_amplitude for i in TW_x_freqs]
         else: # TW_x multi-freq input
             TW_x_phases = trap_phase(TW_x_freqs)
             TW_x_amps = TW_x_amplitude * trap_amplitude(TW_x_freqs) # amplitude set to 0.99 to aviod calculation error
