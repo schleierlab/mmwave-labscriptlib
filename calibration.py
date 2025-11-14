@@ -429,6 +429,9 @@ def mot_y_repump_calib(power):
     return repump_aom_calib(power/power_max)
 
 
+def local_addressing_movement_calibration(displacement):
+    return displacement
+
 
 if __name__ == '__main__':
 
