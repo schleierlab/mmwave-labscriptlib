@@ -17,6 +17,9 @@ if not shot_globals.TW_y_use_dds:
     TW_y_channel = True # use spectrum card instead of dds for tweezer y channel
 else:
     TW_y_channel = False # use dds for tweezer y channel
+
+LA_y_channel = True # use spectrum card instead of dds for tweezer y channel
+
 devices.initialize()
 
 class SpectrumManager():
@@ -61,9 +64,9 @@ class SpectrumManager():
 
         # set the card mode
         devices.spectrum_0.set_mode(
-            replay_mode=b'sequence',
+            replay_mode='sequence',
             channels = channel_setting,
-            clock_freq = 625,#625,
+            clock_freq = 625,
             use_ext_clock = True,
             export_data = False,
             export_path = r'Z:\spectrum_testing_20230801',
@@ -89,10 +92,10 @@ class SpectrumManager():
                 TW_y_freqs = np.round(TW_y_freqs* 1e6 * SpectrumDuration) / SpectrumDuration / 1e6
 
 
-
-        if len(TW_x_freqs)==1: # TW_x single freq input
-            TW_x_phases  = [SpectrumPhase for i in TW_x_freqs]
-            TW_x_amps = [TW_x_amplitude for i in TW_x_freqs]
+        if np.size(TW_x_freqs)==1:
+        #if len(TW_x_freqs)==1: # TW_x single freq input
+            TW_x_phases  = SpectrumPhase #[SpectrumPhase for i in TW_x_freqs]
+            TW_x_amps = TW_x_amplitude #[TW_x_amplitude for i in TW_x_freqs]
         else: # TW_x multi-freq input
             print(f"TW_x_freqs = {TW_x_freqs}")
             TW_x_phases = trap_phase(TW_x_freqs)
@@ -146,6 +149,131 @@ class SpectrumManager():
         self.x_key = self.x_key + "0"
         if TW_y_channel:
             devices.spectrum_0.stop_flexible_loop(t, self.y_key)
+            self.y_key = self.y_key + "0"
+        self.outputting = False
+        return t
+    
+    #==========================
+    # Local addressing array
+    #==========================
+
+    def start_local_addr_card(self):
+        # reset state variables
+        self.started = False
+        self.outputting = False
+
+        # we need to declare some runmanager variables as global so that we can reference them later
+        LA_x_freqs = np.asarray(shot_globals.LA_x_freqs)
+
+        #print(f"TW_x_freqs = {TW_x_freqs}")
+        LA_x_power = 0 # Translated from old runmanager settings
+        LA_x_amplitude = 0.1 # Translated from old runmanager settings
+        LA_maxPulses = shot_globals.LA_maxPulses
+        LA_loopDuration = shot_globals.LA_loopDuration
+
+        if LA_y_channel:
+            LA_y_freqs = np.asarray(shot_globals.LA_y_freqs)
+            LA_y_freqs = np.array([LA_y_freqs])
+            LA_y_power = shot_globals.LA_y_power
+            LA_y_amplitude = shot_globals.LA_y_amplitude
+            channel_setting = [
+                        {'name': 'Tweezer_X', 'power': LA_x_power, 'port': 0, 'is_amplified':True,
+                         'amplifier': 1, 'calibration_power': 12, 'power_mode': 'constant_total', 'max_pulses':LA_maxPulses},
+                        {'name': 'Tweezer_Y', 'power': LA_y_power, 'port': 1, 'is_amplified':True,
+                         'amplifier': 2, 'calibration_power': 12, 'power_mode': 'constant_total', 'max_pulses':LA_maxPulses}
+                        ]
+        else:
+            channel_setting = [
+                        {'name': 'Tweezer_X', 'power': LA_x_power, 'port': 0, 'is_amplified':True,
+                         'amplifier': 1, 'calibration_power': 12, 'power_mode': 'constant_total', 'max_pulses':LA_maxPulses},
+                        ]
+
+
+        # set the card mode
+        devices.spectrum_la.set_mode(
+            replay_mode='sequence',
+            channels = channel_setting,
+            clock_freq = 625,
+            use_ext_clock = True,
+            export_data = False,
+            export_path = r'Z:\spectrum_testing_20230801',
+            smart_programming=True,
+            )
+
+        # set the output settings
+        SpectrumPhase = 0
+        SpectrumDuration = LA_loopDuration
+
+        def is_np_int_float(x: Any) -> bool:
+            return isinstance(x, np.int32) or isinstance(x, np.float64)
+
+        # if only a single frequency is entered, convert it to an array with one entry
+        if is_np_int_float(LA_x_freqs):
+            LA_x_freqs = np.array([LA_x_freqs])
+
+        if LA_y_channel:
+            if is_np_int_float(LA_y_freqs):
+                LA_y_freqs = np.array([LA_y_freqs])
+                # round the y frequencies since we vary them sometimes
+                # TW_x_freqs = np.round(TW_x_freqs* 1e6 * SpectrumDuration) / SpectrumDuration / 1e6 #FIXME: this is bad mojo without phase optimization
+                LA_y_freqs = np.round(LA_y_freqs* 1e6 * SpectrumDuration) / SpectrumDuration / 1e6
+
+        if len(LA_x_freqs)==1: # TW_x single freq input
+            LA_x_phases  = [SpectrumPhase for i in LA_x_freqs]
+            LA_x_amps = [LA_x_amplitude for i in LA_x_freqs]
+        else: # TW_x multi-freq input
+            print(f"TW_x_freqs = {LA_x_freqs}")
+            LA_x_phases = trap_phase(LA_x_freqs)
+            LA_x_amps = LA_x_amplitude * trap_amplitude(LA_x_freqs) # amplitude set to 0.99 to aviod calculation error
+
+        if LA_y_channel:
+            if len(LA_y_freqs)==1: # TW_y single freq input
+                LA_y_phases  = [SpectrumPhase for i in LA_y_freqs]
+                LA_y_amps = [LA_y_amplitude for i in LA_y_freqs]
+            else: # TW_y multi-freq input
+                LA_y_phases = trap_phase(LA_y_freqs)
+                LA_y_amps = LA_y_amplitude * trap_amplitude(LA_y_freqs) # amplitude set to 0.99 to aviod calculation error
+
+        # instantiate dictionary to carry tweezer options
+        self.x_kwargs = {'duration': SpectrumDuration,
+                                'freqs': LA_x_freqs*1e6,
+                                'amplitudes': LA_x_amps,
+                                'phases': LA_x_phases,
+                                'ch': 0}
+        self.x_key = 'x_comb'
+
+        if LA_y_channel:
+            self.y_kwargs = {'duration': SpectrumDuration,
+                                'freqs': LA_y_freqs*1e6,
+                                'amplitudes': LA_y_amps,
+                                'phases': LA_y_phases,
+                                'ch': 1}
+            self.y_key = 'y_comb'
+
+        self.started = True
+
+
+        return
+
+    def stop_local_addr_card(self):
+        assert not self.outputting, 'SpectrumManager: output must be stopped before card is stopped'
+        devices.spectrum_la.stop()
+
+    def start_local_addr(self, t):
+        assert self.started, 'SpectrumManager: must run prepare() before start()'
+        assert not self.outputting, 'SpectrumManager: output has already been started'
+        devices.spectrum_la.start_flexible_loop(t, devices.spectrum_la.comb, self.x_key, **self.x_kwargs)
+        if LA_y_channel:
+            devices.spectrum_la.start_flexible_loop(t, devices.spectrum_la.comb, self.y_key, **self.y_kwargs)
+        self.outputting = True
+        return t
+
+    def stop_local_addr(self, t):
+        assert self.outputting, 'SpectrumManager: must run start() before stop()'
+        devices.spectrum_la.stop_flexible_loop(t, self.x_key)
+        self.x_key = self.x_key + "0"
+        if LA_y_channel:
+            devices.spectrum_la.stop_flexible_loop(t, self.y_key)
             self.y_key = self.y_key + "0"
         self.outputting = False
         return t

@@ -133,10 +133,13 @@ Tweezers:
   tw_img_tof_imaging_delay: { value: 50e-3, unit: s }
   kinetix_roi_row: { value: "tuple((1150,110))", unit: pixels }
   tw_modulation_freq: { value: 0, unit: Hz }
-  tw_power: { value: 0.25, unit: V }
+  tw_power: { value: 0.25, unit: V } 
   tw_ramp_dur: { value: 10e-3, unit: s }
   tw_ramp_power: { value: 0.14, unit: V }
   tw_turn_off_time: { value: 0, unit: s}
+
+Local_Addressing_Arrays:
+  la_power: { value: 0, unit: V }
 
 Rydberg:
   do_blue: { value: False, unit: bool }

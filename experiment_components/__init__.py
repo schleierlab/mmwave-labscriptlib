@@ -8,6 +8,7 @@ from .lasers import (
     RydLasers,
     ShutterConfig,
     TweezerLaser,
+    LocalAddressLaser,
 )
 from .microwaves import Microwave
 from .uv import UVLamps
@@ -24,5 +25,6 @@ __all__ = [
     'RydLasers',
     'ShutterConfig',
     'TweezerLaser',
+    'LocalAddressLaser',
     'UVLamps',
 ]

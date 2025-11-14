@@ -1,8 +1,9 @@
 import labscript.labscript as ls
 
-from labscriptlib.experiment_components import D2Lasers, ShutterConfig, TweezerLaser
+from labscriptlib.experiment_components import D2Lasers, ShutterConfig, TweezerLaser, LocalAddressLaser
 from labscriptlib.shot_globals import shot_globals
 from .optical_pumping import OpticalPumpingOperations
+from labscriptlib.connection_table import devices # temperal
 
 
 class TweezerOperations(OpticalPumpingOperations):
@@ -31,6 +32,9 @@ class TweezerOperations(OpticalPumpingOperations):
             tw_y_freq = None
         # other DDS parameters need to be set in start_tweezers function in lasers.py.
         self.TweezerLaser_obj = TweezerLaser(t, shot_globals.tw_power, spectrum_mode, tw_y_use_dds, tw_y_freq)
+
+        # other DDS parameters need to be set in start_tweezers function in lasers.py.
+        self.LocalAddressLaser_obj = LocalAddressLaser(t, shot_globals.la_power)
 
     def ramp_to_imaging_parameters(self, t):
         """Configure laser parameters for imaging or additional cooling.
@@ -268,6 +272,14 @@ class TweezerOperations(OpticalPumpingOperations):
         return t
 
     def _do_tweezer_check(self, t, check_rearrangement_position = False) -> float:
+        # devices.local_addr_1064_aom_digital.go_high(t) # temp
+        # devices.local_addr_1064_aom_analog.constant(t, 0.05) # temp
+        # devices.pulse_local_addr_1064_aom_digital.go_high(t) # temp
+        # devices.pulse_local_addr_1064_aom_analog.constant(t, 1) # temp
+        # devices.analog_test_32.constant(t, 1)
+        # devices.analog_test_33.constant(t, -1)
+        # devices.pb_test_9.go_high(t+50e-6)
+        # devices.pb_test_9.go_low(t+250e-6)
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
         t += shot_globals.img_wait_time_between_shots
@@ -307,8 +319,16 @@ class TweezerOperations(OpticalPumpingOperations):
         Returns:
             float: End time of the sequence
         """
+        # devices.local_addr_1064_aom_digital.go_high(t) # temp
+        # devices.local_addr_1064_aom_analog.constant(t, 0.05) # temp
+        # devices.pulse_local_addr_1064_aom_digital.go_high(t) # temp
+        # devices.pulse_local_addr_1064_aom_analog.constant(t, 1) # temp
+        # devices.analog_test_32.constant(t, 1)
+        # devices.analog_test_33.constant(t, -1)
+        # devices.pb_test_9.go_high(t+50e-6)
+        # devices.pb_test_9.go_low(t+250e-6)
         t += 1e-5
-        self.TweezerLaser_obj.aom_on(t, shot_globals.tw_power)
+        self.TweezerLaser_obj.aom_on(t, 1)#shot_globals.tw_power)
 
         if check_with_vimba:
             t += 10
