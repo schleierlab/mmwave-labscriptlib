@@ -11,6 +11,7 @@ import numpy as np
 from labscriptlib.calibration import (
     repump_freq_calib,
     ta_freq_calib,
+    local_addr_move_cal
 )
 from labscriptlib.connection_table import devices
 from labscriptlib.spectrum_manager import spectrum_manager
@@ -836,6 +837,19 @@ class LocalAddressLaser:
         devices.local_addr_piezo_mirror_y2.constant(t, 0)
 
         return t
+    
+    def deflect_mirrors(self, t, deflection, dur = None, cal = True):
+        if cal:
+            voltages, duration = local_addr_move_cal(deflection)
+        else:
+            voltages = deflection
+            if dur == None:
+                raise ValueError("gimme some duration I'm not calibrated")
+            else:
+                duration = dur
+        
+        t = self.deflect_mirrors_uncal(t, duration, voltages)
+
 
 
 

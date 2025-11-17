@@ -554,6 +554,13 @@ class LabDevices():
         #     BIAS_port=54323,
         # )
 
+        # self.manta419b_local_addr = Manta419B(
+        #     'manta419b_local_addr',
+        #     parent_device=ni_6363_0,
+        #     connection="port0/line2",
+        #     BIAS_port=54323,#??
+        # )
+
         self.kinetix = Kinetix(
             name='kinetix',
             parent_device=ni_6363_0,

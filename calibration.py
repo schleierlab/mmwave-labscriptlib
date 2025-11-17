@@ -429,8 +429,39 @@ def mot_y_repump_calib(power):
     return repump_aom_calib(power/power_max)
 
 
-def local_addressing_movement_calibration(displacement):
-    return displacement
+def local_addr_move_cal(displacement):
+    #Maybe makes more sense to calibrate the velocities...?
+
+    piezo_V_to_v = np.array([
+        [matrix]
+    ])
+
+
+
+    #_______________________________________________________
+
+
+    cal_disp_dur = 1
+    piezo_cal_v = 5
+
+    piezo_to_disp = np.array([
+        [matrix]
+    ])
+
+    #Inverting the displacement matrix to give some piezo 
+    disp_to_piezo = np.linalg.inv(matrix)
+    piezo_unnorm = disp_to_piezo @ np.array(displacement)
+
+    #Rescaling so the fastest piezo goes at the voltage used for the calibration
+    #and then the duration of the move is also scaled accordingly
+    piezo_rescaled = piezo_unnorm * (piezo_cal_v / max(piezo_unnorm))
+    dur = cal_disp_dur / (piezo_cal_v / max(piezo_unnorm))
+
+    #Accounting for different speeds in different directions
+    sign_factor = 0.1
+    piezo_voltages = [p * ((p<0)*sign_factor + 1) for p in piezo_rescaled]
+
+    return displacement#, dur
 
 
 if __name__ == '__main__':
