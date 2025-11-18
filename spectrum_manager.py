@@ -172,7 +172,8 @@ class SpectrumManager():
         LA_loopDuration = shot_globals.LA_loopDuration
 
         LA_y_freqs = np.asarray(shot_globals.LA_y_freqs)
-        LA_y_freqs = np.array([LA_y_freqs])
+        if np.size(LA_y_freqs) ==1:
+            LA_y_freqs = np.array([LA_y_freqs])
         LA_y_power = shot_globals.LA_y_power
         LA_y_amplitude = shot_globals.LA_y_amplitude
         channel_setting = [
