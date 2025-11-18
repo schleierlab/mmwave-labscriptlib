@@ -228,11 +228,11 @@ class LabDevices():
         )
 
         # Dummy digital out to keep even number for Blacs
-        self.tweezer_aom_digital = DigitalOut( # temp
-            name='tweezer_aom_digital',
-            parent_device=ni_6363_0,
-            connection='port0/line22',
-        )
+        # self.tweezer_aom_digital = DigitalOut( # temp
+        #     name='tweezer_aom_digital',
+        #     parent_device=ni_6363_0,
+        #     connection='port0/line22',
+        # )
 
         self.local_addr_1064_aom_digital = DigitalOut( # temp
             name='local_addr_1064_aom_digital',
@@ -533,12 +533,12 @@ class LabDevices():
         #     BIAS_port=54321,
         # )
 
-        # self.manta419b_tweezer = Manta419B(
-        #     'manta419b_tweezer',
-        #     parent_device=ni_6363_0,
-        #     connection="port0/line13",
-        #     BIAS_port=54324,
-        # )
+        self.manta419b_tweezer = Manta419B(
+            'manta419b_tweezer',
+            parent_device=ni_6363_0,
+            connection="port0/line13",
+            BIAS_port=54324,
+        )
 
         # self.manta419b_blue_laser = Manta419B(
         #     'manta419b_blue_laser',
@@ -554,19 +554,19 @@ class LabDevices():
         #     BIAS_port=54323,
         # )
 
-        # self.manta419b_local_addr = Manta419B(
-        #     'manta419b_local_addr',
-        #     parent_device=ni_6363_0,
-        #     connection="port0/line2",
-        #     BIAS_port=54323,#??
-        # )
-
-        self.kinetix = Kinetix(
-            name='kinetix',
+        self.manta419b_local_addr = Manta419B(
+            'manta419b_local_addr',
             parent_device=ni_6363_0,
-            connection='port0/line15',
-            BIAS_port=27171,
+            connection="port0/line2",
+            BIAS_port=54325,#??
         )
+
+        # self.kinetix = Kinetix(
+        #     name='kinetix',
+        #     parent_device=ni_6363_0,
+        #     connection='port0/line15',
+        #     BIAS_port=27171,
+        # )
 
         #================================================================================
         # Spectrum Instrumentation Cards for microwaves
