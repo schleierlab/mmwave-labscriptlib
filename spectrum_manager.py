@@ -176,10 +176,10 @@ class SpectrumManager():
         LA_y_power = shot_globals.LA_y_power
         LA_y_amplitude = shot_globals.LA_y_amplitude
         channel_setting = [
-                    {'name': 'Tweezer_X', 'power': LA_x_power, 'port': 0, 'is_amplified':False,
-                        'amplifier': None, 'calibration_power': 12, 'power_mode': 'constant_total', 'max_pulses':LA_maxPulses},
-                    {'name': 'Tweezer_Y', 'power': LA_y_power, 'port': 1, 'is_amplified':False,
-                        'amplifier': None, 'calibration_power': 12, 'power_mode': 'constant_total', 'max_pulses':LA_maxPulses}
+                    {'name': 'Tweezer_X', 'power': LA_x_power, 'port': 0, 'is_amplified':True,
+                        'amplifier': 1, 'calibration_power': 12, 'power_mode': 'constant_total', 'max_pulses':LA_maxPulses},
+                    {'name': 'Tweezer_Y', 'power': LA_y_power, 'port': 1, 'is_amplified':True,
+                        'amplifier': 2, 'calibration_power': 12, 'power_mode': 'constant_total', 'max_pulses':LA_maxPulses}
                     ]
 
 
