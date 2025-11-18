@@ -142,7 +142,7 @@ if __name__ == "__main__":
         sequence_objects.append(TweezerSequence_obj)
         t = TweezerSequence_obj._do_tweezer_position_check_sequence(t, check_with_vimba=True)
     
-    elif shot_globals._do_local_addr_move_matrix_calib:
+    elif shot_globals.do_local_addr_move_matrix_calib:
         TweezerSequence_obj = TweezerOperations(t)
         sequence_objects.append(TweezerSequence_obj)
         t = TweezerSequence_obj._do_local_addr_move_matrix_calib(t)

@@ -164,6 +164,8 @@ class SpectrumManager():
 
         # we need to declare some runmanager variables as global so that we can reference them later
         LA_x_freqs = np.asarray(shot_globals.LA_x_freqs)
+        if np.size(LA_x_freqs) ==1:
+            LA_y_freqs = np.array([LA_x_freqs])
 
         #print(f"TW_x_freqs = {TW_x_freqs}")
         LA_x_power = 0 # Translated from old runmanager settings
@@ -171,22 +173,17 @@ class SpectrumManager():
         LA_maxPulses = shot_globals.LA_maxPulses
         LA_loopDuration = shot_globals.LA_loopDuration
 
-        if LA_y_channel:
-            LA_y_freqs = np.asarray(shot_globals.LA_y_freqs)
+        LA_y_freqs = np.asarray(shot_globals.LA_y_freqs)
+        if np.size(LA_y_freqs) ==1:
             LA_y_freqs = np.array([LA_y_freqs])
-            LA_y_power = shot_globals.LA_y_power
-            LA_y_amplitude = shot_globals.LA_y_amplitude
-            channel_setting = [
-                        {'name': 'Tweezer_X', 'power': LA_x_power, 'port': 0, 'is_amplified':True,
-                         'amplifier': 1, 'calibration_power': 12, 'power_mode': 'constant_total', 'max_pulses':LA_maxPulses},
-                        {'name': 'Tweezer_Y', 'power': LA_y_power, 'port': 1, 'is_amplified':True,
-                         'amplifier': 2, 'calibration_power': 12, 'power_mode': 'constant_total', 'max_pulses':LA_maxPulses}
-                        ]
-        else:
-            channel_setting = [
-                        {'name': 'Tweezer_X', 'power': LA_x_power, 'port': 0, 'is_amplified':True,
-                         'amplifier': 1, 'calibration_power': 12, 'power_mode': 'constant_total', 'max_pulses':LA_maxPulses},
-                        ]
+        LA_y_power = shot_globals.LA_y_power
+        LA_y_amplitude = shot_globals.LA_y_amplitude
+        channel_setting = [
+                    {'name': 'Tweezer_X', 'power': LA_x_power, 'port': 0, 'is_amplified':True,
+                        'amplifier': 1, 'calibration_power': 12, 'power_mode': 'constant_total', 'max_pulses':LA_maxPulses},
+                    {'name': 'Tweezer_Y', 'power': LA_y_power, 'port': 1, 'is_amplified':True,
+                        'amplifier': 2, 'calibration_power': 12, 'power_mode': 'constant_total', 'max_pulses':LA_maxPulses}
+                    ]
 
 
         # set the card mode
