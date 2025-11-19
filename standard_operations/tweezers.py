@@ -328,7 +328,7 @@ class TweezerOperations(OpticalPumpingOperations):
         # devices.pb_test_9.go_high(t+50e-6)
         # devices.pb_test_9.go_low(t+250e-6)
         t += 1e-5
-        self.TweezerLaser_obj.aom_on(t, 0.25)#shot_globals.tw_power)
+        self.TweezerLaser_obj.aom_on(t, shot_globals.tw_power)
         self.LocalAddressLaser_obj.aom_on(t, shot_globals.la_power)
         devices.local_addr_1064_aom_analog.constant(t, 1)
         devices.local_addr_1064_aom_digital.go_high(t)
