@@ -253,7 +253,7 @@ class LabDevices():
         self.mmwave_switch = DigitalOut( # temp
             name='mmwave_switch',
             parent_device = ni_6363_0,
-            connection='port0/line2', 
+            connection='port0/line15', 
         )
 
         self.blue_456_shutter = Shutter(
@@ -265,11 +265,11 @@ class LabDevices():
         )
 
         # dummy channel. Not connected to anything but enable/ disable to meet the even-number-channel requirement
-        # self.digital_out_ch26 = DigitalOut(
-        #     name='digital_out_ch26',
-        #     parent_device=ni_6363_0,
-        #     connection='port0/line26',
-        # )
+        self.digital_out_ch26 = DigitalOut(
+            name='digital_out_ch26',
+            parent_device=ni_6363_0,
+            connection='port0/line26',
+        )
 
         # clockline_6739 = ClockLine(name='clockline_6739', pseudoclock=pb.pseudoclock, connection='flag 17')
         clockline_6739 = pb.clocklines[1]

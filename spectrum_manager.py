@@ -165,11 +165,11 @@ class SpectrumManager():
         # we need to declare some runmanager variables as global so that we can reference them later
         LA_x_freqs = np.asarray(shot_globals.LA_x_freqs)
         if np.size(LA_x_freqs) ==1:
-            LA_y_freqs = np.array([LA_x_freqs])
+            LA_x_freqs = np.array([LA_x_freqs])
 
         #print(f"TW_x_freqs = {TW_x_freqs}")
-        LA_x_power = 0 # Translated from old runmanager settings
-        LA_x_amplitude = 0.1 # Translated from old runmanager settings
+        LA_x_power = shot_globals.LA_x_power # Translated from old runmanager settings
+        LA_x_amplitude = shot_globals.LA_x_amplitude # Translated from old runmanager settings
         LA_maxPulses = shot_globals.LA_maxPulses
         LA_loopDuration = shot_globals.LA_loopDuration
 
@@ -201,20 +201,6 @@ class SpectrumManager():
         SpectrumPhase = 0
         SpectrumDuration = LA_loopDuration
 
-        def is_np_int_float(x: Any) -> bool:
-            return isinstance(x, np.int32) or isinstance(x, np.float64)
-
-        # if only a single frequency is entered, convert it to an array with one entry
-        if is_np_int_float(LA_x_freqs):
-            LA_x_freqs = np.array([LA_x_freqs])
-
-        if LA_y_channel:
-            if is_np_int_float(LA_y_freqs):
-                LA_y_freqs = np.array([LA_y_freqs])
-                # round the y frequencies since we vary them sometimes
-                # TW_x_freqs = np.round(TW_x_freqs* 1e6 * SpectrumDuration) / SpectrumDuration / 1e6 #FIXME: this is bad mojo without phase optimization
-                LA_y_freqs = np.round(LA_y_freqs* 1e6 * SpectrumDuration) / SpectrumDuration / 1e6
-
         if len(LA_x_freqs)==1: # TW_x single freq input
             LA_x_phases  = [SpectrumPhase for i in LA_x_freqs]
             LA_x_amps = [LA_x_amplitude for i in LA_x_freqs]
@@ -223,13 +209,12 @@ class SpectrumManager():
             LA_x_phases = trap_phase(LA_x_freqs)
             LA_x_amps = LA_x_amplitude * trap_amplitude(LA_x_freqs) # amplitude set to 0.99 to aviod calculation error
 
-        if LA_y_channel:
-            if len(LA_y_freqs)==1: # TW_y single freq input
-                LA_y_phases  = [SpectrumPhase for i in LA_y_freqs]
-                LA_y_amps = [LA_y_amplitude for i in LA_y_freqs]
-            else: # TW_y multi-freq input
-                LA_y_phases = trap_phase(LA_y_freqs)
-                LA_y_amps = LA_y_amplitude * trap_amplitude(LA_y_freqs) # amplitude set to 0.99 to aviod calculation error
+        if len(LA_y_freqs)==1: # TW_y single freq input
+            LA_y_phases  = [SpectrumPhase for i in LA_y_freqs]
+            LA_y_amps = [LA_y_amplitude for i in LA_y_freqs]
+        else: # TW_y multi-freq input
+            LA_y_phases = trap_phase(LA_y_freqs)
+            LA_y_amps = LA_y_amplitude * trap_amplitude(LA_y_freqs) # amplitude set to 0.99 to aviod calculation error
 
         # instantiate dictionary to carry tweezer options
         self.x_kwargs = {'duration': SpectrumDuration,
@@ -239,13 +224,12 @@ class SpectrumManager():
                                 'ch': 0}
         self.x_key = 'x_comb'
 
-        if LA_y_channel:
-            self.y_kwargs = {'duration': SpectrumDuration,
-                                'freqs': LA_y_freqs*1e6,
-                                'amplitudes': LA_y_amps,
-                                'phases': LA_y_phases,
-                                'ch': 1}
-            self.y_key = 'y_comb'
+        self.y_kwargs = {'duration': SpectrumDuration,
+                            'freqs': LA_y_freqs*1e6,
+                            'amplitudes': LA_y_amps,
+                            'phases': LA_y_phases,
+                            'ch': 1}
+        self.y_key = 'y_comb'
 
         self.started = True
 

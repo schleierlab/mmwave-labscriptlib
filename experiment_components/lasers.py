@@ -849,6 +849,7 @@ class LocalAddressLaser:
                 duration = dur
         
         t = self.deflect_mirrors_uncal(t, duration, voltages)
+        return t
 
 
 

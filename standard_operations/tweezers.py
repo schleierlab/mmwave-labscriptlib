@@ -374,8 +374,8 @@ class TweezerOperations(OpticalPumpingOperations):
 
 
         t += 2*max(tweezer_cam_exposure_time, local_addr_cam_exposure_time)
-        deflection_dur = 100e-6
-        self.LocalAddressLaser_obj.deflect_mirrors(
+        deflection_dur = 100e-3
+        t = self.LocalAddressLaser_obj.deflect_mirrors(
             t, 
             shot_globals.local_addr_deflection, 
             dur = deflection_dur, 
