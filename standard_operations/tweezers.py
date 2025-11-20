@@ -31,7 +31,7 @@ class TweezerOperations(OpticalPumpingOperations):
         else:
             tw_y_freq = None
         # other DDS parameters need to be set in start_tweezers function in lasers.py.
-        self.TweezerLaser_obj = TweezerLaser(t, shot_globals.tw_power, spectrum_mode, tw_y_use_dds, tw_y_freq)
+        # self.TweezerLaser_obj = TweezerLaser(t, shot_globals.tw_power, spectrum_mode, tw_y_use_dds, tw_y_freq)
 
         # other DDS parameters need to be set in start_tweezers function in lasers.py.
         self.LocalAddressLaser_obj = LocalAddressLaser(t, shot_globals.la_power)
@@ -359,36 +359,52 @@ class TweezerOperations(OpticalPumpingOperations):
         Returns:
             float: End time of the sequence
         """
-        tweezer_cam_exposure_time = 500e-6
-        local_addr_cam_exposure_time = 500e-6
+        tweezer_cam_exposure_time = 1e-3
+        local_addr_cam_exposure_time = 2e-3
         #50us min exposure time
 
         t += 1e-5
-        self.LocalAddressLaser_obj.aom_on(t, 1)
+        self.LocalAddressLaser_obj.aom_on(t, shot_globals.la_power)
+
+        #Temporary
+        devices.local_addr_1064_aom_digital.go_high(t)
+        devices.local_addr_1064_aom_analog.constant(t,1)
+        devices.tweezer_aom_digital.go_high(t)
+        devices.tweezer_aom_analog.constant(t,0.1)
 
         self.Camera_obj.set_type("local_addr_manta")
         self.Camera_obj.expose(t, local_addr_cam_exposure_time)
+
+        t+=0.01
 
         self.Camera_obj.set_type("tweezer_manta")
         self.Camera_obj.expose(t, tweezer_cam_exposure_time)
 
 
-        t += 2*max(tweezer_cam_exposure_time, local_addr_cam_exposure_time)
-        deflection_dur = 100e-3
+        t += 0.05#2*max(tweezer_cam_exposure_time, local_addr_cam_exposure_time)
+        deflection_dur = shot_globals.local_addr_defl_t
         t = self.LocalAddressLaser_obj.deflect_mirrors(
             t, 
             shot_globals.local_addr_deflection, 
             dur = deflection_dur, 
             cal = False,
             )
+        t += 0.05
+        
+        self.Camera_obj.set_type("tweezer_manta")
+        self.Camera_obj.expose(t, tweezer_cam_exposure_time)
+        t+=0.01
 
         self.Camera_obj.set_type("local_addr_manta")
         self.Camera_obj.expose(t, local_addr_cam_exposure_time)
 
-        self.Camera_obj.set_type("tweezer_manta")
-        self.Camera_obj.expose(t, tweezer_cam_exposure_time)
 
         t += 0.5
+
+        #Temporary
+        devices.local_addr_1064_aom_digital.go_low(t)
+        devices.local_addr_1064_aom_analog.constant(t,0)
+        t += 0.1
 
         return t
     

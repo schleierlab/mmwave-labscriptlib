@@ -77,7 +77,7 @@ class LabDevices():
         self.uwave_absorp_switch = DigitalOut( # temp
             name='uwave_absorp_switch',
             parent_device=ni_6363_0,
-            connection='port0/line13',
+            connection='port0/line26',
         )
 
         # self.uwave_absorp_switch = DigitalOut(
@@ -265,10 +265,11 @@ class LabDevices():
         )
 
         # dummy channel. Not connected to anything but enable/ disable to meet the even-number-channel requirement
-        self.digital_out_ch26 = DigitalOut(
-            name='digital_out_ch26',
+        #Make this channel 26 if using the spectrum 0!
+        self.digital_out_ch20 = DigitalOut(
+            name='digital_out_ch20',
             parent_device=ni_6363_0,
-            connection='port0/line26',
+            connection='port0/line20',
         )
 
         # clockline_6739 = ClockLine(name='clockline_6739', pseudoclock=pb.pseudoclock, connection='flag 17')
@@ -595,14 +596,14 @@ class LabDevices():
         # Spectrum Instrumentation Cards
         #==============================================================================
 
-        self.spectrum_0 = Spectrum(
-            name='spectrum_0',
-            parent_device=clockline_6363,
-            trigger={'device': ni_6363_0, 'connection': 'port0/line20'},
-            BIAS_port=8770,
-            serial_number=19620,
-            handle_name = b'/dev/spcm0',
-        )
+        # self.spectrum_0 = Spectrum(
+        #     name='spectrum_0',
+        #     parent_device=clockline_6363,
+        #     trigger={'device': ni_6363_0, 'connection': 'port0/line20'},
+        #     BIAS_port=8770,
+        #     serial_number=19620,
+        #     handle_name = b'/dev/spcm0',
+        # )
 
         self.spectrum_la = Spectrum(
             name='spectrum_la',
