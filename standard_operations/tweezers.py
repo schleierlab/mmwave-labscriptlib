@@ -371,6 +371,7 @@ class TweezerOperations(OpticalPumpingOperations):
         devices.local_addr_1064_aom_analog.constant(t,1)
         devices.tweezer_aom_digital.go_high(t)
         devices.tweezer_aom_analog.constant(t,0.1)
+        t+=0.01
 
         self.Camera_obj.set_type("local_addr_manta")
         self.Camera_obj.expose(t, local_addr_cam_exposure_time)
@@ -381,11 +382,12 @@ class TweezerOperations(OpticalPumpingOperations):
         self.Camera_obj.expose(t, tweezer_cam_exposure_time)
 
 
-        t += 0.05#2*max(tweezer_cam_exposure_time, local_addr_cam_exposure_time)
+        t += 0.05
         deflection_dur = shot_globals.local_addr_defl_t
         t = self.LocalAddressLaser_obj.deflect_mirrors(
             t, 
-            shot_globals.local_addr_deflection, 
+            shot_globals.local_addr_direction, 
+            shot_globals.local_addr_move_mag,
             dur = deflection_dur, 
             cal = False,
             )
@@ -402,9 +404,9 @@ class TweezerOperations(OpticalPumpingOperations):
         t += 0.5
 
         #Temporary
-        devices.local_addr_1064_aom_digital.go_low(t)
-        devices.local_addr_1064_aom_analog.constant(t,0)
-        t += 0.1
+        # devices.local_addr_1064_aom_digital.go_low(t)
+        # devices.local_addr_1064_aom_analog.constant(t,0)
+        # t += 0.1
 
         return t
     

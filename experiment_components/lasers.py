@@ -819,6 +819,9 @@ class LocalAddressLaser:
         Voltages should be given as (v_x1, v_x2, v_y1, v_y2), 
         and should be between +/- 10V (maximum NI analog and piezo controller range)"""
 
+        if dur == 0:
+            return t
+
         v_x1, v_x2, v_y1, v_y2 = voltages
 
         if any([np.abs(v) >= 10 for v in voltages]):
@@ -838,12 +841,12 @@ class LocalAddressLaser:
 
         return t
     
-    def deflect_mirrors(self, t, deflection, dur = None, cal = True):
+    def deflect_mirrors(self, t, direction, mag, dur = None, cal = True):
         if cal:
-            voltages, duration = local_addr_move_cal(deflection)
+            voltages, duration = local_addr_move_cal(direction, mag)
         else:
-            voltages = deflection
-            if dur == None:
+            voltages = [i*mag/np.linalg.norm(direction) for i in direction]
+            if dur is None:
                 raise ValueError("gimme some duration I'm not calibrated")
             else:
                 duration = dur
