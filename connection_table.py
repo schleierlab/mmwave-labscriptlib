@@ -9,8 +9,8 @@ from labscript_devices.PrawnBlaster.labscript_devices import PrawnBlaster
 from user_devices.DDS.AD9914 import AD9914
 
 from user_devices.DDS.AD_DDS import AD_DDS
-# from user_devices.spcm.Spectrum_sequence import Spectrum # Use Spectrum.py for when we don't run tweezers or when we run sequence mode. This is the old Spectrum.py code before we added fifo capability
-from user_devices.spcm.Spectrum import Spectrum # Use Spectrum.py for fifo mode or sequence mode. This doesn't work when we don't run tweezers.
+from user_devices.spcm.Spectrum_sequence import Spectrum # Use Spectrum.py for when we don't run tweezers or when we run sequence mode. This is the old Spectrum.py code before we added fifo capability
+# from user_devices.spcm.Spectrum import Spectrum # Use Spectrum.py for fifo mode or sequence mode. This doesn't work when we don't run tweezers.
 # TODO need to fix the issues in Spectrum for it to be able to run when we don't assign any waveform to specturm card
 
 from user_devices.manta419b.manta419b import Manta419B  # noqa:F401
@@ -33,15 +33,16 @@ class LabDevices():
     def initialize(self):
         print('Initializing connection table')
 
-        # pb = PulseBlasterESRPro500(name='pb', board_number=0)
-        pb = PrawnBlaster(name='pb', com_port='COM4', num_pseudoclocks=2)
+        pb = PulseBlasterESRPro500(name='pb', board_number=0)
+        # pb = PrawnBlaster(name='pb', com_port='COM4', num_pseudoclocks=2)
 
-        # clockline_6363 = ClockLine(
-        #     name='clockline_6363',
-        #     pseudoclock=pb.pseudoclock,
-        #     connection='flag 16',
-        # )
-        clockline_6363 = pb.clocklines[0]
+        clockline_6363 = ClockLine(
+            name='clockline_6363',
+            pseudoclock=pb.pseudoclock,
+            connection='flag 16',
+        )
+        # clockline_6363 = pb.clocklines[0] # for PrawnBlaster
+
         ni_6363_0 = NI_PXIe_6363(
             name='ni_6363_0',
             parent_device=clockline_6363,
@@ -74,23 +75,11 @@ class LabDevices():
             connection='port0/line3',
         )
 
-        self.uwave_absorp_switch = DigitalOut( # temp
+        self.uwave_absorp_switch = DigitalOut(
             name='uwave_absorp_switch',
-            parent_device=ni_6363_0,
-            connection='port0/line26',
+            parent_device = pb.direct_outputs,
+            connection='flag 8',
         )
-
-        # self.uwave_absorp_switch = DigitalOut(
-        #     name='uwave_absorp_switch',
-        #     parent_device = pb.direct_outputs,
-        #     connection='flag 8',
-        # )
-
-        # self.pb_test_9 = DigitalOut(
-        #     name='pb_test_9',
-        #     parent_device = pb.direct_outputs,
-        #     connection='flag 9',
-        # )
 
         # *_shutter_on_t: delay between pulse edge and fully-on state
         # *_shutter_off_t: delay between pulse edge and starting to close
@@ -164,48 +153,48 @@ class LabDevices():
             connection='port0/line1',
         )
 
-        # self.tweezer_aom_digital = DigitalOut(
-        #     name='tweezer_aom_digital',
-        #     parent_device = pb.direct_outputs,
-        #     connection='flag 12',
-        # )
+        self.tweezer_aom_digital = DigitalOut(
+            name='tweezer_aom_digital',
+            parent_device = pb.direct_outputs,
+            connection='flag 12',
+        )
 
-        # self.servo_1064_aom_digital = DigitalOut(
-        #     name='servo_1064_aom_digital',
-        #     parent_device = pb.direct_outputs,
-        #     connection='flag 13',
-        # )
+        self.servo_1064_aom_digital = DigitalOut(
+            name='servo_1064_aom_digital',
+            parent_device = pb.direct_outputs,
+            connection='flag 13',
+        )
 
-        # self.servo_456_aom_digital = DigitalOut(
-        #     name='servo_456_aom_digital',
-        #     parent_device = pb.direct_outputs,
-        #     connection='flag 14',
-        # )
+        self.servo_456_aom_digital = DigitalOut(
+            name='servo_456_aom_digital',
+            parent_device = pb.direct_outputs,
+            connection='flag 14',
+        )
 
 
-        # self.pulse_456_aom_digital = DigitalOut(
-        #     name='pulse_456_aom_digital',
-        #     parent_device = pb.direct_outputs,
-        #     connection='flag 15',
-        # )
+        self.pulse_456_aom_digital = DigitalOut(
+            name='pulse_456_aom_digital',
+            parent_device = pb.direct_outputs,
+            connection='flag 15',
+        )
 
-        # self.pulse_1064_aom_digital = DigitalOut(
-        #     name='pulse_1064_aom_digital',
-        #     parent_device = pb.direct_outputs,
-        #     connection='flag 10',
-        # )
+        self.pulse_1064_aom_digital = DigitalOut(
+            name='pulse_1064_aom_digital',
+            parent_device = pb.direct_outputs,
+            connection='flag 10',
+        )
 
-        # self.local_addr_1064_aom_digital = DigitalOut(
-        #     name='local_addr_1064_aom_digital',
-        #     parent_device = pb.direct_outputs,
-        #     connection='flag 11',
-        # )
+        self.local_addr_1064_aom_digital = DigitalOut(
+            name='local_addr_1064_aom_digital',
+            parent_device = pb.direct_outputs,
+            connection='flag 11',
+        )
 
-        # self.pulse_local_addr_1064_aom_digital = DigitalOut(
-        #     name='pulse_local_addr_1064_aom_digital',
-        #     parent_device=pb.direct_outputs,
-        #     connection='flag 20',
-        # )
+        self.pulse_local_addr_1064_aom_digital = DigitalOut(
+            name='pulse_local_addr_1064_aom_digital',
+            parent_device=pb.direct_outputs,
+            connection='flag 20',
+        )
 
         self.ta_relock = DigitalOut(
             name='ta_relock',
@@ -227,33 +216,12 @@ class LabDevices():
             open_state=1,
         )
 
-        self.tweezer_aom_digital = DigitalOut( # temp
-            name='tweezer_aom_digital',
-            parent_device=ni_6363_0,
-            connection='port0/line22',
-        )
+        # Dummy digital out to keep even number for Blacs
 
-        self.local_addr_1064_aom_digital = DigitalOut( # temp
-            name='local_addr_1064_aom_digital',
-            parent_device=ni_6363_0,
-            connection='port0/line24',
-        )
-
-        self.pulse_local_addr_1064_aom_digital = DigitalOut( # temp
-            name='pulse_local_addr_1064_aom_digital',
-            parent_device=ni_6363_0,
-            connection='port0/line25',
-        )
-
-        # self.mmwave_switch = DigitalOut(
-        #     name='mmwave_switch',
-        #     parent_device = pb.direct_outputs,
-        #     connection='flag 18',
-        # )
-        self.mmwave_switch = DigitalOut( # temp
+        self.mmwave_switch = DigitalOut(
             name='mmwave_switch',
-            parent_device = ni_6363_0,
-            connection='port0/line15', 
+            parent_device = pb.direct_outputs,
+            connection='flag 18',
         )
 
         self.blue_456_shutter = Shutter(
@@ -265,15 +233,15 @@ class LabDevices():
         )
 
         # dummy channel. Not connected to anything but enable/ disable to meet the even-number-channel requirement
-        #Make this channel 26 if using the spectrum 0!
-        self.digital_out_ch20 = DigitalOut(
-            name='digital_out_ch20',
-            parent_device=ni_6363_0,
-            connection='port0/line20',
-        )
+        # self.digital_out_ch26 = DigitalOut(
+        #     name='digital_out_ch26',
+        #     parent_device=ni_6363_0,
+        #     connection='port0/line26',
+        # )
 
-        # clockline_6739 = ClockLine(name='clockline_6739', pseudoclock=pb.pseudoclock, connection='flag 17')
-        clockline_6739 = pb.clocklines[1]
+        clockline_6739 = ClockLine(name='clockline_6739', pseudoclock=pb.pseudoclock, connection='flag 17')
+        # clockline_6739 = pb.clocklines[1]# for PrawnBlaster
+
         ni_6739_0 = NI_PXIe_6739(
             name='ni_6739_0',
             parent_device=clockline_6739,
@@ -540,12 +508,12 @@ class LabDevices():
             BIAS_port=54324,
         )
 
-        # self.manta419b_blue_laser = Manta419B(
-        #     'manta419b_blue_laser',
-        #     parent_device=ni_6363_0,
-        #     connection="port0/line2",
-        #     BIAS_port=54323,
-        # )
+        self.manta419b_local_addr = Manta419B(
+            'manta419b_local_addr',
+            parent_device=ni_6363_0,
+            connection="port0/line21",
+            BIAS_port=54325,
+        )
 
         # self.manta419b_dipole_trap = Manta419B(
         #     'manta419b_dipole_trap',
@@ -554,38 +522,21 @@ class LabDevices():
         #     BIAS_port=54323,
         # )
 
-        self.manta419b_local_addr = Manta419B(
-            'manta419b_local_addr',
+        self.kinetix = Kinetix(
+            name='kinetix',
             parent_device=ni_6363_0,
-            connection="port0/line2",
-            BIAS_port=54325,
+            connection='port0/line15',
+            BIAS_port=27171,
         )
-
-        # self.kinetix = Kinetix(
-        #     name='kinetix',
-        #     parent_device=ni_6363_0,
-        #     connection='port0/line15',
-        #     BIAS_port=27171,
-        # )
 
         #================================================================================
         # Spectrum Instrumentation Cards for microwaves
         #================================================================================
 
-        # self.spectrum_uwave = Spectrum(
-        #     name='spectrum_uwave',
-        #     parent_device=clockline_6363,
-        #     trigger={'device': pb.direct_outputs, 'connection': 'flag 19'},
-        #     BIAS_port = 8771,
-        #     serial_number = 19621,
-        #     handle_name = b'/dev/spcm0',
-        #     triggerDur=10e-3
-        # )
-
-        self.spectrum_uwave = Spectrum( # temp
+        self.spectrum_uwave = Spectrum(
             name='spectrum_uwave',
             parent_device=clockline_6363,
-            trigger={'device': ni_6363_0, 'connection': 'port0/line23'},
+            trigger={'device': pb.direct_outputs, 'connection': 'flag 19'},
             BIAS_port = 8771,
             serial_number = 19621,
             handle_name = b'/dev/spcm0',
@@ -596,33 +547,33 @@ class LabDevices():
         # Spectrum Instrumentation Cards
         #==============================================================================
 
-        # self.spectrum_0 = Spectrum(
-        #     name='spectrum_0',
+        self.spectrum_0 = Spectrum(
+            name='spectrum_0',
+            parent_device=clockline_6363,
+            trigger={'device': ni_6363_0, 'connection': 'port0/line20'},
+            BIAS_port=8770,
+            serial_number=19620,
+            handle_name = b'/dev/spcm0',
+        )
+
+        # self.spectrum_la = Spectrum(
+        #     name='spectrum_la',
         #     parent_device=clockline_6363,
-        #     trigger={'device': ni_6363_0, 'connection': 'port0/line20'},
-        #     BIAS_port=8770,
-        #     serial_number=19620,
-        #     handle_name = b'/dev/spcm0',
+        #     trigger={'device': ni_6363_0, 'connection': 'port0/line21'},
+        #     BIAS_port=8772,
+        #     serial_number=22134,
+        #     handle_name = b'/dev/spcm1',
         # )
 
+        ## connected to pulseblaster
         self.spectrum_la = Spectrum(
             name='spectrum_la',
-            parent_device=clockline_6363,
-            trigger={'device': ni_6363_0, 'connection': 'port0/line21'},
+            parent_device= clockline_6363,
+            trigger={'device': pb.direct_outputs, 'connection': 'flag 9'},
             BIAS_port=8772,
             serial_number=22134,
             handle_name = b'/dev/spcm1',
         )
-
-        ## for testing spectrum card when directly connected to pulseblaster
-        # self.spectrum_la = Spectrum(
-        #     name='spectrum_la',
-        #     parent_device=clockline_spectrum,
-        #     trigger={'device': pb.direct_outputs, 'connection': 'flag 19'},
-        #     BIAS_port=8771,
-        #     serial_number=19621,
-        #     handle_name = b'/dev/spcm1',
-        # )
 
         # #==============================================================================
         # # Y AOD DDS: AD9914 0

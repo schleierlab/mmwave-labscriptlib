@@ -188,7 +188,7 @@ class SpectrumManager():
 
         # set the card mode
         devices.spectrum_la.set_mode(
-            replay_mode='sequence',
+            replay_mode=b'sequence',
             channels = channel_setting,
             clock_freq = 625,
             use_ext_clock = True,
