@@ -31,7 +31,7 @@ class TweezerOperations(OpticalPumpingOperations):
         else:
             tw_y_freq = None
         # other DDS parameters need to be set in start_tweezers function in lasers.py.
-        # self.TweezerLaser_obj = TweezerLaser(t, shot_globals.tw_power, spectrum_mode, tw_y_use_dds, tw_y_freq)
+        self.TweezerLaser_obj = TweezerLaser(t, shot_globals.tw_power, spectrum_mode, tw_y_use_dds, tw_y_freq)
 
         # other DDS parameters need to be set in start_tweezers function in lasers.py.
         self.LocalAddressLaser_obj = LocalAddressLaser(t, shot_globals.la_power)
@@ -373,8 +373,8 @@ class TweezerOperations(OpticalPumpingOperations):
         devices.tweezer_aom_analog.constant(t,0.1)
         t+=0.01
 
-        self.Camera_obj.set_type("local_addr_manta")
-        self.Camera_obj.expose(t, local_addr_cam_exposure_time)
+        # self.Camera_obj.set_type("local_addr_manta")
+        # self.Camera_obj.expose(t, local_addr_cam_exposure_time)
 
         t+=0.01
 
@@ -397,11 +397,12 @@ class TweezerOperations(OpticalPumpingOperations):
         self.Camera_obj.expose(t, tweezer_cam_exposure_time)
         t+=0.01
 
-        self.Camera_obj.set_type("local_addr_manta")
-        self.Camera_obj.expose(t, local_addr_cam_exposure_time)
+        # self.Camera_obj.set_type("local_addr_manta")
+        # self.Camera_obj.expose(t, local_addr_cam_exposure_time)
 
 
-        t += 0.5
+        t += 10
+    
 
         #Temporary
         # devices.local_addr_1064_aom_digital.go_low(t)
