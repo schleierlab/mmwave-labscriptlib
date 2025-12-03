@@ -9,8 +9,8 @@ from labscript_devices.PrawnBlaster.labscript_devices import PrawnBlaster
 from user_devices.DDS.AD9914 import AD9914
 
 from user_devices.DDS.AD_DDS import AD_DDS
-from user_devices.spcm.Spectrum_sequence import Spectrum # Use Spectrum.py for when we don't run tweezers or when we run sequence mode. This is the old Spectrum.py code before we added fifo capability
-# from user_devices.spcm.Spectrum import Spectrum # Use Spectrum.py for fifo mode or sequence mode. This doesn't work when we don't run tweezers.
+# from user_devices.spcm.Spectrum_sequence import Spectrum # Use Spectrum.py for when we don't run tweezers or when we run sequence mode. This is the old Spectrum.py code before we added fifo capability
+from user_devices.spcm.Spectrum import Spectrum # Use Spectrum.py for fifo mode or sequence mode. This doesn't work when we don't run tweezers.
 # TODO need to fix the issues in Spectrum for it to be able to run when we don't assign any waveform to specturm card
 
 from user_devices.manta419b.manta419b import Manta419B  # noqa:F401
@@ -233,11 +233,11 @@ class LabDevices():
         )
 
         # dummy channel. Not connected to anything but enable/ disable to meet the even-number-channel requirement
-        self.digital_out_ch26 = DigitalOut(
-            name='digital_out_ch26',
-            parent_device=ni_6363_0,
-            connection='port0/line26',
-        )
+        # self.digital_out_ch26 = DigitalOut(
+        #     name='digital_out_ch26',
+        #     parent_device=ni_6363_0,
+        #     connection='port0/line26',
+        # )
 
         clockline_6739 = ClockLine(name='clockline_6739', pseudoclock=pb.pseudoclock, connection='flag 17')
         # clockline_6739 = pb.clocklines[1]# for PrawnBlaster
@@ -501,12 +501,12 @@ class LabDevices():
         #     BIAS_port=54321,
         # )
 
-        self.manta419b_tweezer = Manta419B(
-            'manta419b_tweezer',
-            parent_device=ni_6363_0,
-            connection="port0/line13",
-            BIAS_port=54324,
-        )
+        # self.manta419b_tweezer = Manta419B(
+        #     'manta419b_tweezer',
+        #     parent_device=ni_6363_0,
+        #     connection="port0/line13",
+        #     BIAS_port=54324,
+        # )
 
         # self.manta419b_local_addr = Manta419B(
         #     'manta419b_local_addr',

@@ -376,10 +376,10 @@ class TweezerOperations(OpticalPumpingOperations):
         # self.Camera_obj.set_type("local_addr_manta")
         # self.Camera_obj.expose(t, local_addr_cam_exposure_time)
 
-        t+=0.01
+        # t+=0.01
 
-        self.Camera_obj.set_type("tweezer_manta")
-        self.Camera_obj.expose(t, tweezer_cam_exposure_time)
+        # self.Camera_obj.set_type("tweezer_manta")
+        # self.Camera_obj.expose(t, tweezer_cam_exposure_time)
 
 
         t += 0.05
@@ -393,9 +393,9 @@ class TweezerOperations(OpticalPumpingOperations):
             )
         t += 0.05
         
-        self.Camera_obj.set_type("tweezer_manta")
-        self.Camera_obj.expose(t, tweezer_cam_exposure_time)
-        t+=0.01
+        # self.Camera_obj.set_type("tweezer_manta")
+        # self.Camera_obj.expose(t, tweezer_cam_exposure_time)
+        # t+=0.01
 
         # self.Camera_obj.set_type("local_addr_manta")
         # self.Camera_obj.expose(t, local_addr_cam_exposure_time)
