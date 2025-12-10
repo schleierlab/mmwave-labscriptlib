@@ -105,8 +105,8 @@ if __name__ == "__main__":
         t = MOTSeq_obj._do_mot_in_situ_sequence(t, reset_mot=True, check_with_vimba=False)
 
     elif shot_globals.do_molasses_in_situ_check:
-        if shot_globals.do_molasses_in_situ_check and shot_globals.imaging_beam_choice != "mot":
-            raise ValueError
+        # if shot_globals.do_molasses_in_situ_check and shot_globals.imaging_beam_choice != "mot":
+        #     raise ValueError
 
         MOTSeq_obj = MOTOperations(t)
         sequence_objects.append(MOTSeq_obj)
