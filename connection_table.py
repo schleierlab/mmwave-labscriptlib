@@ -494,6 +494,8 @@ class LabDevices():
         # Cameras
         #==============================================================================
 
+        # use line21 for local address manta camera
+
         # self.manta419b_mot = Manta419B(
         #     'manta419b_mot',
         #     parent_device=ni_6363_0,
@@ -556,16 +558,6 @@ class LabDevices():
             handle_name = b'/dev/spcm0',
         )
 
-        # self.spectrum_la = Spectrum(
-        #     name='spectrum_la',
-        #     parent_device=clockline_6363,
-        #     trigger={'device': ni_6363_0, 'connection': 'port0/line21'},
-        #     BIAS_port=8772,
-        #     serial_number=22134,
-        #     handle_name = b'/dev/spcm1',
-        # )
-
-        ## connected to pulseblaster
         self.spectrum_la = Spectrum(
             name='spectrum_la',
             parent_device= clockline_6363,
