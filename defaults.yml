@@ -26,7 +26,7 @@ Bright_Molasses:
   bm_repump_power: { value: 1.0, unit: V }
   bm_robust_loading_pulse_dur: { value: 80e-3, unit: s }
   bm_ta_detuning: { value: -150, unit: MHz } #-100
-  bm_ta_power: { value: 0.2, unit: V } #0.22#0.2
+  bm_ta_power: { value: 0.15, unit: V } #0.2
   bm_time: { value: 10e-3, unit: s }
   bm_tof_imaging_delay: { value: 7e-3, unit: s }
   bm_beam_choice: { value: "\"mot\"", unit: "" } # "mot" or "img"
@@ -127,9 +127,9 @@ Tweezers:
   do_tweezer_modulation: { value: False, unit: bool }
   do_tweezers: { value: True, unit: bool }
   tw_img_exposure_time: { value: 40e-3, unit: s } #80e-3
-  tw_img_repump_power: { value: 0.2, unit: V }
-  tw_img_ta_detuning: { value: -30, unit: MHz} #-35#-47
-  tw_img_ta_power: { value: 0.2, unit: V } 
+  tw_img_repump_power: { value: 0.18, unit: V } #0.2
+  tw_img_ta_detuning: { value: -34, unit: MHz} #-34#-35#-47
+  tw_img_ta_power: { value: 0.18, unit: V } #0.2
   tw_img_tof_imaging_delay: { value: 50e-3, unit: s }
   kinetix_roi_row: { value: "tuple((1150,110))", unit: pixels }
   tw_modulation_freq: { value: 0, unit: Hz }
@@ -140,11 +140,22 @@ Tweezers:
 
 Local_Addressing_Arrays:
   la_power: { value: 0, unit: V }
+  LA_loopDuration: { value: 0.96e-3, unit: s }
+  # TODO this loop duration is for np.arange(60,88,0.7). Need to use different ones if we run sequence mode with different frequencies
+  LA_maxPulses: { value: 1, unit: "" }
+  LA_x_freqs: { value: [74], unit: MHz } #np.arange(60,88,0.7) #np.arange(58,88,0.6)
+  LA_y_amplitude: { value: 0.99, unit: ""}
+  LA_x_amplitude: { value: 0.99, unit: ""}
+  LA_y_freqs: { value: "tuple(np.arange(58,88,0.6))", unit: MHz } #70.75
+  LA_y_power: { value: 33, unit: dBm }
+  LA_x_power: { value: 33, unit: dBm }
+  local_addr_defl_t: {value: 0.0, unit: s}
+  local_addr_direction: {value: "tuple([1,0,0,0])" , unit: ""}
+  local_addr_move_mag: { value: 1, unit: "" }
 
 Rydberg:
   do_blue: { value: False, unit: bool }
   do_dipole_trap: { value: False, unit: bool }
-  do_local_addr: { value: False, unit: bool }
   do_ryd_2_photon: { value: False, unit: bool }
   dp_img_exposure_time: { value: 80e-3, unit: s }
   dp_img_repump_power: { value: 0.4, unit: V }
