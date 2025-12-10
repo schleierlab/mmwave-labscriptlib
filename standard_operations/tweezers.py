@@ -273,10 +273,24 @@ class TweezerOperations(OpticalPumpingOperations):
 
     def _do_tweezer_check(self, t, check_rearrangement_position = False) -> float:
         t = self.load_tweezers(t)
+
+        # t = self.TweezerLaser_obj.ramp_power(
+        #     t, dur=TweezerLaser.CONST_TWEEZER_RAMPING_TIME, final_power = 0.99
+        # )
+
         t = self.image_tweezers(t, shot_number=1)
+
+        # t = self.TweezerLaser_obj.ramp_power(
+        #     t, dur=TweezerLaser.CONST_TWEEZER_RAMPING_TIME, final_power = shot_globals.tw_ramp_power
+        # )
         t += shot_globals.img_wait_time_between_shots
         if shot_globals.do_tw_release_and_recapture: # ramp and turn traps off for temperature measurement
             t = self.release_and_recapture(t)
+
+        # t = self.TweezerLaser_obj.ramp_power(
+        #     t, dur=TweezerLaser.CONST_TWEEZER_RAMPING_TIME, final_power = 0.99
+        # )
+
         t = self.image_tweezers(t, shot_number=2)
         if shot_globals.do_rearrangement:
             t = self.image_tweezers(t, shot_number=3) # this adds 46 ms time offset
