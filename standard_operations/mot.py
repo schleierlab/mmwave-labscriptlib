@@ -306,8 +306,7 @@ class MOTOperations:
                     shot_globals.bm_repump_power,
                     close_all_shutters=close_all_shutters,
                 )
-
-            if shot_globals.bm_beam_choice == "img":
+            elif shot_globals.bm_beam_choice == "img":
                 t, _ = self.D2Lasers_obj.do_pulse(
                     t,
                     dur,

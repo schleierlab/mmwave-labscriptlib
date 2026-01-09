@@ -216,8 +216,6 @@ class LabDevices():
             open_state=1,
         )
 
-        # Dummy digital out to keep even number for Blacs
-
         self.mmwave_switch = DigitalOut(
             name='mmwave_switch',
             parent_device = pb.direct_outputs,

@@ -1024,13 +1024,16 @@ class RydbergOperations(TweezerOperations):
 
         t = self.pump_then_rotate(
             t,
-            (shot_globals.mw_bias_amp,
-             shot_globals.mw_bias_phi,
-             shot_globals.mw_bias_theta),
-             polar=True) # trap is lowered when optical pump happens
+            (
+                shot_globals.mw_bias_amp,
+                shot_globals.mw_bias_phi,
+                shot_globals.mw_bias_theta,
+            ),
+            polar=True,
+        ) # trap is lowered when optical pump happens
 
         # Apply Rydberg pulse with both 456 and 1064 active
-        t+=2.5e-6
+        t += 2.5e-6
 
         t += shot_globals.mw_field_wait_dur  # 400e-6
 

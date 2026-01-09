@@ -258,7 +258,6 @@ def biasy_calib(field):
     voltage = V0 +1/Bp*field
     return voltage
 
-
 def biasz_calib(field):
     V0 = -0.6682 # V
     Bp = 1096.9 # mG/V

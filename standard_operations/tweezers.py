@@ -129,7 +129,7 @@ class TweezerOperations(OpticalPumpingOperations):
         return t
 
     def tweezer_modulation(self, t, label="sine"):
-        pass
+        raise NotImplementedError
 
     # TODO make Camera object intelligently bump camera exposures in quick succession
     def image_tweezers(self, t, shot_number):
