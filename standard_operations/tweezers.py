@@ -96,17 +96,16 @@ class TweezerOperations(OpticalPumpingOperations):
         t = self.TweezerLaser_obj.ramp_power(
             t, dur=TweezerLaser.CONST_TWEEZER_RAMPING_TIME, final_power=1
         )
-        # ramp to full power and parity projection
+        # ramp to full power and do parity projection
         if shot_globals.do_parity_projection_pulse:
-            _, t_aom_start = self.D2Lasers_obj.parity_projection_pulse(
-                t, dur=shot_globals.bm_parity_projection_pulse_dur
+            t, _ = self.D2Lasers_obj.parity_projection_pulse(
+                t,
+                shot_globals.bm_parity_projection_pulse_dur,
+                shot_globals.bm_parity_projection_ta_detuning, 
+                shot_globals.bm_parity_projection_ta_power, 
+                shot_globals.bm_parity_projection_repump_power,
+                close_all_shutters=True,
             )
-            # if doing parity projection, synchronize with power ramp
-            t = t_aom_start
-            t += shot_globals.bm_parity_projection_pulse_dur
-
-        # t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
-        # t += shot_globals.bm_time
 
         t = self.ramp_to_imaging_parameters(t)
 

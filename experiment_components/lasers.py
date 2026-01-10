@@ -533,7 +533,16 @@ class D2Lasers:
 
         return t
 
-    def parity_projection_pulse(self, t, dur, close_all_shutters=False):
+    def parity_projection_pulse(
+            self,
+            t,
+            dur,
+            ta_freq,
+            ta_power,
+            repump_power, 
+            shutterconfig: ShutterConfig = ShutterConfig.IMG_FULL,
+            close_all_shutters: bool = False,
+    ):
         """Execute a parity projection pulse sequence.
 
         Performs a specialized pulse sequence for parity projection measurements,
@@ -550,15 +559,15 @@ class D2Lasers:
         self.ramp_ta_freq(
             t,
             duration=self.CONST_TA_VCO_RAMP_TIME,
-            final=self.parity_proj_config.ta_detuning,
+            final=ta_freq,
         )  # fixed the ramp duration for the parity projection
         t += self.CONST_TA_VCO_RAMP_TIME
         t, t_aom_start = self.do_pulse(
             t,
             dur,
-            ShutterConfig.MOT_TA,
-            self.parity_proj_config.ta_power,
-            0,
+            shutterconfig,
+            ta_power,
+            repump_power,
             close_all_shutters=close_all_shutters,
         )
         return t, t_aom_start

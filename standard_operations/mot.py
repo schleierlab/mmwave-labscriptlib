@@ -58,6 +58,7 @@ class MOTOperations:
             shot_globals.mot_ta_power,
             shot_globals.mot_ta_detuning,
             shot_globals.mot_repump_power,
+            repump_detuning=shot_globals.mot_repump_detuning,
         )
         pp_config = ParityProjectionConfig(
             shot_globals.bm_parity_projection_ta_power,
@@ -100,14 +101,16 @@ class MOTOperations:
         Returns:
             float: End time of the MOT sequence
         """
-        if shot_globals.mot_do_uv:
-            t = self.UVLamps_obj.uv_pulse(t, dur=shot_globals.mot_uv_duration)
-            # the uv duration should be determined for each dispenser current
-            # generally, get superior loading in the 10s of milliseconds
+        # uv_shutter_offset = 5e-3
+        # if shot_globals.mot_do_uv:
+        #     t = self.UVLamps_obj.uv_pulse(t+uv_shutter_offset, dur=shot_globals.mot_uv_duration-uv_shutter_offset)
+        #     # the uv duration should be determined for each dispenser current
+        #     # generally, get superior loading in the 10s of milliseconds
 
-        # possibly extend MOT loading to ensure
-        # that UV light is off by the time MOT loading is complete
-        dur = max(dur, shot_globals.mot_uv_duration)
+        # # possibly extend MOT loading to ensure
+        # # that UV light is off by the time MOT loading is complete
+        # dur = max(dur, shot_globals.mot_uv_duration)
+
         t, _ = self.D2Lasers_obj.do_pulse(
             t,
             dur,
@@ -153,6 +156,9 @@ class MOTOperations:
 
         t += 10e-3
 
+        if shot_globals.mot_do_uv:
+            t = self.UVLamps_obj.uv_pulse(t, dur=shot_globals.mot_uv_duration)
+
         return t
 
     def image_mot(self, t, close_all_shutters=False):
@@ -170,6 +176,7 @@ class MOTOperations:
         """
         # Move to on resonance, make sure AOM is off
         self.D2Lasers_obj.ramp_ta_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
+        self.D2Lasers_obj.ramp_repump_freq(t, D2Lasers.CONST_TA_VCO_RAMP_TIME, 0)
         t += D2Lasers.CONST_TA_VCO_RAMP_TIME
 
         # Make sure coils are off
@@ -183,8 +190,8 @@ class MOTOperations:
             t,
             shot_globals.mot_exposure_time,
             ShutterConfig.MOT_FULL,
-            shot_globals.mot_ta_power,
-            shot_globals.mot_repump_power,
+            shot_globals.mot_img_ta_power,
+            shot_globals.mot_img_repump_power,
             close_all_shutters=close_all_shutters,
         )
 
@@ -424,10 +431,7 @@ class MOTOperations:
         Returns:
             float: End time of the sequence
         """
-        # MOT loading time 500 ms
-        mot_load_dur = 0.5
-
-        t = self.do_mot(t, mot_load_dur)
+        t = self.do_mot(t, shot_globals.mot_load_dur)
         t = self.do_molasses(t, shot_globals.bm_time)
         t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
 
@@ -472,7 +476,7 @@ class MOTOperations:
             # Turn off MOT for taking background images
             t += 100e-3
 
-            t = self.do_molasses_dipole_trap_imaging(t)
+            t = self.do_molasses_dipole_trap_imaging(t, close_all_shutters=True)
 
         t += 10e-3
         if reset_mot:

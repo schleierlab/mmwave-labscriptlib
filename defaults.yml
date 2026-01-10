@@ -4,34 +4,37 @@ MOT:
   mot_do_coil: { value: True, unit: bool }
   mot_do_uv: { value: False, unit: bool }
   mot_exposure_time: { value: 1e-3, unit: s }
-  mot_load_dur: { value: 0, unit: s }
+  mot_load_dur: { value: 0.001, unit: s }  # making this too short (< 30 us ish) causes labscript timing errors (cmds in too quick succession on 6739 clockline)
   mot_repump_power: { value: 1, unit: V }
-  mot_ta_detuning: { value: -21, unit: MHz }
-  mot_ta_power: { value: 0.7, unit: V }
+  mot_repump_detuning: { value: 0, unit: MHz }
+  mot_ta_detuning: { value: -21, unit: MHz } #-21
+  mot_ta_power: { value: 0.4, unit: V }
+  mot_img_ta_power: { value: 0.4, unit: V }
+  mot_img_repump_power: { value: 1, unit: V }
   mot_tof_imaging_delay: { value: 7e-3, unit: s }
-  mot_uv_duration: { value: 200e-3, unit: s }
-  mot_x_coil_voltage: { value: 0.75, unit: V }
-  mot_y_coil_voltage: { value: -1.1, unit: V }
-  mot_z_coil_voltage: { value: -1.1, unit: V }
+  mot_uv_duration: { value: 100e-3, unit: s }
+  mot_x_coil_voltage: { value: -1, unit: V }
+  mot_y_coil_voltage: { value: 0.6, unit: V }
+  mot_z_coil_voltage: { value: -0.5, unit: V }
   zero_Efield_Vx: { value: 0.29, unit: V }
   zero_Efield_Vy: { value: 0, unit: V }
   zero_Efield_Vz: { value: -0.01, unit: V }
 
 Bright_Molasses:
   bm_exposure_time: { value: 1e-3, unit: s }
-  bm_parity_projection_pulse_dur: { value: 10e-3, unit: s }
-  bm_parity_projection_ta_detuning: { value: -35, unit: MHz }
-  bm_parity_projection_ta_power: { value: 0.4, unit: V }
+  bm_parity_projection_pulse_dur: { value: 40e-3, unit: s } #10e-3
+  bm_parity_projection_ta_detuning: { value: -8, unit: MHz }
+  bm_parity_projection_ta_power: { value: 0.12, unit: V }
   bm_repump_detuning: { value: 0.0, unit: MHz }
   bm_repump_power: { value: 1.0, unit: V }
-  bm_robust_loading_pulse_dur: { value: 80e-3, unit: s }
-  bm_ta_detuning: { value: -150, unit: MHz } #-100
-  bm_ta_power: { value: 0.15, unit: V } #0.2
-  bm_time: { value: 10e-3, unit: s }
+  bm_robust_loading_pulse_dur: { value: 40e-3, unit: s }
+  bm_ta_detuning: { value: -150, unit: MHz }
+  bm_ta_power: { value: 0.15, unit: V }
+  bm_time: { value: 30e-3, unit: s }
   bm_tof_imaging_delay: { value: 7e-3, unit: s }
   bm_beam_choice: { value: "\"mot\"", unit: "" } # "mot" or "img"
-  do_parity_projection_pulse: { value: False, unit: bool }
-  do_robust_loading_pulse: { value: True, unit: bool }
+  do_parity_projection_pulse: { value: True, unit: bool }
+  do_robust_loading_pulse: { value: False, unit: bool }
   do_GMC: {value: False, unit: bool}
 
 Mmwaves:
@@ -109,12 +112,12 @@ Tweezers:
   TW_post_select_img_row_index: { value: 0, unit: "" }
   # TODO: are these needed if they are zero? What do they do? why are there two offsets?
   TW_rearrangement_fine_time_offset: { value: 0, unit: s }
-  TW_rearrangement_time_offset: { value: 0e-3, unit: s }
+  TW_rearrangement_time_offset: { value: 262e-3, unit: s } # for rydberg tweezer sequences. For just tweezer check, it is 172 ms
   # TODO: how do we eval strings
   TW_target_array: { value: "tuple(np.arange(12,38,1))", unit: "" }
   TW_x_freqs: { value: "tuple(np.arange(58,88,0.6))", unit: MHz } #np.arange(60,88,0.7) #np.arange(58,88,0.6)
   TW_y_amplitude: { value: 0.99, unit: ""}
-  TW_y_freqs: { value: [69], unit: MHz } #70.75
+  TW_y_freqs: { value: [70], unit: MHz }
   TW_y_power: { value: 33, unit: dBm }
   TW_y_use_dds: { value: True, unit: bool }
   do_cooling_while_rearrange: { value: False, unit: bool }
@@ -127,9 +130,9 @@ Tweezers:
   do_tweezer_modulation: { value: False, unit: bool }
   do_tweezers: { value: True, unit: bool }
   tw_img_exposure_time: { value: 40e-3, unit: s } #80e-3
-  tw_img_repump_power: { value: 0.18, unit: V } #0.2
-  tw_img_ta_detuning: { value: -34, unit: MHz} #-34#-35#-47
-  tw_img_ta_power: { value: 0.18, unit: V } #0.2
+  tw_img_repump_power: { value: 0.25, unit: V }
+  tw_img_ta_detuning: { value: -47, unit: MHz}
+  tw_img_ta_power: { value: 0.2, unit: V }
   tw_img_tof_imaging_delay: { value: 50e-3, unit: s }
   kinetix_roi_row: { value: "tuple((1150,110))", unit: pixels }
   tw_modulation_freq: { value: 0, unit: Hz }
