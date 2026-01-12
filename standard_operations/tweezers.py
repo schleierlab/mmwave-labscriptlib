@@ -1,8 +1,9 @@
 import labscript.labscript as ls
 
-from labscriptlib.experiment_components import D2Lasers, ShutterConfig, TweezerLaser
+from labscriptlib.experiment_components import D2Lasers, ShutterConfig, TweezerLaser, LocalAddressLaser
 from labscriptlib.shot_globals import shot_globals
 from .optical_pumping import OpticalPumpingOperations
+from labscriptlib.connection_table import devices # temperal
 
 
 class TweezerOperations(OpticalPumpingOperations):
@@ -31,6 +32,9 @@ class TweezerOperations(OpticalPumpingOperations):
             tw_y_freq = None
         # other DDS parameters need to be set in start_tweezers function in lasers.py.
         self.TweezerLaser_obj = TweezerLaser(t, shot_globals.tw_power, spectrum_mode, tw_y_use_dds, tw_y_freq)
+
+        # other DDS parameters need to be set in start_tweezers function in lasers.py.
+        self.LocalAddressLaser_obj = LocalAddressLaser(t, shot_globals.la_power)
 
     def ramp_to_imaging_parameters(self, t):
         """Configure laser parameters for imaging or additional cooling.
@@ -92,17 +96,16 @@ class TweezerOperations(OpticalPumpingOperations):
         t = self.TweezerLaser_obj.ramp_power(
             t, dur=TweezerLaser.CONST_TWEEZER_RAMPING_TIME, final_power=1
         )
-        # ramp to full power and parity projection
+        # ramp to full power and do parity projection
         if shot_globals.do_parity_projection_pulse:
-            _, t_aom_start = self.D2Lasers_obj.parity_projection_pulse(
-                t, dur=shot_globals.bm_parity_projection_pulse_dur
+            t, _ = self.D2Lasers_obj.parity_projection_pulse(
+                t,
+                shot_globals.bm_parity_projection_pulse_dur,
+                shot_globals.bm_parity_projection_ta_detuning, 
+                shot_globals.bm_parity_projection_ta_power, 
+                shot_globals.bm_parity_projection_repump_power,
+                close_all_shutters=True,
             )
-            # if doing parity projection, synchronize with power ramp
-            t = t_aom_start
-            t += shot_globals.bm_parity_projection_pulse_dur
-
-        # t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
-        # t += shot_globals.bm_time
 
         t = self.ramp_to_imaging_parameters(t)
 
@@ -125,7 +128,7 @@ class TweezerOperations(OpticalPumpingOperations):
         return t
 
     def tweezer_modulation(self, t, label="sine"):
-        pass
+        raise NotImplementedError
 
     # TODO make Camera object intelligently bump camera exposures in quick succession
     def image_tweezers(self, t, shot_number):
@@ -269,10 +272,24 @@ class TweezerOperations(OpticalPumpingOperations):
 
     def _do_tweezer_check(self, t, check_rearrangement_position = False) -> float:
         t = self.load_tweezers(t)
+
+        # t = self.TweezerLaser_obj.ramp_power(
+        #     t, dur=TweezerLaser.CONST_TWEEZER_RAMPING_TIME, final_power = 0.99
+        # )
+
         t = self.image_tweezers(t, shot_number=1)
+
+        # t = self.TweezerLaser_obj.ramp_power(
+        #     t, dur=TweezerLaser.CONST_TWEEZER_RAMPING_TIME, final_power = shot_globals.tw_ramp_power
+        # )
         t += shot_globals.img_wait_time_between_shots
         if shot_globals.do_tw_release_and_recapture: # ramp and turn traps off for temperature measurement
             t = self.release_and_recapture(t)
+
+        # t = self.TweezerLaser_obj.ramp_power(
+        #     t, dur=TweezerLaser.CONST_TWEEZER_RAMPING_TIME, final_power = 0.99
+        # )
+
         t = self.image_tweezers(t, shot_number=2)
         if shot_globals.do_rearrangement:
             t = self.image_tweezers(t, shot_number=3) # this adds 46 ms time offset
@@ -309,6 +326,9 @@ class TweezerOperations(OpticalPumpingOperations):
         """
         t += 1e-5
         self.TweezerLaser_obj.aom_on(t, shot_globals.tw_power)
+        self.LocalAddressLaser_obj.aom_on(t, shot_globals.la_power)
+        devices.local_addr_1064_aom_analog.constant(t, 1)
+        devices.local_addr_1064_aom_digital.go_high(t)
 
         if check_with_vimba:
             t += 10

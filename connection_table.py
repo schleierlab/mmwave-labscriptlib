@@ -5,6 +5,7 @@ import labscript_devices.FunctionRunner.labscript_devices
 from labscript import AnalogIn, AnalogOut, ClockLine, DigitalOut, Shutter
 from labscript_devices.NI_DAQmx.models.NI_PXIe_6363 import NI_PXIe_6363
 from labscript_devices.PulseBlasterESRPro500 import PulseBlasterESRPro500
+from labscript_devices.PrawnBlaster.labscript_devices import PrawnBlaster
 from user_devices.DDS.AD9914 import AD9914
 
 from user_devices.DDS.AD_DDS import AD_DDS
@@ -26,16 +27,22 @@ class LabDevices():
     def __getattr__(self, name):
         raise AttributeError(f'Device {name} not defined. Did you forget to call initialize()?')
 
+    def initialized(self) -> bool:
+        return hasattr(self, 'pb')
+
     def initialize(self):
         print('Initializing connection table')
 
         pb = PulseBlasterESRPro500(name='pb', board_number=0)
+        # pb = PrawnBlaster(name='pb', com_port='COM4', num_pseudoclocks=2)
 
         clockline_6363 = ClockLine(
             name='clockline_6363',
             pseudoclock=pb.pseudoclock,
             connection='flag 16',
         )
+        # clockline_6363 = pb.clocklines[0] # for PrawnBlaster
+
         ni_6363_0 = NI_PXIe_6363(
             name='ni_6363_0',
             parent_device=clockline_6363,
@@ -67,12 +74,6 @@ class LabDevices():
             parent_device=ni_6363_0,
             connection='port0/line3',
         )
-
-        # self.uwave_absorp_switch = DigitalOut(
-        #     name='uwave_absorp_switch',
-        #     parent_device=ni_6363_0,
-        #     connection='port0/line4',
-        # )
 
         self.uwave_absorp_switch = DigitalOut(
             name='uwave_absorp_switch',
@@ -189,6 +190,12 @@ class LabDevices():
             connection='flag 11',
         )
 
+        self.pulse_local_addr_1064_aom_digital = DigitalOut(
+            name='pulse_local_addr_1064_aom_digital',
+            parent_device=pb.direct_outputs,
+            connection='flag 20',
+        )
+
         self.ta_relock = DigitalOut(
             name='ta_relock',
             parent_device=ni_6363_0,
@@ -209,13 +216,6 @@ class LabDevices():
             open_state=1,
         )
 
-        # Dummy digital out to keep even number for Blacs
-        self.digital_out_ch22 = DigitalOut(
-            name='digital_out_ch22',
-            parent_device=ni_6363_0,
-            connection='port0/line22',
-        )
-
         self.mmwave_switch = DigitalOut(
             name='mmwave_switch',
             parent_device = pb.direct_outputs,
@@ -231,13 +231,15 @@ class LabDevices():
         )
 
         # dummy channel. Not connected to anything but enable/ disable to meet the even-number-channel requirement
-        self.digital_out_ch26 = DigitalOut(
-            name='digital_out_ch26',
-            parent_device=ni_6363_0,
-            connection='port0/line26',
-        )
+        # self.digital_out_ch26 = DigitalOut(
+        #     name='digital_out_ch26',
+        #     parent_device=ni_6363_0,
+        #     connection='port0/line26',
+        # )
 
         clockline_6739 = ClockLine(name='clockline_6739', pseudoclock=pb.pseudoclock, connection='flag 17')
+        # clockline_6739 = pb.clocklines[1]# for PrawnBlaster
+
         ni_6739_0 = NI_PXIe_6739(
             name='ni_6739_0',
             parent_device=clockline_6739,
@@ -295,8 +297,8 @@ class LabDevices():
             connection='ao8',
             limits=(0, 1)
         )
-        self.servo_1064_aom_analog = AnalogOut(
-            name='notconnected_servo_1064_aom_analog',
+        self.pulse_local_addr_1064_aom_analog = AnalogOut(
+            name='pulse_local_addr_1064_aom_analog',
             parent_device=ni_6739_0,
             connection='ao9',
             limits=(0, 1)
@@ -386,6 +388,34 @@ class LabDevices():
             limits=(0, 1)
         )
 
+        self.local_addr_piezo_mirror_x1 = AnalogOut(
+            name='local_addr_piezo_mirror_x1',
+            parent_device=ni_6739_0,
+            connection='ao32',
+            limits=(-10, 10)
+        )
+
+        self.local_addr_piezo_mirror_x2 = AnalogOut(
+            name='local_addr_piezo_mirror_x2',
+            parent_device=ni_6739_0,
+            connection='ao33',
+            limits=(-10, 10)
+        )
+
+        self.local_addr_piezo_mirror_y1 = AnalogOut(
+            name='local_addr_piezo_mirror_y1',
+            parent_device=ni_6739_0,
+            connection='ao34',
+            limits=(-10, 10)
+        )
+
+        self.local_addr_piezo_mirror_y2 = AnalogOut(
+            name='local_addr_piezo_mirror_y2',
+            parent_device=ni_6739_0,
+            connection='ao35',
+            limits=(-10, 10)
+        )
+
         #==============================================================================
         # Electrodes
         #==============================================================================
@@ -462,6 +492,8 @@ class LabDevices():
         # Cameras
         #==============================================================================
 
+        # use line21 for local address manta camera
+
         # self.manta419b_mot = Manta419B(
         #     'manta419b_mot',
         #     parent_device=ni_6363_0,
@@ -524,24 +556,14 @@ class LabDevices():
             handle_name = b'/dev/spcm0',
         )
 
-        # self.spectrum_1 = Spectrum(
-        #     name='spectrum_1',
-        #     parent_device=clockline_6363,
-        #     trigger={'device': ni_6363_0, 'connection': 'port0/line21'},
-        #     BIAS_port=8771,
-        #     serial_number=19621,
-        #     handle_name = b'/dev/spcm1',
-        # )
-
-        ## for testing spectrum card when directly connected to pulseblaster
-        # self.spectrum_1 = Spectrum(
-        #     name='spectrum_1',
-        #     parent_device=clockline_spectrum,
-        #     trigger={'device': pb.direct_outputs, 'connection': 'flag 19'},
-        #     BIAS_port=8771,
-        #     serial_number=19621,
-        #     handle_name = b'/dev/spcm1',
-        # )
+        self.spectrum_la = Spectrum(
+            name='spectrum_la',
+            parent_device= clockline_6363,
+            trigger={'device': pb.direct_outputs, 'connection': 'flag 9'},
+            BIAS_port=8772,
+            serial_number=22134,
+            handle_name = b'/dev/spcm1',
+        )
 
         # #==============================================================================
         # # Y AOD DDS: AD9914 0

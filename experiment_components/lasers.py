@@ -239,7 +239,7 @@ class D2Lasers:
                 duration=duration,
                 initial=ta_freq_calib(self.ta_freq),
                 final=ta_freq_calib(final),
-                samplerate=4e5,
+                samplerate=3e5,
             )
             self.ta_freq = final
             return t + duration
@@ -270,7 +270,7 @@ class D2Lasers:
                 duration=duration,
                 initial=repump_freq_calib(self.repump_freq),
                 final=repump_freq_calib(final),
-                samplerate=4e5,
+                samplerate=3e5,
             )
             self.repump_freq = final
             return t + duration
@@ -533,7 +533,16 @@ class D2Lasers:
 
         return t
 
-    def parity_projection_pulse(self, t, dur, close_all_shutters=False):
+    def parity_projection_pulse(
+            self,
+            t,
+            dur,
+            ta_freq,
+            ta_power,
+            repump_power, 
+            shutterconfig: ShutterConfig = ShutterConfig.IMG_FULL,
+            close_all_shutters: bool = False,
+    ):
         """Execute a parity projection pulse sequence.
 
         Performs a specialized pulse sequence for parity projection measurements,
@@ -550,15 +559,15 @@ class D2Lasers:
         self.ramp_ta_freq(
             t,
             duration=self.CONST_TA_VCO_RAMP_TIME,
-            final=self.parity_proj_config.ta_detuning,
+            final=ta_freq,
         )  # fixed the ramp duration for the parity projection
         t += self.CONST_TA_VCO_RAMP_TIME
         t, t_aom_start = self.do_pulse(
             t,
             dur,
-            ShutterConfig.MOT_TA,
-            self.parity_proj_config.ta_power,
-            0,
+            shutterconfig,
+            ta_power,
+            repump_power,
             close_all_shutters=close_all_shutters,
         )
         return t, t_aom_start
@@ -706,6 +715,138 @@ class TweezerLaser:
             dc_offset=self.tweezer_power,
             samplerate=1e5,
         )
+
+class LocalAddressLaser:
+    """Controls for the local addressing laser system.
+
+    This class manages the local addressing laser system, including power control,
+    intensity servo operation capabilities.
+    """
+
+    local_addr_power: float
+
+    def __init__(self, t, local_addr_power: float):
+        """Initialize the tweezer laser system.
+
+        Args:
+            t (float): Time to start the tweezers
+        """
+        self.local_addr_power = local_addr_power
+
+        # self.intensity_servo_keep_on(t)
+        self.start_local_addr(t)
+
+    def start_local_addr(self, t):
+        """Initialize and start the optical tweezer system.
+
+        Args:
+            t (float): Time to start the tweezers
+        """
+        spectrum_manager.start_local_addr_card()
+        spectrum_manager.start_local_addr(t)
+
+        self.aom_on(t, self.local_addr_power)
+
+    def stop_local_addr(self, t):
+        """Safely stop and power down the optical tweezer system.
+
+        Args:
+            t (float): Time to stop the tweezers
+        """
+        # stop tweezers
+        spectrum_manager.stop_local_addr(t)
+
+        # dummy segment, need this to stop tweezers due to spectrum card bug
+        spectrum_manager.start_local_addr(t)
+        t += 2e-3
+        spectrum_manager.stop_local_addr(t)
+        spectrum_manager.stop_local_addr_card()
+        return t
+
+    def intensity_servo_keep_on(self, t):
+        """Maintain the intensity servo in active state.
+
+        Args:
+            t (float): Time to ensure servo remains active
+        """
+        """keep the AOM digital high for intensity servo"""
+        self.aom_on(t, 1)
+
+    def aom_on(self, t, const, digital_only = False):
+        """Turn on the tweezer beam using AOM.
+
+        Args:
+            t (float): Time to turn on the AOM
+            const (float): Power level for the AOM
+        """
+        """Turn on the tweezer beam using aom"""
+        devices.pulse_local_addr_1064_aom_digital.go_high(t)  # digital on
+        if not digital_only:
+            devices.pulse_local_addr_1064_aom_analog.constant(t, const)  # analog on
+            self.local_addr_power = const
+
+    def aom_off(self, t, digital_only = False):
+        """Turn off the tweezer beam using AOM.
+
+        Args:
+            t (float): Time to turn off the AOM
+        """
+        """Turn off the tweezer beam using aom"""
+        devices.pulse_local_addr_1064_aom_digital.go_low(t)  # digital off
+        if not digital_only:
+            devices.pulse_local_addr_1064_aom_analog.constant(t, 0)  # analog off
+            self.local_addr_power = 0
+
+    def ramp_power(self, t, dur, final_power):
+        """Ramp the tweezer power from current to final value.
+
+        Args:
+            t (float): Start time for the power ramp
+            dur (float): Duration of the ramp
+            final_power (float): Target power level
+
+        Returns:
+            float: End time of the ramp
+        """
+        devices.pulse_local_addr_1064_aom_analog.ramp(
+            t, duration=dur, initial=self.local_addr_power, final=final_power, samplerate=1e5
+        )
+        self.local_addr_power = final_power
+        return t + dur
+
+    def deflect_mirrors_uncal(self, t, dur, voltages):
+        """Moves the mirrors at velocity given by voltages for time dur
+        Args:
+            t (float): Start time for the power ramp
+            dur (float): Duration of the move
+            voltages (tuple): voltages corresponding to speed of piezo move
+
+        Returns:
+            float: End time of the ramp
+
+        Voltages should be given as (v_x1, v_x2, v_y1, v_y2), 
+        and should be between +/- 10V (maximum NI analog and piezo controller range)"""
+
+        v_x1, v_x2, v_y1, v_y2 = voltages
+
+        if any([np.abs(v) >= 10 for v in voltages]):
+            raise ValueError("voltages must have magnitude < 10")
+        
+        devices.local_addr_piezo_mirror_x1.constant(t, v_x1)
+        devices.local_addr_piezo_mirror_x2.constant(t, v_x2)
+        devices.local_addr_piezo_mirror_y1.constant(t, v_y1)
+        devices.local_addr_piezo_mirror_y2.constant(t, v_y2)
+
+        t += dur
+
+        devices.local_addr_piezo_mirror_x1.constant(t, 0)
+        devices.local_addr_piezo_mirror_x2.constant(t, 0)
+        devices.local_addr_piezo_mirror_y1.constant(t, 0)
+        devices.local_addr_piezo_mirror_y2.constant(t, 0)
+
+        return t
+
+
 
 
 @dataclass
@@ -893,20 +1034,7 @@ class RydLasers:
             Power level for the AOM
         """
         devices.servo_1064_aom_digital.go_high(t)  # digital on
-        devices.servo_1064_aom_analog.constant(t, power)  # analog to const
         self.power_1064 = power
-
-    def servo_1064_aom_off(self, t: float):
-        """Turn off the 1064nm laser servo AOM.
-
-        Parameters
-        ----------
-        t: float
-            Time to turn off the AOM
-        """
-        devices.servo_1064_aom_digital.go_low(t)  # digital off
-        devices.servo_1064_aom_analog.constant(t, 0)  # analog off
-        self.power_1064 = 0
 
     def pulse_1064_aom_on(self, t: float, power: float, digital_only: bool = False):
         """Turn on the 1064nm laser pulse AOM.
@@ -1165,7 +1293,7 @@ class RydLasers:
                 self.pulse_1064_aom_on(t - extra_time_1064, power_1064, digital_only=True)
                 t += pulse_dur
                 self.pulse_456_aom_off(t, digital_only=True)
-                self.pulse_1064_aom_off(t + extra_time_1064, digital_only=True)
+                self.pulse_1064_aom_off(t + extra_time_1064 , digital_only=True)
                 t += pulse_wait_dur
 
             pulse_start_times.append(t - pulse_wait_dur-pulse_dur)

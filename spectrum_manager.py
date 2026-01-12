@@ -17,23 +17,45 @@ if not shot_globals.TW_y_use_dds:
     TW_y_channel = True # use spectrum card instead of dds for tweezer y channel
 else:
     TW_y_channel = False # use dds for tweezer y channel
+
 devices.initialize()
 
 class SpectrumManager():
-    x_kwargs = None
-    x_key = None
-    y_kwargs = None
-    y_key = None
-    started = False
-    outputting = False
+
+    def __init__(self):
+        # Flags for tweezer card (spectrum_0)
+        self.tweezer_started = False
+        self.tweezer_outputting = False
+
+        # Flags for local-addressing card (spectrum_la)
+        self.local_addr_started = False
+        self.local_addr_outputting = False
+
+        # Tweezer waveform keys / kwargs
+        self.tw_x_key = None
+        self.tw_y_key = None
+        self.tw_x_kwargs = None
+        self.tw_y_kwargs = None
+
+        # Local-addressing waveform keys / kwargs
+        self.la_x_key = None
+        self.la_y_key = None
+        self.la_x_kwargs = None
+        self.la_y_kwargs = None
+
+    # ----------------------------------------------------
+    # ------------------ TWEEZER CARD --------------------
+    # ----------------------------------------------------
 
     def start_tweezer_card(self):
         # reset state variables
-        self.started = False
-        self.outputting = False
+        self.tweezer_started = False
+        self.tweezer_outputting = False
 
         # we need to declare some runmanager variables as global so that we can reference them later
         TW_x_freqs = np.asarray(shot_globals.TW_x_freqs)
+        if np.size(TW_x_freqs) ==1:
+            TW_x_freqs = np.array([TW_x_freqs])
 
         #print(f"TW_x_freqs = {TW_x_freqs}")
         TW_x_power = 33 # Translated from old runmanager settings
@@ -43,7 +65,8 @@ class SpectrumManager():
 
         if TW_y_channel:
             TW_y_freqs = np.asarray(shot_globals.TW_y_freqs)
-            TW_y_freqs = np.array([TW_y_freqs])
+            if np.size(TW_y_freqs) ==1:
+                TW_y_freqs = np.array([TW_y_freqs]) # if only a single frequency is entered, convert it to an array with one entry
             TW_y_power = shot_globals.TW_y_power
             TW_y_amplitude = shot_globals.TW_y_amplitude
             channel_setting = [
@@ -61,9 +84,9 @@ class SpectrumManager():
 
         # set the card mode
         devices.spectrum_0.set_mode(
-            replay_mode=b'sequence',
+            replay_mode='sequence',
             channels = channel_setting,
-            clock_freq = 625,#625,
+            clock_freq = 625,
             use_ext_clock = True,
             export_data = False,
             export_path = r'Z:\spectrum_testing_20230801',
@@ -74,21 +97,10 @@ class SpectrumManager():
         SpectrumPhase = 0
         SpectrumDuration = TW_loopDuration
 
-        def is_np_int_float(x: Any) -> bool:
-            return isinstance(x, np.int32) or isinstance(x, np.float64)
-
-        # if only a single frequency is entered, convert it to an array with one entry
-        if is_np_int_float(TW_x_freqs):
-            TW_x_freqs = np.array([TW_x_freqs])
-
         if TW_y_channel:
-            if is_np_int_float(TW_y_freqs):
-                TW_y_freqs = np.array([TW_y_freqs])
-                # round the y frequencies since we vary them sometimes
-                # TW_x_freqs = np.round(TW_x_freqs* 1e6 * SpectrumDuration) / SpectrumDuration / 1e6 #FIXME: this is bad mojo without phase optimization
-                TW_y_freqs = np.round(TW_y_freqs* 1e6 * SpectrumDuration) / SpectrumDuration / 1e6
-
-
+            # round the y frequencies since we vary them sometimes
+            # TW_x_freqs = np.round(TW_x_freqs* 1e6 * SpectrumDuration) / SpectrumDuration / 1e6 #FIXME: this is bad mojo without phase optimization
+            TW_y_freqs = np.round(TW_y_freqs* 1e6 * SpectrumDuration) / SpectrumDuration / 1e6
 
         if len(TW_x_freqs)==1: # TW_x single freq input
             TW_x_phases  = [SpectrumPhase for i in TW_x_freqs]
@@ -107,47 +119,163 @@ class SpectrumManager():
                 TW_y_amps = TW_y_amplitude * trap_amplitude(TW_y_freqs) # amplitude set to 0.99 to aviod calculation error
 
         # instantiate dictionary to carry tweezer options
-        self.x_kwargs = {'duration': SpectrumDuration,
+        self.tw_x_kwargs = {'duration': SpectrumDuration,
                                 'freqs': TW_x_freqs*1e6,
                                 'amplitudes': TW_x_amps,
                                 'phases': TW_x_phases,
                                 'ch': 0}
-        self.x_key = 'x_comb'
+        self.tw_x_key = "tw_x_comb"
 
         if TW_y_channel:
-            self.y_kwargs = {'duration': SpectrumDuration,
+            self.tw_y_kwargs = {'duration': SpectrumDuration,
                                 'freqs': TW_y_freqs*1e6,
                                 'amplitudes': TW_y_amps,
                                 'phases': TW_y_phases,
                                 'ch': 1}
-            self.y_key = 'y_comb'
+            self.tw_y_key = "tw_y_comb"
 
-        self.started = True
+        self.tweezer_started = True
 
 
         return
 
     def stop_tweezer_card(self):
-        assert not self.outputting, 'SpectrumManager: output must be stopped before card is stopped'
+        assert not self.tweezer_outputting, 'SpectrumManager: output must be stopped before card is stopped'
         devices.spectrum_0.stop()
 
     def start_tweezers(self, t):
-        assert self.started, 'SpectrumManager: must run prepare() before start()'
-        assert not self.outputting, 'SpectrumManager: output has already been started'
-        devices.spectrum_0.start_flexible_loop(t, devices.spectrum_0.comb, self.x_key, **self.x_kwargs)
+        assert self.tweezer_started, 'SpectrumManager: must run prepare() before start()'
+        assert not self.tweezer_outputting, 'SpectrumManager: output has already been started'
+        devices.spectrum_0.start_flexible_loop(
+            t, devices.spectrum_0.comb, self.tw_x_key, **self.tw_x_kwargs
+        )
         if TW_y_channel:
-            devices.spectrum_0.start_flexible_loop(t, devices.spectrum_0.comb, self.y_key, **self.y_kwargs)
-        self.outputting = True
+            devices.spectrum_0.start_flexible_loop(
+                t, devices.spectrum_0.comb, self.tw_y_key, **self.tw_y_kwargs
+            )
+        self.tweezer_outputting = True
         return t
 
     def stop_tweezers(self, t):
-        assert self.outputting, 'SpectrumManager: must run start() before stop()'
-        devices.spectrum_0.stop_flexible_loop(t, self.x_key)
-        self.x_key = self.x_key + "0"
+        assert self.tweezer_outputting, 'SpectrumManager: must run start() before stop()'
+        devices.spectrum_0.stop_flexible_loop(t, self.tw_x_key)
+        self.tw_x_key += "0"
         if TW_y_channel:
-            devices.spectrum_0.stop_flexible_loop(t, self.y_key)
-            self.y_key = self.y_key + "0"
-        self.outputting = False
+            devices.spectrum_0.stop_flexible_loop(t, self.tw_y_key)
+            self.tw_y_key += "0"
+        self.tweezer_outputting = False
+        return t
+    
+    # ----------------------------------------------------
+    # --------------- LOCAL ADDRESSING CARD --------------
+    # ----------------------------------------------------
+
+    def start_local_addr_card(self):
+        # reset state variables
+        self.local_addr_started = False
+        self.local_addr_outputting = False
+
+        # we need to declare some runmanager variables as global so that we can reference them later
+        LA_x_freqs = np.asarray(shot_globals.LA_x_freqs)
+        if np.size(LA_x_freqs) ==1:
+            LA_x_freqs = np.array([LA_x_freqs])
+
+        #print(f"TW_x_freqs = {TW_x_freqs}")
+        LA_x_power = shot_globals.LA_x_power # Translated from old runmanager settings
+        LA_x_amplitude = shot_globals.LA_x_amplitude # Translated from old runmanager settings
+        LA_maxPulses = shot_globals.LA_maxPulses
+        LA_loopDuration = shot_globals.LA_loopDuration
+
+        LA_y_freqs = np.asarray(shot_globals.LA_y_freqs)
+        if np.size(LA_y_freqs) ==1:
+            LA_y_freqs = np.array([LA_y_freqs])
+        LA_y_power = shot_globals.LA_y_power
+        LA_y_amplitude = shot_globals.LA_y_amplitude
+        channel_setting = [
+                    {'name': 'Tweezer_X', 'power': LA_x_power, 'port': 0, 'is_amplified':True,
+                        'amplifier': 1, 'calibration_power': 12, 'power_mode': 'constant_total', 'max_pulses':LA_maxPulses},
+                    {'name': 'Tweezer_Y', 'power': LA_y_power, 'port': 1, 'is_amplified':True,
+                        'amplifier': 2, 'calibration_power': 12, 'power_mode': 'constant_total', 'max_pulses':LA_maxPulses}
+                    ]
+
+
+        # set the card mode
+        devices.spectrum_la.set_mode(
+            replay_mode='sequence',
+            channels = channel_setting,
+            clock_freq = 625,
+            use_ext_clock = True,
+            export_data = False,
+            export_path = r'Z:\spectrum_testing_20230801',
+            smart_programming=True,
+            )
+
+        # set the output settings
+        SpectrumPhase = 0
+        SpectrumDuration = LA_loopDuration
+
+        if len(LA_x_freqs)==1: # TW_x single freq input
+            LA_x_phases  = [SpectrumPhase for i in LA_x_freqs]
+            LA_x_amps = [LA_x_amplitude for i in LA_x_freqs]
+        else: # TW_x multi-freq input
+            print(f"LA_x_freqs = {LA_x_freqs}")
+            LA_x_phases = trap_phase(LA_x_freqs)
+            LA_x_amps = LA_x_amplitude * trap_amplitude(LA_x_freqs) # amplitude set to 0.99 to aviod calculation error
+
+        if len(LA_y_freqs)==1: # TW_y single freq input
+            LA_y_phases  = [SpectrumPhase for i in LA_y_freqs]
+            LA_y_amps = [LA_y_amplitude for i in LA_y_freqs]
+        else: # TW_y multi-freq input
+            LA_y_phases = trap_phase(LA_y_freqs)
+            LA_y_amps = LA_y_amplitude * trap_amplitude(LA_y_freqs) # amplitude set to 0.99 to aviod calculation error
+
+        # instantiate dictionary to carry tweezer options
+        self.la_x_kwargs = {'duration': SpectrumDuration,
+                                'freqs': LA_x_freqs*1e6,
+                                'amplitudes': LA_x_amps,
+                                'phases': LA_x_phases,
+                                'ch': 0}
+        self.la_x_key = 'x_comb'
+
+        self.la_y_kwargs = {'duration': SpectrumDuration,
+                            'freqs': LA_y_freqs*1e6,
+                            'amplitudes': LA_y_amps,
+                            'phases': LA_y_phases,
+                            'ch': 1}
+        self.la_y_key = 'la_y_comb'
+
+        self.local_addr_started = True
+
+
+        return
+
+    def stop_local_addr_card(self):
+        assert not self.local_addr_outputting, 'SpectrumManager: output must be stopped before card is stopped'
+        devices.spectrum_la.stop()
+
+    def start_local_addr(self, t):
+        assert self.local_addr_started, 'SpectrumManager: must run prepare() before start()'
+        assert not self.local_addr_outputting, 'SpectrumManager: output has already been started'
+        # print('start local addressing card')
+        devices.spectrum_la.start_flexible_loop(
+            t, devices.spectrum_la.comb, self.la_x_key, **self.la_x_kwargs
+        )
+        devices.spectrum_la.start_flexible_loop(
+            t, devices.spectrum_la.comb, self.la_y_key, **self.la_y_kwargs
+        )
+        self.local_addr_outputting = True
+        # print('start local addressing card, setting outputting flag to True')
+        # print('outputtubg flag is ', self.outputting)
+        return t
+
+    def stop_local_addr(self, t):
+        # print('in stop_local_addr, outputtubg flag is ', self.outputting)
+        assert self.local_addr_outputting, 'SpectrumManager: must run start() before stop()'
+        devices.spectrum_la.stop_flexible_loop(t, self.la_x_key)
+        self.la_x_key += "0"
+        devices.spectrum_la.stop_flexible_loop(t, self.la_y_key)
+        self.la_y_key += "0"
+        self.local_addr_outputting = False
         return t
 
     # def move_tweezers(self, t, loops=1):

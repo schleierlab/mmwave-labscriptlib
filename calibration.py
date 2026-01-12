@@ -258,7 +258,6 @@ def biasy_calib(field):
     voltage = V0 +1/Bp*field
     return voltage
 
-
 def biasz_calib(field):
     V0 = -0.6682 # V
     Bp = 1096.9 # mG/V
@@ -428,6 +427,9 @@ def mot_y_repump_calib(power):
     power_max = 5.4 # mW the max power at 1V analog control
     return repump_aom_calib(power/power_max)
 
+
+def local_addressing_movement_calibration(displacement):
+    return displacement
 
 
 if __name__ == '__main__':

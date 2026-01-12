@@ -8,7 +8,7 @@ import numpy as np  # noqa:F401  # needed for correctly parsing call to eval bel
 import yaml
 
 import labscriptlib
-import runmanager
+import labscript_utils.shot_utils
 from labscript import compiler
 
 
@@ -36,6 +36,7 @@ class ParameterSpec(TypedDict):
 class ShotGlobals(SimpleNamespace):
     # declare globals here!
     do_mw_kill: bool
+    mmwave_export_spectrum_segments: bool
     repetition_index: int
     manta_exposure: float
 
@@ -60,7 +61,7 @@ class ShotGlobals(SimpleNamespace):
         # edited or one clicks "Restart subprocess"), so one instance of ShotGlobals can persist
         # across multiple shots
         if self._last_loaded_h5 != compiler.hdf5_filename:
-            self._runmanager_globals = runmanager.get_shot_globals(compiler.hdf5_filename)
+            self._runmanager_globals = labscript_utils.shot_utils.get_shot_globals(compiler.hdf5_filename)
 
             inp_file = impresources.files(labscriptlib) / 'defaults.yml'
             # with open('defaults.yml', 'r') as f:
