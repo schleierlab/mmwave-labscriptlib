@@ -98,12 +98,20 @@ class TweezerOperations(OpticalPumpingOperations):
         )
         # ramp to full power and do parity projection
         if shot_globals.do_parity_projection_pulse:
+            if shot_globals.bm_parity_projection_beam_choice == 'mot':
+                shutterconfig = ShutterConfig.MOT_FULL
+            elif shot_globals.bm_parity_projection_beam_choice == 'img':
+                shutterconfig = ShutterConfig.IMG_FULL
+            else:
+                raise ValueError
+
             t, _ = self.D2Lasers_obj.parity_projection_pulse(
                 t,
                 shot_globals.bm_parity_projection_pulse_dur,
-                shot_globals.bm_parity_projection_ta_detuning, 
-                shot_globals.bm_parity_projection_ta_power, 
+                shot_globals.bm_parity_projection_ta_detuning,
+                shot_globals.bm_parity_projection_ta_power,
                 shot_globals.bm_parity_projection_repump_power,
+                shutterconfig=shutterconfig,
                 close_all_shutters=True,
             )
 
@@ -331,7 +339,7 @@ class TweezerOperations(OpticalPumpingOperations):
         devices.local_addr_1064_aom_digital.go_high(t)
 
         if check_with_vimba:
-            t += 10
+            t += 6
         else:
             t += 1e-3
             t = self.do_molasses_dipole_trap_imaging(t, exposure_time=shot_globals.tw_manta_exposure_time, close_all_shutters=True)
