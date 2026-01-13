@@ -212,9 +212,7 @@ class MOTOperations:
         """
         print("Running _do_mot_in_situ_sequence")
 
-        mot_load_dur = shot_globals.mot_load_dur
-
-        t = self.do_mot(t, mot_load_dur)
+        t = self.do_mot(t, shot_globals.mot_load_dur)
 
         if not check_with_vimba:
             t = self.image_mot(t)

@@ -494,19 +494,19 @@ class LabDevices():
 
         # use line21 for local address manta camera
 
-        # self.manta419b_mot = Manta419B(
-        #     'manta419b_mot',
-        #     parent_device=ni_6363_0,
-        #     connection="port0/line2",
-        #     BIAS_port=54321,
-        # )
+        self.manta419b_mot = Manta419B(
+            'manta419b_mot',
+            parent_device=ni_6363_0,
+            connection="port0/line2",
+            BIAS_port=54321,
+        )
 
-        # self.manta419b_tweezer = Manta419B(
-        #     'manta419b_tweezer',
-        #     parent_device=ni_6363_0,
-        #     connection="port0/line13",
-        #     BIAS_port=54324,
-        # )
+        self.manta419b_tweezer = Manta419B(
+            'manta419b_tweezer',
+            parent_device=ni_6363_0,
+            connection="port0/line13",
+            BIAS_port=54324,
+        )
 
         # self.manta419b_blue_laser = Manta419B(
         #     'manta419b_blue_laser',
