@@ -25,7 +25,7 @@ Bright_Molasses:
   bm_parity_projection_pulse_dur: { value: 40e-3, unit: s }
   bm_parity_projection_beam_choice:  { value: "\"img\"", unit: "" } # "mot" or "img"
   bm_parity_projection_ta_detuning: { value: -8, unit: MHz }
-  bm_parity_projection_ta_power: { value: 0.12, unit: V }
+  bm_parity_projection_ta_power: { value: 0.125, unit: V }
   bm_parity_projection_repump_power: { value: 1, unit: V }
   bm_repump_detuning: { value: 0.0, unit: MHz }
   bm_repump_power: { value: 1.0, unit: V }
