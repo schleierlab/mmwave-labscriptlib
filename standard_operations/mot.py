@@ -47,6 +47,7 @@ class MOTOperations:
     MIN_CAMERA_EXPOSURE_TIMES: ClassVar[dict[str, float]] = {
         "MOT_manta": 50e-6,
         "tweezer_manta": 50e-6,
+        "local_addr_manta": 50e-6,
         "kinetix": 1e-3,
     }
 

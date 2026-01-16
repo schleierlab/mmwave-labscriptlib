@@ -353,6 +353,117 @@ class TweezerOperations(OpticalPumpingOperations):
         t += 1
 
         return t
+    
+    def _do_local_addr_move_matrix_calib(self, t):
+        """Move the local addressing around in each direction to calibrate the matrix which determines
+            how to move the piezos given some displacement on our beams as imaged on the cameras
+        Run a complete sequence and examine the Manta camera image with Lyse
+        Args:
+            t (float): Start time for the sequence
+            check_with_vimba (bool, defaults to True):
+                If enabled, run the dummy sequence (for use with monitoring
+                tweezer image in Vimba Viewer instead of Lyse)
+
+        Returns:
+            float: End time of the sequence
+        """
+        tweezer_cam_exposure_time = 1e-3
+        local_addr_cam_exposure_time = 2e-3
+        #50us min exposure time
+
+        t += 1e-5
+        self.LocalAddressLaser_obj.aom_on(t, shot_globals.la_power)
+
+        #Temporary
+        devices.local_addr_1064_aom_digital.go_high(t)
+        devices.local_addr_1064_aom_analog.constant(t,1)
+        devices.tweezer_aom_digital.go_high(t)
+        devices.tweezer_aom_analog.constant(t,0.1)
+        t+=0.01
+
+        # self.Camera_obj.set_type("local_addr_manta")
+        # self.Camera_obj.expose(t, local_addr_cam_exposure_time)
+
+        # t+=0.01
+
+        # self.Camera_obj.set_type("tweezer_manta")
+        # self.Camera_obj.expose(t, tweezer_cam_exposure_time)
+
+
+        t += 0.05
+        deflection_dur = shot_globals.local_addr_defl_t
+        t = self.LocalAddressLaser_obj.deflect_mirrors(
+            t, 
+            shot_globals.local_addr_direction, 
+            shot_globals.local_addr_move_mag,
+            dur = deflection_dur, 
+            cal = False,
+            )
+        t += 0.05
+        
+        # self.Camera_obj.set_type("tweezer_manta")
+        # self.Camera_obj.expose(t, tweezer_cam_exposure_time)
+        # t+=0.01
+
+        # self.Camera_obj.set_type("local_addr_manta")
+        # self.Camera_obj.expose(t, local_addr_cam_exposure_time)
+
+
+        t += 10
+    
+
+        #Temporary
+        # devices.local_addr_1064_aom_digital.go_low(t)
+        # devices.local_addr_1064_aom_analog.constant(t,0)
+        # t += 0.1
+
+        return t
+    
+
+    def _do_local_addr_alignment(self, t):
+        """Move the local addressing around in each direction to calibrate the matrix which determines
+            how to move the piezos given some displacement on our beams as imaged on the cameras
+        Run a complete sequence and examine the Manta camera image with Lyse
+        Args:
+            t (float): Start time for the sequence
+            check_with_vimba (bool, defaults to True):
+                If enabled, run the dummy sequence (for use with monitoring
+                tweezer image in Vimba Viewer instead of Lyse)
+
+        Returns:
+            float: End time of the sequence
+        """
+        tweezer_cam_exposure_time = 500e-6
+        local_addr_cam_exposure_time = 500e-6
+        #50us min exposure time
+
+        t += 1e-5
+
+        self.LocalAddressLaser_obj.aom_on(t, 1)
+
+        if shot_globals.do_local_addr_pre_move:
+            self.LocalAddressLaser_obj.deflect_mirrors(t, shot_globals.local_addr_deflection)
+
+        self.Camera_obj.set_type("local_addr_manta")
+        self.Camera_obj.expose(t, local_addr_cam_exposure_time)
+
+        self.Camera_obj.set_type("tweezer_manta")
+        self.Camera_obj.expose(t, tweezer_cam_exposure_time)
+
+        t += 2*max(tweezer_cam_exposure_time, local_addr_cam_exposure_time)
+
+        self.LocalAddressLaser_obj.aom_on(t, 0)
+        self.TweezerLaser_obj.aom_on(t, 1)
+
+        self.Camera_obj.set_type("local_addr_manta")
+        self.Camera_obj.expose(t, local_addr_cam_exposure_time)
+
+        self.Camera_obj.set_type("tweezer_manta")
+        self.Camera_obj.expose(t, tweezer_cam_exposure_time)
+
+        t += 0.5
+
+        return t
 
     def _tweezer_modulation_sequence(self, t):
         """Execute a tweezer modulation sequence.
