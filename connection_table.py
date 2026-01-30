@@ -563,16 +563,7 @@ class LabDevices():
             handle_name = b'/dev/spcm0',
         )
 
-        # self.spectrum_la = Spectrum(
-        #     name='spectrum_la',
-        #     parent_device=clockline_6363,
-        #     trigger={'device': ni_6363_0, 'connection': 'port0/line21'},
-        #     BIAS_port=8772,
-        #     serial_number=22134,
-        #     handle_name = b'/dev/spcm1',
-        # )
-
-        ## connected to pulseblaster
+        # connected to pulseblaster
         self.spectrum_la = Spectrum(
             name='spectrum_la',
             parent_device= clockline_6363,
