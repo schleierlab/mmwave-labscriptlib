@@ -47,6 +47,7 @@ class MOTOperations:
     MIN_CAMERA_EXPOSURE_TIMES: ClassVar[dict[str, float]] = {
         "MOT_manta": 50e-6,
         "tweezer_manta": 50e-6,
+        "local_addr_manta": 50e-6,
         "kinetix": 1e-3,
     }
 
@@ -212,9 +213,7 @@ class MOTOperations:
         """
         print("Running _do_mot_in_situ_sequence")
 
-        mot_load_dur = shot_globals.mot_load_dur
-
-        t = self.do_mot(t, mot_load_dur)
+        t = self.do_mot(t, shot_globals.mot_load_dur)
 
         if not check_with_vimba:
             t = self.image_mot(t)
