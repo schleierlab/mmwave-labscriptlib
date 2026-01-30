@@ -11,7 +11,6 @@ import numpy as np
 from labscriptlib.calibration import (
     repump_freq_calib,
     ta_freq_calib,
-    local_addr_move_cal
 )
 from labscriptlib.connection_table import devices
 from labscriptlib.spectrum_manager import spectrum_manager
