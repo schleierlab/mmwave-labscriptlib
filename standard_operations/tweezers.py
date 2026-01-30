@@ -367,57 +367,85 @@ class TweezerOperations(OpticalPumpingOperations):
         Returns:
             float: End time of the sequence
         """
-        tweezer_cam_exposure_time = 1e-3
-        local_addr_cam_exposure_time = 2e-3
+        # tweezer_cam_exposure_time = 200e-6
+        tweezer_cam_exposure_time = 80e-3
+        local_addr_cam_exposure_time = 10e-3
+        exposure_buffer = max(tweezer_cam_exposure_time, local_addr_cam_exposure_time) + 10e-3
         #50us min exposure time
 
         t += 1e-5
         self.LocalAddressLaser_obj.aom_on(t, shot_globals.la_power)
 
-        #Temporary
+        # Temporary -- these are future servo
         devices.local_addr_1064_aom_digital.go_high(t)
-        devices.local_addr_1064_aom_analog.constant(t,1)
-        devices.tweezer_aom_digital.go_high(t)
-        devices.tweezer_aom_analog.constant(t,0.1)
-        t+=0.01
+        devices.local_addr_1064_aom_analog.constant(t, 1)
+        self.LocalAddressLaser_obj
 
-        # self.Camera_obj.set_type("local_addr_manta")
-        # self.Camera_obj.expose(t, local_addr_cam_exposure_time)
+        # Less temporary -- these are also supposed to be future servo
+        devices.tweezer_aom_digital.go_low(t)
+        devices.tweezer_aom_analog.constant(t, 0)
+        t += 0.01
 
-        # t+=0.01
+        devices.manta419b_local_addr.expose(
+            'manta419b',
+            t,
+            frametype='atoms',
+            exposure_time=local_addr_cam_exposure_time,
+        )
+        devices.manta419b_tweezer.expose(
+            'manta419b',
+            t,
+            frametype='atoms',
+            exposure_time=tweezer_cam_exposure_time,
+        )
 
-        # self.Camera_obj.set_type("tweezer_manta")
-        # self.Camera_obj.expose(t, tweezer_cam_exposure_time)
+        t += exposure_buffer
 
-
-        t += 0.05
-        deflection_dur = shot_globals.local_addr_defl_t
         t = self.LocalAddressLaser_obj.deflect_mirrors(
-            t, 
-            shot_globals.local_addr_direction, 
-            shot_globals.local_addr_move_mag,
-            dur = deflection_dur, 
-            cal = False,
+            t,
+            effective_durations=(
+                shot_globals.local_addr_piezo_dur_1h,
+                shot_globals.local_addr_piezo_dur_1v,
+                shot_globals.local_addr_piezo_dur_2h,
+                shot_globals.local_addr_piezo_dur_2v,
+            ),
+            unsigned_voltage=shot_globals.local_addr_piezo_voltage,
+        )
+
+        t += 0.5
+
+        devices.manta419b_local_addr.expose(
+            'manta419b',
+            t,
+            frametype='atoms',
+            exposure_time=local_addr_cam_exposure_time,
+        )
+        devices.manta419b_tweezer.expose(
+            'manta419b',
+            t,
+            frametype='atoms',
+            exposure_time=tweezer_cam_exposure_time,
+        )
+
+        t += exposure_buffer
+
+        # Temporary
+        devices.local_addr_1064_aom_digital.go_low(t)
+        devices.local_addr_1064_aom_analog.constant(t, 0)
+
+        if shot_globals.local_addr_piezo_return:
+            t = self.LocalAddressLaser_obj.deflect_mirrors(
+                t,
+                effective_durations=(
+                    -shot_globals.local_addr_piezo_dur_1h,
+                    -shot_globals.local_addr_piezo_dur_1v,
+                    -shot_globals.local_addr_piezo_dur_2h,
+                    -shot_globals.local_addr_piezo_dur_2v,
+                ),
+                unsigned_voltage=shot_globals.local_addr_piezo_voltage,
             )
-        t += 0.05
-        
-        # self.Camera_obj.set_type("tweezer_manta")
-        # self.Camera_obj.expose(t, tweezer_cam_exposure_time)
-        # t+=0.01
 
-        # self.Camera_obj.set_type("local_addr_manta")
-        # self.Camera_obj.expose(t, local_addr_cam_exposure_time)
-
-
-        t += 10
-    
-
-        #Temporary
-        # devices.local_addr_1064_aom_digital.go_low(t)
-        # devices.local_addr_1064_aom_analog.constant(t,0)
-        # t += 0.1
-
-        return t
+        return t + 0.01
     
 
     def _do_local_addr_alignment(self, t):

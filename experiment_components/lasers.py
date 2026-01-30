@@ -815,7 +815,7 @@ class LocalAddressLaser:
         self.local_addr_power = final_power
         return t + dur
 
-    def deflect_mirrors_uncal(self, t, dur, voltages):
+    def deflect_mirrors(self, t, effective_durations, unsigned_voltage):
         """Moves the mirrors at velocity given by voltages for time dur
         Args:
             t (float): Start time for the power ramp
@@ -826,45 +826,42 @@ class LocalAddressLaser:
             float: End time of the ramp
 
         Voltages should be given as (v_x1, v_x2, v_y1, v_y2), 
-        and should be between +/- 10V (maximum NI analog and piezo controller range)"""
+        and should be between +/- 10V (maximum NI analog and piezo controller range)
+        """
+        if not (0 <= unsigned_voltage <= 10):
+            raise ValueError('Unsigned voltage must be between 0 and 10, inclusive.')
 
-        if dur == 0:
-            return t
+        piezos = [
+            devices.local_addr_piezo_mirror_x1,
+            devices.local_addr_piezo_mirror_y1,
+            devices.local_addr_piezo_mirror_x2,
+            devices.local_addr_piezo_mirror_y2,
+        ]
+        for effective_dur, piezo in zip(effective_durations, piezos):
+            sign = +1 if effective_dur >= 0 else -1
+            duration = abs(effective_dur)
 
-        v_x1, v_x2, v_y1, v_y2 = voltages
+            if duration == 0:
+                continue
+            
+            piezo.constant(t, sign * unsigned_voltage)
+            piezo.constant(t + duration, 0)
 
-        if any([np.abs(v) >= 10 for v in voltages]):
-            raise ValueError("voltages must have magnitude < 10")
-        
-        devices.local_addr_piezo_mirror_x1.constant(t, v_x1)
-        devices.local_addr_piezo_mirror_x2.constant(t, v_x2)
-        devices.local_addr_piezo_mirror_y1.constant(t, v_y1)
-        devices.local_addr_piezo_mirror_y2.constant(t, v_y2)
-
-        t += dur
-
-        devices.local_addr_piezo_mirror_x1.constant(t, 0)
-        devices.local_addr_piezo_mirror_x2.constant(t, 0)
-        devices.local_addr_piezo_mirror_y1.constant(t, 0)
-        devices.local_addr_piezo_mirror_y2.constant(t, 0)
-
-        return t
+        max_duration = max(abs(effective_dur) for effective_dur in effective_durations)
+        return t + max_duration
     
-    def deflect_mirrors(self, t, direction, mag, dur = None, cal = True):
-        if cal:
-            voltages, duration = local_addr_move_cal(direction, mag)
-        else:
-            voltages = [i*mag/np.linalg.norm(direction) for i in direction]
-            if dur is None:
-                raise ValueError("gimme some duration I'm not calibrated")
-            else:
-                duration = dur
+    # def deflect_mirrors(self, t, direction, mag, dur = None, cal = True):
+    #     if cal:
+    #         voltages, duration = local_addr_move_cal(direction, mag)
+    #     else:
+    #         voltages = [i*mag/np.linalg.norm(direction) for i in direction]
+    #         if dur is None:
+    #             raise ValueError("gimme some duration I'm not calibrated")
+    #         else:
+    #             duration = dur
         
-        t = self.deflect_mirrors_uncal(t, duration, voltages)
-        return t
-
-
-
+    #     t = self.deflect_mirrors_uncal(t, duration, voltages)
+    #     return t
 
 
 @dataclass
