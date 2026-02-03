@@ -78,11 +78,15 @@ import logging
 import labscript
 
 from labscriptlib.connection_table import devices
+from labscriptlib.experiment_components.lasers import LocalAddressLaser, TweezerLaser
+from labscriptlib.experiment_components.microwaves import Microwave
 from labscriptlib.shot_globals import shot_globals
 from labscriptlib.standard_operations import (
-    MOTOperations, OpticalPumpingOperations, RydbergOperations, TweezerOperations
+    MOTOperations,
+    OpticalPumpingOperations,
+    RydbergOperations,
+    TweezerOperations,
 )
-
 
 if __name__ == "__main__":
     print(f'{devices.initialized()=}')
@@ -141,6 +145,11 @@ if __name__ == "__main__":
         TweezerSequence_obj = TweezerOperations(t)
         sequence_objects.append(TweezerSequence_obj)
         t = TweezerSequence_obj._do_tweezer_position_check_sequence(t, check_with_vimba=True)
+    
+    elif shot_globals.do_local_addr_move_matrix_calib:
+        TweezerSequence_obj = TweezerOperations(t)
+        sequence_objects.append(TweezerSequence_obj)
+        t = TweezerSequence_obj._do_local_addr_move_matrix_calib(t)
 
     elif shot_globals.do_F4_microwave_spec_dipole_trap or shot_globals.do_dipole_trap_B_calib:
         RydSequence_obj = RydbergOperations(t)
@@ -244,15 +253,37 @@ if __name__ == "__main__":
         logging.debug("current_obj has TweezerLaser_obj")
         t = current_obj.TweezerLaser_obj.stop_tweezers(t)
         # print('tweezer is stopped at time ', t)
+    else:
+        tweezerlaser_obj = TweezerLaser(
+            t=0,
+            tweezer_power=shot_globals.tw_power,
+            spectrum_mode='fifo',
+            tw_y_use_dds=True,
+            tw_y_freq=shot_globals.TW_y_freqs,
+        )
+        t = tweezerlaser_obj.stop_tweezers(t)
 
     if hasattr(current_obj, 'LocalAddressLaser_obj'):
         logging.debug("current_obj has LocalAddressLaser_obj")
         t = current_obj.LocalAddressLaser_obj.stop_local_addr(t)
+    else:
+        localaddresslaser = LocalAddressLaser(
+            t=0,
+            local_addr_power=shot_globals.la_power,
+        )
+        t = localaddresslaser.stop_local_addr(t)
 
     # Reset spectrum if the object has Microwave_obj and if we use microwave in the sequence
     do_mw = shot_globals.do_mw_pulse or shot_globals.do_mw_sweep or shot_globals.do_microwave_kill or shot_globals.do_mmwave_pulse or shot_globals.do_mmwave_kill
     for obj in sequence_objects:
         if obj is not None and hasattr(obj, 'Microwave_obj') and do_mw:
             t = obj.Microwave_obj.reset_spectrum(t)
+        else:
+            microwave_obj = Microwave(
+                t=0,
+                init_detuning=shot_globals.mw_detuning,
+                init_mmwave_detuning=shot_globals.mmwave_spectrum_freq,
+            )
+            t = microwave_obj.reset_spectrum(t)
 
     labscript.stop(t + 1e-2)

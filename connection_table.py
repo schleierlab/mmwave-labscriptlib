@@ -494,25 +494,32 @@ class LabDevices():
 
         # use line21 for local address manta camera
 
-        # self.manta419b_mot = Manta419B(
-        #     'manta419b_mot',
-        #     parent_device=ni_6363_0,
-        #     connection="port0/line2",
-        #     BIAS_port=54321,
-        # )
+        self.manta419b_mot = Manta419B(
+            'manta419b_mot',
+            parent_device=ni_6363_0,
+            connection="port0/line2",
+            BIAS_port=54321,
+        )
 
-        # self.manta419b_tweezer = Manta419B(
-        #     'manta419b_tweezer',
-        #     parent_device=ni_6363_0,
-        #     connection="port0/line13",
-        #     BIAS_port=54324,
-        # )
+        self.manta419b_tweezer = Manta419B(
+            'manta419b_tweezer',
+            parent_device=ni_6363_0,
+            connection="port0/line13",
+            BIAS_port=54324,
+        )
 
-        # self.manta419b_blue_laser = Manta419B(
-        #     'manta419b_blue_laser',
+        self.manta419b_local_addr = Manta419B(
+            'manta419b_local_addr',
+            parent_device=ni_6363_0,
+            connection="port0/line21",
+            BIAS_port=54325,
+        )
+
+        # self.manta419b_local_addr = Manta419B(
+        #     'manta419b_local_addr',
         #     parent_device=ni_6363_0,
-        #     connection="port0/line2",
-        #     BIAS_port=54323,
+        #     connection="port0/line21",
+        #     BIAS_port=54325,
         # )
 
         # self.manta419b_dipole_trap = Manta419B(
@@ -556,6 +563,7 @@ class LabDevices():
             handle_name = b'/dev/spcm0',
         )
 
+        # connected to pulseblaster
         self.spectrum_la = Spectrum(
             name='spectrum_la',
             parent_device= clockline_6363,

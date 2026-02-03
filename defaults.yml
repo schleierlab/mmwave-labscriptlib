@@ -4,7 +4,7 @@ MOT:
   mot_do_coil: { value: True, unit: bool }
   mot_do_uv: { value: False, unit: bool }
   mot_exposure_time: { value: 1e-3, unit: s }
-  mot_load_dur: { value: 0.001, unit: s }  # making this too short (< 30 us ish) causes labscript timing errors (cmds in too quick succession on 6739 clockline)
+  mot_load_dur: { value: 0.03, unit: s }  # making this too short (< 30 us ish) causes labscript timing errors (cmds in too quick succession on 6739 clockline)
   mot_repump_power: { value: 1, unit: V }
   mot_repump_detuning: { value: 0, unit: MHz }
   mot_ta_detuning: { value: -21, unit: MHz } #-21
@@ -23,8 +23,9 @@ MOT:
 Bright_Molasses:
   bm_exposure_time: { value: 1e-3, unit: s }
   bm_parity_projection_pulse_dur: { value: 40e-3, unit: s }
+  bm_parity_projection_beam_choice:  { value: "\"img\"", unit: "" } # "mot" or "img"
   bm_parity_projection_ta_detuning: { value: -8, unit: MHz }
-  bm_parity_projection_ta_power: { value: 0.12, unit: V }
+  bm_parity_projection_ta_power: { value: 0.125, unit: V }
   bm_parity_projection_repump_power: { value: 1, unit: V }
   bm_repump_detuning: { value: 0.0, unit: MHz }
   bm_repump_power: { value: 1.0, unit: V }
@@ -131,9 +132,9 @@ Tweezers:
   do_tweezer_modulation: { value: False, unit: bool }
   do_tweezers: { value: True, unit: bool }
   tw_img_exposure_time: { value: 40e-3, unit: s } #80e-3
-  tw_img_repump_power: { value: 0.25, unit: V }
+  tw_img_repump_power: { value: 0.2, unit: V }
   tw_img_ta_detuning: { value: -47, unit: MHz}
-  tw_img_ta_power: { value: 0.2, unit: V }
+  tw_img_ta_power: { value: 0.19, unit: V }
   tw_img_tof_imaging_delay: { value: 50e-3, unit: s }
   kinetix_roi_row: { value: "tuple((1150,110))", unit: pixels }
   tw_modulation_freq: { value: 0, unit: Hz }
@@ -227,3 +228,4 @@ Sequence:
   do_456_light_shift_check: { value: False, unit: bool }
   do_456_hyperfine_light_shift_check: {value: False, unit: bool}
   do_1064_light_shift_check: { value: False, unit: bool }
+  do_local_addr_move_matrix_calib: { value: False, unit: bool }

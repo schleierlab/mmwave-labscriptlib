@@ -218,7 +218,7 @@ class BField:
             else:
                 self.current_outputs[i].ramp(
                     coil_ramp_start_times[i],
-                    duration= dur,
+                    duration=dur,
                     initial=self.bias_voltages[i],
                     final=voltage_vector[i],
                     samplerate=1e5,

@@ -21,7 +21,7 @@ class Camera:
 
         Args:
             type (str): Type of imaging configuration to use, "MOT_manta" or
-            "tweezer_manta" or "kinetix"
+            "tweezer_manta" or "kinetix" or "local_addr_manta"
         """
         self.type = type
 
@@ -44,6 +44,14 @@ class Camera:
 
         if self.type == "tweezer_manta":
             devices.manta419b_tweezer.expose(
+                "manta419b",
+                t,
+                "atoms",
+                exposure_time=exposure_time,
+            )
+        
+        if self.type == "local_addr_manta":
+            devices.manta419b_local_addr.expose(
                 "manta419b",
                 t,
                 "atoms",
