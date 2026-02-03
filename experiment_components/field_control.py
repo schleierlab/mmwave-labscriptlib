@@ -196,6 +196,14 @@ class BField:
                 ]
             )
 
+        coil_control_voltage_limits = np.array([5, 2.7, 3.5])
+        if np.any(np.abs(voltage_vector) > coil_control_voltage_limits):
+            raise ValueError(
+                'Cannot drive coils beyond limit set by power supply voltages. '
+                f'Drive voltages: {voltage_vector}; '
+                f'Limit absolute voltages: {coil_control_voltage_limits}'
+            )
+
         if np.all(self.bias_voltages == voltage_vector):
             logging.debug("bias field initial and final are the same, skip ramp")
             return t
