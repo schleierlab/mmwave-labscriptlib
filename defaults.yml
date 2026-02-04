@@ -228,4 +228,5 @@ Sequence:
   do_456_light_shift_check: { value: False, unit: bool }
   do_456_hyperfine_light_shift_check: {value: False, unit: bool}
   do_1064_light_shift_check: { value: False, unit: bool }
-  do_local_addr_move_matrix_calib: { value: False, unit: bool }
+  do_local_addr_move: { value: False, unit: bool }
+  do_local_addr_alignment_check: { value: False, unit: bool }

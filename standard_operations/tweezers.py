@@ -1,9 +1,9 @@
 import labscript.labscript as ls
 
+from labscriptlib.connection_table import devices
 from labscriptlib.experiment_components import D2Lasers, ShutterConfig, TweezerLaser, LocalAddressLaser
 from labscriptlib.shot_globals import shot_globals
-from .optical_pumping import OpticalPumpingOperations
-from labscriptlib.connection_table import devices # temperal
+from labscriptlib.standard_operations.optical_pumping import OpticalPumpingOperations
 
 
 class TweezerOperations(OpticalPumpingOperations):
@@ -353,21 +353,20 @@ class TweezerOperations(OpticalPumpingOperations):
         t += 1
 
         return t
-    
-    def _do_local_addr_move_matrix_calib(self, t):
-        """Move the local addressing around in each direction to calibrate the matrix which determines
-            how to move the piezos given some displacement on our beams as imaged on the cameras
-        Run a complete sequence and examine the Manta camera image with Lyse
+
+    def _do_local_addr_move(self, t):
+        """Move the local addressing piezo mirrors and take before/after images
+        of the local addressing position on two cameras.
+        May be used to calibrate the matrices which determines
+        how to long to move the piezos (at a fixed drive voltage)
+        given some displacement on our beams as imaged on the cameras.
+
         Args:
             t (float): Start time for the sequence
-            check_with_vimba (bool, defaults to True):
-                If enabled, run the dummy sequence (for use with monitoring
-                tweezer image in Vimba Viewer instead of Lyse)
 
         Returns:
             float: End time of the sequence
         """
-        # tweezer_cam_exposure_time = 200e-6
         tweezer_cam_exposure_time = 80e-3
         local_addr_cam_exposure_time = 10e-3
         exposure_buffer = max(tweezer_cam_exposure_time, local_addr_cam_exposure_time) + 10e-3
@@ -375,17 +374,11 @@ class TweezerOperations(OpticalPumpingOperations):
 
         t += 1e-5
         self.LocalAddressLaser_obj.aom_on(t, shot_globals.la_power)
-
-        # Temporary -- these are future servo
         devices.local_addr_1064_aom_digital.go_high(t)
-        devices.local_addr_1064_aom_analog.constant(t, 1)
-        self.LocalAddressLaser_obj
+        self.TweezerLaser_obj.aom_off(t)
 
-        # Less temporary -- these are also supposed to be future servo
-        devices.tweezer_aom_digital.go_low(t)
-        devices.tweezer_aom_analog.constant(t, 0)
         t += 0.01
-
+        ls.add_time_marker(t, 'Local addressing imaging')
         devices.manta419b_local_addr.expose(
             'manta419b',
             t,
@@ -401,6 +394,7 @@ class TweezerOperations(OpticalPumpingOperations):
 
         t += exposure_buffer
 
+        ls.add_time_marker(t, 'Move piezo mirrors')
         t = self.LocalAddressLaser_obj.deflect_mirrors(
             t,
             effective_durations=(
@@ -414,6 +408,7 @@ class TweezerOperations(OpticalPumpingOperations):
 
         t += 0.5
 
+        ls.add_time_marker(t, 'Local addressing imaging')
         devices.manta419b_local_addr.expose(
             'manta419b',
             t,
@@ -429,9 +424,7 @@ class TweezerOperations(OpticalPumpingOperations):
 
         t += exposure_buffer
 
-        # Temporary
-        devices.local_addr_1064_aom_digital.go_low(t)
-        devices.local_addr_1064_aom_analog.constant(t, 0)
+        self.LocalAddressLaser_obj.aom_off(t)
 
         if shot_globals.local_addr_piezo_return:
             t = self.LocalAddressLaser_obj.deflect_mirrors(
@@ -446,52 +439,71 @@ class TweezerOperations(OpticalPumpingOperations):
             )
 
         return t + 0.01
-    
 
-    def _do_local_addr_alignment(self, t):
-        """Move the local addressing around in each direction to calibrate the matrix which determines
-            how to move the piezos given some displacement on our beams as imaged on the cameras
-        Run a complete sequence and examine the Manta camera image with Lyse
+    def _do_local_addr_alignment_check(self, t):
+        """Move the local addressing turning mirrors, then take images of
+        the tweezer and local addressing beam locations on two cameras.
+        Used to align the local addressing beam with the tweezer.        
+
         Args:
             t (float): Start time for the sequence
-            check_with_vimba (bool, defaults to True):
-                If enabled, run the dummy sequence (for use with monitoring
-                tweezer image in Vimba Viewer instead of Lyse)
 
         Returns:
             float: End time of the sequence
         """
-        tweezer_cam_exposure_time = 500e-6
-        local_addr_cam_exposure_time = 500e-6
+        tweezer_cam_exposure_time = 40e-3
+        local_addr_cam_exposure_time = 10e-3
+        exposure_buffer = max(tweezer_cam_exposure_time, local_addr_cam_exposure_time) + 30e-3
         #50us min exposure time
 
-        t += 1e-5
+        self.TweezerLaser_obj.aom_off(t)
+        self.LocalAddressLaser_obj.aom_on(t, shot_globals.la_power)
+        devices.local_addr_1064_aom_digital.go_high(t)
 
-        self.LocalAddressLaser_obj.aom_on(t, 1)
+        t += 0.1  # ensure that tweezers are OFF for the local addr image
+        ls.add_time_marker(t, 'Local addressing imaging')
 
-        if shot_globals.do_local_addr_pre_move:
-            self.LocalAddressLaser_obj.deflect_mirrors(t, shot_globals.local_addr_deflection)
+        devices.manta419b_local_addr.expose(
+            'manta419b',
+            t,
+            frametype='atoms',
+            exposure_time=local_addr_cam_exposure_time,
+        )
+        devices.manta419b_tweezer.expose(
+            'manta419b',
+            t,
+            frametype='atoms',
+            exposure_time=10e-3,
+        )
 
-        self.Camera_obj.set_type("local_addr_manta")
-        self.Camera_obj.expose(t, local_addr_cam_exposure_time)
+        t += exposure_buffer
+        t += 0.3
 
-        self.Camera_obj.set_type("tweezer_manta")
-        self.Camera_obj.expose(t, tweezer_cam_exposure_time)
+        ls.add_time_marker(t, 'Tweezer imaging')
+        self.LocalAddressLaser_obj.aom_off(t)
+        # self.TweezerLaser_obj.start_tweezers(t)
+        self.TweezerLaser_obj.aom_on(t + 0.01, 0.035)
 
-        t += 2*max(tweezer_cam_exposure_time, local_addr_cam_exposure_time)
+        t += 0.01  # to make sure beams are switched over
 
-        self.LocalAddressLaser_obj.aom_on(t, 0)
-        self.TweezerLaser_obj.aom_on(t, 1)
+        devices.manta419b_local_addr.expose(
+            'manta419b',
+            t,
+            frametype='atoms',
+            exposure_time=local_addr_cam_exposure_time,
+        )
+        devices.manta419b_tweezer.expose(
+            'manta419b',
+            t,
+            frametype='atoms',
+            exposure_time=10e-3,
+        )
 
-        self.Camera_obj.set_type("local_addr_manta")
-        self.Camera_obj.expose(t, local_addr_cam_exposure_time)
+        t += exposure_buffer
 
-        self.Camera_obj.set_type("tweezer_manta")
-        self.Camera_obj.expose(t, tweezer_cam_exposure_time)
+        self.TweezerLaser_obj.aom_off(t)
 
-        t += 0.5
-
-        return t
+        return t + 0.01
 
     def _tweezer_modulation_sequence(self, t):
         """Execute a tweezer modulation sequence.
