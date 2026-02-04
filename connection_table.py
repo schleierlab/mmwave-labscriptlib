@@ -231,11 +231,11 @@ class LabDevices():
         )
 
         # dummy channel. Not connected to anything but enable/ disable to meet the even-number-channel requirement
-        # self.digital_out_ch26 = DigitalOut(
-        #     name='digital_out_ch26',
-        #     parent_device=ni_6363_0,
-        #     connection='port0/line26',
-        # )
+        self.digital_out_ch26 = DigitalOut(
+            name='digital_out_ch26',
+            parent_device=ni_6363_0,
+            connection='port0/line26',
+        )
 
         clockline_6739 = ClockLine(name='clockline_6739', pseudoclock=pb.pseudoclock, connection='flag 17')
         # clockline_6739 = pb.clocklines[1]# for PrawnBlaster
@@ -514,13 +514,6 @@ class LabDevices():
             connection="port0/line21",
             BIAS_port=54325,
         )
-
-        # self.manta419b_local_addr = Manta419B(
-        #     'manta419b_local_addr',
-        #     parent_device=ni_6363_0,
-        #     connection="port0/line21",
-        #     BIAS_port=54325,
-        # )
 
         # self.manta419b_dipole_trap = Manta419B(
         #     'manta419b_dipole_trap',
