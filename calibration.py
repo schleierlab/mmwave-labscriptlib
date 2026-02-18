@@ -245,24 +245,27 @@ def spec_freq_calib(mw_detuning):
     return spec_freq
 
 
-def biasx_calib(field):
-    # unit: V, mG
-    V0 = 0.6134 #0.5243 # V
-    Bp = 842.47 #546.8 # mG/V
-    voltage = V0 +1/Bp*field
-    return voltage
+# in order [v0 in volts, b_per_v in mG] * [x, y, z]
+bfield_calibration_coefficients = np.array([
+    [0.6134, 0.0678, -0.6682],
+    [842.47, 1193.4, 1096.9],
+])
 
-def biasy_calib(field):
-    V0 =  0.0678 # V
-    Bp = 1193.4 # mG/V
-    voltage = V0 +1/Bp*field
-    return voltage
+bfield_calibration_offsets = np.array([0.6134, 0.0678, -0.6682])  # volts for 0 field
+bfield_calibration_gains = np.array([842.47, 1193.4, 1096.9])  # mG per volt
 
-def biasz_calib(field):
-    V0 = -0.6682 # V
-    Bp = 1096.9 # mG/V
-    voltage = V0 + 1/Bp * field
-    return voltage
+def bfield_to_voltages(field):
+    return bfield_calibration_offsets + field / bfield_calibration_gains
+
+def voltages_to_bfield(voltages):
+    """
+    voltages : array_like, (..., 3)
+    """
+    voltages = np.asarray(voltages)
+    if np.shape(voltages)[-1] != 3:
+        raise ValueError
+    return (voltages - bfield_calibration_offsets) * bfield_calibration_gains
+
 
 # unit: V, MHz shift on 41S state
 def Ex_calib(shift):

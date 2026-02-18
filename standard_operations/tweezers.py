@@ -246,7 +246,7 @@ class TweezerOperations(OpticalPumpingOperations):
 
         return t
 
-    def pump_then_rotate(self, t, B_field, polar = False):
+    def pump_then_rotate(self, t, b_field, polar = False):
         """Pumps to stretched state then rotates the field
         Also lowers the trap, but doesn't raise it back.
 
@@ -270,10 +270,24 @@ class TweezerOperations(OpticalPumpingOperations):
             t_start_ramp, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power
         )
 
-        t = self.BField_obj.ramp_bias_field(
+        t += shot_globals.mw_field_wait_dur
+
+        # t = self.BField_obj.ramp_bias_field(
+        #     t, # extra time to wait for 5e-3s extra time in optical pumping field
+        #     dur=10e-3,
+        #     bias_field_vector=b_field,
+        #     polar = polar,
+        # )
+
+        if polar:
+            b_field_cartesian = self.BField_obj.convert_bias_fields_sph_to_cart(*b_field)
+        else:
+            b_field_cartesian = b_field
+        t = self.BField_obj.ramp_bias_field_slerp(
             t, # extra time to wait for 5e-3s extra time in optical pumping field
-            bias_field_vector=B_field,
-            polar = polar,
+            10e-3,
+            final_bias_field=b_field_cartesian,
+            sample_points=501,
         )
 
         return t

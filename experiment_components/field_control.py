@@ -1,18 +1,21 @@
+import logging
 from typing import ClassVar, Literal
 
-import logging
 import numpy as np
+from numpy.typing import NDArray
 
 from labscript import AnalogOut, DigitalOut
 from labscriptlib.calibration import (
-    biasx_calib,
-    biasy_calib,
-    biasz_calib,
+    bfield_to_voltages,
+    voltages_to_bfield,
     Ex_calib,
     Ey_calib,
     Ez_calib,
 )
 from labscriptlib.connection_table import devices
+
+
+logger = logging.getLogger(__name__)
 
 
 class BField:
@@ -33,11 +36,11 @@ class BField:
     CONST_BIPOLAR_COIL_FLIP_TIME: ClassVar[float] = 10e-3
     CONST_COIL_FEEDBACK_OFF_TIME: ClassVar[float] = 4.5e-3
 
-    bias_voltages = tuple[float, float, float]
+    bias_voltages: tuple[float, float, float]
     mot_coils_on: bool
     mot_coils_on_current: float
-    current_outputs = tuple[AnalogOut, AnalogOut, AnalogOut]
-    feedback_disable_ttls = tuple[DigitalOut, DigitalOut, DigitalOut]
+    current_outputs: tuple[AnalogOut, AnalogOut, AnalogOut]
+    feedback_disable_ttls: tuple[DigitalOut, DigitalOut, DigitalOut]
 
 
     def __init__(
@@ -87,7 +90,7 @@ class BField:
                 t, 0
             )  # when changing bias field make sure the magnetic field gradient is off
 
-    def flip_coil_polarity(
+    def _flip_coil_polarity(
         self, t: float, final_voltage: float, component: Literal[0, 1, 2]
     ):
         """
@@ -151,7 +154,29 @@ class BField:
         self.bias_voltages = tuple(bias_voltages)
         return t
 
-    def ramp_bias_field(self, t, dur = 100e-6,  bias_field_vector=None, voltage_vector=None, polar = False):
+    @staticmethod
+    def _check_voltage_limits(voltage_vector):
+        """
+        Parameters
+        ----------
+        voltage_vector : array_like, shape (..., 3)
+        """
+        coil_control_voltage_limits = np.array([5.05, 2.7, 3.5])
+        if np.any(np.abs(voltage_vector) > coil_control_voltage_limits):
+            raise ValueError(
+                'Cannot drive coils beyond limit set by power supply voltages. '
+                f'Drive voltages: {voltage_vector}; '
+                f'Limit absolute voltages: {coil_control_voltage_limits}'
+            )
+
+    def ramp_bias_field(
+            self,
+            t,
+            dur = 100e-6,
+            bias_field_vector=None,
+            voltage_vector=None,
+            polar: bool = False,
+    ):
         """Ramp the bias field to new values.
 
         Args:
@@ -164,6 +189,10 @@ class BField:
         Returns:
             float: End time of the ramp
         """
+        # require field changes to be programmed in sequence
+        if t <= self.t_last_change:
+            raise ValueError
+
         # bias_field_vector should be a tuple of the form (x,y,z)
         # Need to start the ramp earlier if the voltage changes sign
         if polar:
@@ -174,38 +203,19 @@ class BField:
                     bias_field_vector[2],
                 )
             )
-
-            # print('bias field:', bias_field_vector[0], '\n',
-            #         bias_field_vector[1], '\n',
-            #         bias_field_vector[2],'\n','after conversion:',
-            #         biasx_calib(field_vector[0]),
-            #         biasy_calib(field_vector[1]),
-            #         biasz_calib(field_vector[2]),
-            #     )
         else:
             field_vector = bias_field_vector
 
-
+        if dur < self.CONST_COIL_RAMP_TIME:
+            logger.info(f"Lengthening spec'd field ramp duration {dur} to minimum value of {self.CONST_COIL_RAMP_TIME}.")
         dur = np.max([dur, self.CONST_COIL_RAMP_TIME])
         if field_vector is not None:
-            voltage_vector = np.array(
-                [
-                    biasx_calib(field_vector[0]),
-                    biasy_calib(field_vector[1]),
-                    biasz_calib(field_vector[2]),
-                ]
-            )
-
-        coil_control_voltage_limits = np.array([5, 2.7, 3.5])
-        if np.any(np.abs(voltage_vector) > coil_control_voltage_limits):
-            raise ValueError(
-                'Cannot drive coils beyond limit set by power supply voltages. '
-                f'Drive voltages: {voltage_vector}; '
-                f'Limit absolute voltages: {coil_control_voltage_limits}'
-            )
+            voltage_vector = bfield_to_voltages(field_vector)
+            
+        self._check_voltage_limits(voltage_vector)
 
         if np.all(self.bias_voltages == voltage_vector):
-            logging.debug("bias field initial and final are the same, skip ramp")
+            logger.debug("bias field initial and final are the same, skip ramp")
             return t
 
         sign_flip_in_ramp = voltage_vector * np.asarray(self.bias_voltages) < 0
@@ -213,14 +223,12 @@ class BField:
             t - self.CONST_BIPOLAR_COIL_FLIP_TIME * sign_flip_in_ramp
         )
 
-        # print(coil_ramp_start_times)
-
         for i in range(3):
             if sign_flip_in_ramp[i]:
                 coil_ramp_start_times[i] = np.max(
                     [self.t_last_change + 100e-6, coil_ramp_start_times[i]]
                 )
-                _ = self.flip_coil_polarity(
+                _ = self._flip_coil_polarity(
                     coil_ramp_start_times[i], voltage_vector[i], component=i
                 )
             else:
@@ -231,14 +239,12 @@ class BField:
                     final=voltage_vector[i],
                     samplerate=1e5,
                 )
-        # print(coil_ramp_start_times)
         end_time = (
             np.min(coil_ramp_start_times)
             + dur
             + self.CONST_BIPOLAR_COIL_FLIP_TIME
         )
         self.t_last_change = end_time
-        # print(coil_ramp_start_times)
 
         # TODO: add the inverse function of bias_i_calib
         # otherwise, if only voltage vector is provided on input, the bias field will not be updated
@@ -247,6 +253,111 @@ class BField:
         self.bias_voltages = tuple(voltage_vector)
 
         return t + dur
+
+    @staticmethod
+    def _cart2sph(cartesian_coords):
+        xyz = np.asarray(cartesian_coords)
+        x2y2 = xyz[..., 0]**2 + xyz[..., 1]**2
+
+        spherical_coords = np.empty_like(xyz)
+
+        # radial coordinate
+        spherical_coords[..., 0] = np.sqrt(x2y2 + xyz[..., 2]**2)
+
+        # polar angle
+        spherical_coords[..., 1] = np.arctan2(np.sqrt(x2y2), xyz[..., 2])
+
+        # azimuthal angle
+        spherical_coords[..., 2] = np.arctan2(xyz[..., 1], xyz[..., 0])
+
+        return spherical_coords
+
+    @classmethod
+    def _slerp_ramp(cls, initial, final, ramp_progress) -> NDArray:
+        """
+        initial, final : array_like, (3,)
+            Starting and ending point in Cartesian coordinates with shape (3,).
+        ramp_progress : array_like, shape (...,)
+            Progress parameter from 0 to 1, where 0 represents the initial point
+            and 1 represents the final point. Any shape.
+        Returns
+        -------
+        ndarray
+            Interpolated points along the great circle ramp in Cartesian coordinates.
+            Shape (..., 3). The radial distance varies linearly from the initial
+            to the final radius, while the angular trajectory follows a great circle
+            on the sphere.
+        Notes
+        -----
+        This method performs spherical interpolation (slerp) on the angular components
+        while maintaining linear interpolation of the radial component. The resulting
+        trajectory lies on a sphere of varying radius centered at the origin.
+        Compute a ramp between two specified points in Cartesian coordinates
+        such that the radial distance along the ramp varies linearly
+        and such that the projection of the trajectory on a sphere at the origin
+        uniformly follows a great circle.
+        """
+        ((r1, theta1, phi1), (r2, theta2, phi2)) = cls._cart2sph([initial, final])
+
+        # arc angle between two points
+        # (may be ill-conditioned for nearby points; can use haversine formula there)
+        d = np.arccos(np.cos(theta1) * np.cos(theta2) + np.sin(theta1) * np.sin(theta2) * np.cos(phi1 - phi2))
+
+        # shape: (...,)
+        a_sin_d = np.sin((1 - ramp_progress) * d)
+        b_sin_d = np.sin(ramp_progress * d)
+
+        # shape: (..., 3)
+        great_circle_points_cartesian = (a_sin_d[..., np.newaxis] * initial/r1 + b_sin_d[..., np.newaxis] * final/r2) / np.sin(d)
+        radial_coords = r1 + ramp_progress * (r2 - r1)
+
+        return radial_coords[..., np.newaxis] * great_circle_points_cartesian
+
+    def ramp_bias_field_slerp(
+            self,
+            t,
+            duration,
+            final_bias_field: tuple[float, float, float],
+            sample_points: int = 11,
+    ):
+        """
+        Ramp the bias field to a final value over a specified duration.
+        The ramp linearly interpolates between initial and final fields
+        in polar coordinates in the plane defined by the two endpoint fields.
+
+        Parameters
+        ----------
+        t : float
+            The time at which to start the ramp (in seconds).
+        duration : float
+            The duration of the ramp (in seconds).
+        final_bias_field : tuple or array-like
+            The final bias field values in Cartesian coordinates.
+        """
+        if t <= self.t_last_change:
+            raise ValueError
+        if duration / (sample_points - 1) < 2.5e-6:
+            raise ValueError(f'Ramp sample rate too fast: {duration=}, {sample_points=}')
+
+        ramp_progress = np.linspace(0, 1, sample_points)[1:]
+        times = np.linspace(t, t + duration, sample_points)[1:]
+
+        initial_bias_field = voltages_to_bfield(self.bias_voltages)
+        field_points = self._slerp_ramp(initial_bias_field, final_bias_field, ramp_progress)
+        control_voltages = bfield_to_voltages(field_points)
+        if np.any(control_voltages[-1] / self.bias_voltages < 0):
+            logger.warning('Switching bias coil drive sign')
+        self._check_voltage_limits(control_voltages)
+
+        for time, control_voltages_single in zip(times, control_voltages):
+            for i, current_output in enumerate(self.current_outputs):
+                current_output.constant(time, control_voltages_single[i])
+
+        endtime = t + duration
+        self.t_last_change = endtime
+        self.bias_voltages = control_voltages[-1]
+
+        return endtime
 
     def switch_mot_coils(self, t):
         """Switch the MOT coils on or off.
@@ -284,8 +395,8 @@ class BField:
 
         Args:
             bias_amp (float): Amplitude of the bias field
-            bias_phi (float): Azimuthal angle in radians
-            bias_theta (float): Polar angle in radians
+            bias_phi (float): Azimuthal angle in degrees
+            bias_theta (float): Polar angle in degrees
 
         Returns:
             tuple: Cartesian coordinates (x, y, z) for the bias field
