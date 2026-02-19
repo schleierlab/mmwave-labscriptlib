@@ -74,6 +74,7 @@
 from __future__ import annotations
 
 import logging
+import sys
 
 import labscript
 
@@ -88,7 +89,11 @@ from labscriptlib.standard_operations import (
     TweezerOperations,
 )
 
+logger = logging.getLogger(__name__)
+
+
 if __name__ == "__main__":
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     print(f'{devices.initialized()=}')
     devices.initialize()
     print(f'{devices.initialized()=}')
@@ -255,7 +260,7 @@ if __name__ == "__main__":
 
     # Stop tweezers if the object has a TweezerLaser_obj
     if hasattr(current_obj, 'TweezerLaser_obj'):
-        logging.debug("current_obj has TweezerLaser_obj")
+        logger.debug("current_obj has TweezerLaser_obj")
         t = current_obj.TweezerLaser_obj.stop_tweezers(t)
         # print('tweezer is stopped at time ', t)
     else:
@@ -269,7 +274,7 @@ if __name__ == "__main__":
         t = tweezerlaser_obj.stop_tweezers(t)
 
     if hasattr(current_obj, 'LocalAddressLaser_obj'):
-        logging.debug("current_obj has LocalAddressLaser_obj")
+        logger.debug("current_obj has LocalAddressLaser_obj")
         t = current_obj.LocalAddressLaser_obj.stop_local_addr(t)
     else:
         localaddresslaser = LocalAddressLaser(
