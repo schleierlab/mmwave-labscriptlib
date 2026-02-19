@@ -355,7 +355,14 @@ phase_dict_46 = {68.0: 0.0, 68.4: 306.91036972273076, 68.8: 0.0, 69.2: 59.910744
 phase_dict_47 = {59.0: 0.0, 59.5: 154.53421831479332, 60.0: 180.87659561051683, 60.5: 278.2718233491072, 61.0: 161.09560908598098, 61.5: 220.66158728790145, 62.0: 282.8886311812735, 62.5: 347.80024118690613, 63.0: 290.4645984035179, 63.5: 354.67688728889243, 64.0: 77.44627701597014, 64.5: 136.458120943454, 65.0: 297.244155272046, 65.5: 179.83743949221542, 66.0: 139.38342655399802, 66.5: 266.8600880412453, 67.0: 274.1167219281108, 67.5: 208.34273222065502, 68.0: 143.98298217238755, 68.5: 221.59326267651588, 69.0: 197.60361642315627, 69.5: 0.0, 70.0: 221.955531931992, 70.5: 230.9388390228637, 71.0: 342.3440222996343, 71.5: 320.61670972707424, 72.0: 204.94086301874376, 72.5: 165.71965828024943, 73.0: 257.7627500121738, 73.5: 0.0, 74.0: 316.84541070568895, 74.5: 174.52509783481875, 75.0: 80.97345433226313, 75.5: 199.9598678549547, 76.0: 172.98091626643284, 76.5: 41.05625014241505, 77.0: 56.57414651356958, 77.5: 80.69983457187325, 78.0: 60.496346237007934, 78.5: 291.59634107014256, 79.0: 0.0, 79.5: 229.5596316370043, 80.0: 124.58723828948145, 80.5: 0.0, 81.0: 108.25243730935586, 81.5: 299.8438883457133, 82.0: 130.39140565085944, 82.5: 255.12397223443566, 83.0: 56.82807215600464, 83.5: 223.19264009173557, 84.0: 0.25814143166233144, 84.5: 211.48956095703693, 85.0: 238.11520669043122, 85.5: 190.17699682147958, 86.0: 144.4964441019529, 86.5: 52.16324247518083}
 # 56 traps, freq = np.arange(59,87,0.5)
 
-phase_dictionaries = [phase_dict_47, phase_dict_46, phase_dict_45, phase_dict_44, phase_dict_43, phase_dict_42, phase_dict_41, phase_dict_40, phase_dict_39, phase_dict_38, phase_dict_37, phase_dict_36, phase_dict_35, phase_dict_34, phase_dict_33, phase_dict_32, phase_dict_31, phase_dict_30, phase_dict_27, phase_dict_29, phase_dict_26, phase_dict_25, phase_dict_24, phase_dict_23, phase_dict_22, phase_dict_21, phase_dict_17, phase_dict_1, phase_dict_2, phase_dict_5, phase_dict_6, phase_dict_7, phase_dict_8, phase_dict_9, phase_dict_10, phase_dict_10b, phase_dict_11, phase_dict_12, phase_dict_13, phase_dict_14, phase_dict_15, phase_dict_16, phase_dict_18, phase_dict_19, phase_dict_20, phase_dict_28] #,phase_dict_3, phase_dict_4]
+phase_dict_48 = {60.0: 194.3202373453966, 63.0: 29.301585540002726, 66.0: 12.696910233892966, 69.0: 24.726449942943628, 72.0: 249.77429233402543, 75.0: 104.93615739970548, 78.0: 303.6536703473793, 81.0: 0.008399035673149268, 84.0: 84.48261434336534, 87.0: 328.7759542609177}
+# 10 traps, freq = np.arange(60,88,3)
+
+phase_dict_49 = {58.0: 80.48743636091693, 61.0: 137.20669083892471, 64.0: 130.2178636012717, 67.0: 159.77072626691006, 70.0: 0.0, 73.0: 55.6548418943129, 76.0: 262.20873937840616, 79.0: 190.61946205551052, 82.0: 51.202315922854396, 85.0: 231.8115649410449}
+# 10 traps, freq = np.arange(58,88,3)
+
+
+phase_dictionaries = [phase_dict_49, phase_dict_48, phase_dict_47, phase_dict_46, phase_dict_45, phase_dict_44, phase_dict_43, phase_dict_42, phase_dict_41, phase_dict_40, phase_dict_39, phase_dict_38, phase_dict_37, phase_dict_36, phase_dict_35, phase_dict_34, phase_dict_33, phase_dict_32, phase_dict_31, phase_dict_30, phase_dict_27, phase_dict_29, phase_dict_26, phase_dict_25, phase_dict_24, phase_dict_23, phase_dict_22, phase_dict_21, phase_dict_17, phase_dict_1, phase_dict_2, phase_dict_5, phase_dict_6, phase_dict_7, phase_dict_8, phase_dict_9, phase_dict_10, phase_dict_10b, phase_dict_11, phase_dict_12, phase_dict_13, phase_dict_14, phase_dict_15, phase_dict_16, phase_dict_18, phase_dict_19, phase_dict_20, phase_dict_28] #,phase_dict_3, phase_dict_4]
 
 ##########################################################################
 
@@ -628,7 +635,13 @@ amp_dict_30 = {68.0: 0.9, 68.4: 0.9, 68.8: 0.9, 69.2: 0.9, 69.6: 0.9, 70.0: 0.9,
 amp_dict_31 = {59.0: 0.9, 59.5: 0.9, 60.0: 0.9, 60.5: 0.9, 61.0: 0.9, 61.5: 0.9, 62.0: 0.9, 62.5: 0.9, 63.0: 0.9, 63.5: 0.9, 64.0: 0.9, 64.5: 0.9, 65.0: 0.9, 65.5: 0.9, 66.0: 0.9, 66.5: 0.9, 67.0: 0.9, 67.5: 0.9, 68.0: 0.9, 68.5: 0.9, 69.0: 0.9, 69.5: 0.9, 70.0: 0.9, 70.5: 0.9, 71.0: 0.9, 71.5: 0.9, 72.0: 0.9, 72.5: 0.9, 73.0: 0.9, 73.5: 0.9, 74.0: 0.9, 74.5: 0.9, 75.0: 0.9, 75.5: 0.9, 76.0: 0.9, 76.5: 0.9, 77.0: 0.9, 77.5: 0.9, 78.0: 0.9, 78.5: 0.9, 79.0: 0.9, 79.5: 0.9, 80.0: 0.9, 80.5: 0.9, 81.0: 0.9, 81.5: 0.9, 82.0: 0.9, 82.5: 0.9, 83.0: 0.9, 83.5: 0.9, 84.0: 0.9, 84.5: 0.9, 85.0: 0.9, 85.5: 0.9, 86.0: 0.9, 86.5: 0.9}
 # 56 traps, freq = np.arange(59,87,0.5)
 
-amp_dictionaries = [amp_dict_31, amp_dict_30, amp_dict_29, amp_dict_28, amp_dict_27, amp_dict_26, amp_dict_25, amp_dict_24, amp_dict_23, amp_dict_22, amp_dict_21, amp_dict_20, amp_dict_19, amp_dict_18, amp_dict_17, amp_dict_16, amp_dict_14, amp_dict_15, amp_dict_11, amp_dict_1, amp_dict_2, amp_dict_3, amp_dict_4, amp_dict_5, amp_dict_6, amp_dict_7, amp_dict_8, amp_dict_9, amp_dict_10, amp_dict_12, amp_dict_13]
+amp_dict_32 = {60.0: 0.9, 63.0: 0.9, 66.0: 0.9, 69.0: 0.9, 72.0: 0.9, 75.0: 0.9, 78.0: 0.9, 81.0: 0.9, 84.0: 0.9, 87.0: 0.9}
+# 10 traps, freq = np.arange(60,88,3)
+
+amp_dict_33 = {58.0: 0.9, 61.0: 0.9, 64.0: 0.9, 67.0: 0.9, 70.0: 0.9, 73.0: 0.9, 76.0: 0.9, 79.0: 0.9, 82.0: 0.9, 85.0: 0.9}
+# 10 traps, freq = np.arange(58,88,3)
+
+amp_dictionaries = [amp_dict_33, amp_dict_32, amp_dict_31, amp_dict_30, amp_dict_29, amp_dict_28, amp_dict_27, amp_dict_26, amp_dict_25, amp_dict_24, amp_dict_23, amp_dict_22, amp_dict_21, amp_dict_20, amp_dict_19, amp_dict_18, amp_dict_17, amp_dict_16, amp_dict_14, amp_dict_15, amp_dict_11, amp_dict_1, amp_dict_2, amp_dict_3, amp_dict_4, amp_dict_5, amp_dict_6, amp_dict_7, amp_dict_8, amp_dict_9, amp_dict_10, amp_dict_12, amp_dict_13]
 
 def trap_phase(frequencies):
     frequencies = [float(i) for i in frequencies]

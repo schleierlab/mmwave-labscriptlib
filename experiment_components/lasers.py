@@ -896,7 +896,7 @@ class RydLasers:
     # this is only really a problem for devices that use both (ryd lasers, tweezers, local addressing)
     CONST_NI_ANALOG_DELAY: ClassVar[float] = 0
 
-    CONST_EXTRA_TIME_1064: ClassVar[float] = 0.2e-6
+    CONST_EXTRA_TIME_1064: ClassVar[float] = 0.4e-6
 
 
     def __init__(self, t, blue_pointing: PointingConfig, ir_pointing: PointingConfig, init_blue_detuning: float):

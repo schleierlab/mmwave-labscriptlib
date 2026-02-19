@@ -13,7 +13,7 @@ if root_path not in sys.path:
 
 import labscript
 from connection_table import devices
-from calibration import ta_freq_calib, repump_freq_calib, biasx_calib, biasy_calib, biasz_calib
+from calibration import ta_freq_calib, repump_freq_calib
 from labscriptlib.shot_globals import shot_globals
 import numpy as np
 

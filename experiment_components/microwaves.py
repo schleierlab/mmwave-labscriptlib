@@ -167,7 +167,7 @@ class Microwave:
                 return list(param)
             
         turn_on_buffer_time = shot_globals.mmwave_switch_turn_on_buffer_time #1.15e-6 #0.75e-6
-        turn_off_buffer_time = 0.1e-6
+        turn_off_buffer_time = 0.3e-6
         switch_spectrum_offset = switch_offset + 2.5e-7
         devices.mmwave_switch.go_low(t0 + switch_spectrum_offset - turn_on_buffer_time)
         self.mmwave_switch_on = True
@@ -187,8 +187,8 @@ class Microwave:
                 t0,
                 duration=duration,
                 freqs=pulse_detuning,
-                amplitudes= ensure_list(amplitude),#0.965,#0.98,  # the amplitude cannot be 1 due to bug in spectrum card server, at most 0.99
-                phases= ensure_list(phase),
+                amplitudes=ensure_list(amplitude),#0.965,#0.98,  # the amplitude cannot be 1 due to bug in spectrum card server, at most 0.99
+                phases=ensure_list(phase),
                 ch=1,
                 loops=1,
             )

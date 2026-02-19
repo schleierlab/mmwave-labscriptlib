@@ -438,7 +438,7 @@ class RydbergOperations(TweezerOperations):
              shot_globals.ryd_bias_theta),
              polar=True) # trap is lowered when optical pump happens
 
-        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99) # ramp trap power back
+        # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99) # ramp trap power back
         # Apply Rydberg pulse with both 456 and 1064 active
         t += 2.5e-6
 
@@ -467,7 +467,7 @@ class RydbergOperations(TweezerOperations):
                                  shot_globals.ryd_E_shift_phi)
             self.EField_obj.set_efield_shift(t, E_field_shift_vec, polar = True)
 
-        t += 50e-3
+        t += 30e-3
         ls.add_time_marker(t, 'Rydberg physics')
         if shot_globals.do_ramsey:
             t, pulse_start_times = self.RydLasers_obj.do_rydberg_multipulses(
@@ -492,8 +492,15 @@ class RydbergOperations(TweezerOperations):
             t_aom_stop = t_aom_start + shot_globals.ryd_456_duration
 
         if shot_globals.do_tw_trap_off:
+            # self.TweezerLaser_obj.ramp_power(t_aom_start - 0.6e-6 - 3e-6 - shot_globals.tw_ramp_dur, shot_globals.tw_ramp_dur, 0.14)
             self.TweezerLaser_obj.aom_off(t_aom_start - 0.6e-6, digital_only=True)
-            self.TweezerLaser_obj.aom_on(t_aom_stop, 0.99, digital_only=True)
+            self.TweezerLaser_obj.aom_on(t_aom_stop + 0.6e-6, 0.99)
+
+            # self.TweezerLaser_obj.aom_off(t_aom_start - 0.6e-6, digital_only=True)
+            # self.TweezerLaser_obj.aom_on(t_aom_stop + 0.6e-6, 0.99, digital_only=True)
+
+            
+            # self.TweezerLaser_obj.ramp_power(t_aom_stop, shot_globals.tw_ramp_dur, 0.99)
 
         # Fudge time based on picoscope observation when NOT rearranging; depends on expt timing
         spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET - 30e-6
@@ -554,7 +561,7 @@ class RydbergOperations(TweezerOperations):
              shot_globals.ryd_bias_theta),
              polar=True) # trap is lowered when optical pump happens
 
-        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99) # ramp trap power back
+        # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99) # ramp trap power back
         t += 5e-3
 
         E_field_shift_vec = (shot_globals.ryd_E_shift_amp,
@@ -562,7 +569,7 @@ class RydbergOperations(TweezerOperations):
                              shot_globals.ryd_E_shift_phi)
         self.EField_obj.set_efield_shift(t, E_field_shift_vec, polar = True)
 
-        t += 50e-3
+        t += 30e-3
 
         ls.add_time_marker(t, 'Rydberg pulses')
 
@@ -580,9 +587,13 @@ class RydbergOperations(TweezerOperations):
         t_aom_stop_0 = t_aom_start + shot_globals.ryd_456_duration
         t_aom_stop_1 = t_aom_start + shot_globals.ryd_456_duration * 2 + shot_globals.ryd_state_wait_time
         self.TweezerLaser_obj.aom_off(t_aom_start - 0.6e-6, digital_only=True)
-        self.TweezerLaser_obj.aom_on(t_aom_stop_1, 0.99, digital_only=True)
+        self.TweezerLaser_obj.aom_on(t_aom_stop_1 +  0.6e-6, 0.99)
 
-        spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET - 29.30e-6
+        # compensation for desynchronization between pulseblaster and spectrum card
+        # subtracted time usually around 20 to 30 us
+        # spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET - 25.25e-6  # without rearrangement
+        spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET - 24.57e-6  # with rearrangement
+
         # if shot_globals.do_mmwave_ramsey:
         #     ramsey_time = shot_globals.mmwave_pi_half_pulse_t*2 + shot_globals.mmwave_ramsey_wait_time
         #     mmwave_offset_t = (shot_globals.ryd_state_wait_time - ramsey_time)/2
@@ -669,7 +680,7 @@ class RydbergOperations(TweezerOperations):
              shot_globals.ryd_bias_theta),
              polar=True) # trap is lowered when optical pump happens
 
-        t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99) # ramp trap power back
+        # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99) # ramp trap power back
         t += 5e-3
 
         E_field_shift_vec = (shot_globals.ryd_E_shift_amp,
@@ -677,7 +688,7 @@ class RydbergOperations(TweezerOperations):
                              shot_globals.ryd_E_shift_phi)
         self.EField_obj.set_efield_shift(t, E_field_shift_vec, polar = True)
 
-        t += 50e-3
+        t += 30e-3
 
         ls.add_time_marker(t, 'Rydberg pulses')
 
@@ -695,9 +706,9 @@ class RydbergOperations(TweezerOperations):
         t_aom_stop_0 = t_aom_start + shot_globals.ryd_456_duration
         t_aom_stop_1 = t_aom_start + shot_globals.ryd_456_duration * 2 + shot_globals.ryd_state_wait_time
         self.TweezerLaser_obj.aom_off(t_aom_start - 0.6e-6, digital_only=True)
-        self.TweezerLaser_obj.aom_on(t_aom_stop_1, 0.99, digital_only=True)
+        self.TweezerLaser_obj.aom_on(t_aom_stop_1 + 0.6e-6, 0.99)
 
-        spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET - 29.30e-6
+        spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET - 24.65e-6 #29.30e-6
 
         # do ramsey
         ramsey_time = shot_globals.mmwave_pi_half_pulse_t*2 + shot_globals.mmwave_ramsey_wait_time
@@ -715,7 +726,7 @@ class RydbergOperations(TweezerOperations):
             t_aom_stop_0 - spectrum_card_delay + mmwave_offset_t,
             shot_globals.mmwave_pi_half_pulse_t,
             detuning=shot_globals.mmwave_spectrum_freq,
-            phase= [0]*num_of_tone,
+            phase=[0]*num_of_tone,
             keep_switch_on=True,
             switch_offset = spectrum_card_delay,
         )
@@ -736,7 +747,11 @@ class RydbergOperations(TweezerOperations):
             accumulated_time = (shot_globals.mmwave_pi_half_pulse_t + shot_globals.mmwave_ramsey_wait_time)
 
         phase_accumulation_degrees = 360 * (ensure_list(shot_globals.mmwave_spectrum_freq)[0]) * accumulated_time
-        end_pulse_phase = phase_accumulation_degrees+shot_globals.mmwave_ramsey_extraphase if num_of_tone ==1 else [0, phase_accumulation_degrees+shot_globals.mmwave_ramsey_extraphase]
+        end_pulse_phase = (
+            phase_accumulation_degrees + shot_globals.mmwave_ramsey_extraphase
+            if num_of_tone == 1 else
+            [0, phase_accumulation_degrees + shot_globals.mmwave_ramsey_extraphase]
+        )
 
         self.Microwave_obj.do_mmwave_pulse(
             pulse_start_time,
@@ -1022,20 +1037,60 @@ class RydbergOperations(TweezerOperations):
 
         t += 1e-3
 
+        # t = self.pump_then_rotate(
+        #     t,
+        #     (
+        #         shot_globals.mw_bias_amp,
+        #         shot_globals.mw_bias_phi,
+        #         shot_globals.mw_bias_theta,
+        #     ),
+        #     polar=True,
+        # ) # trap is lowered when optical pump happens
+
+
+        rydberg_field = (shot_globals.ryd_bias_amp, shot_globals.ryd_bias_phi, shot_globals.ryd_bias_theta,)
+        mw_field = (shot_globals.mw_bias_amp, shot_globals.mw_bias_phi, shot_globals.mw_bias_theta,)
+        # op_fixed_field = np.array([shot_globals.op_bias_amp, 0, 0])
+        # op_added_field = np.array(
+        #         self.BField_obj.convert_bias_fields_sph_to_cart(
+        #             shot_globals.op_bias_added_amp,
+        #             shot_globals.op_bias_phi,
+        #             shot_globals.op_bias_theta,
+        #         )
+        #     )
+        # op_total_field = op_fixed_field + op_added_field
         t = self.pump_then_rotate(
             t,
-            (
-                shot_globals.mw_bias_amp,
-                shot_globals.mw_bias_phi,
-                shot_globals.mw_bias_theta,
-            ),
+            rydberg_field,
             polar=True,
         ) # trap is lowered when optical pump happens
+
+        # t = self.TweezerLaser_obj.ramp_power(
+        #     t, shot_globals.tw_ramp_dur, 0.99
+        # )
+
+        t += shot_globals.mw_field_wait_dur
+
+        # t = self.TweezerLaser_obj.ramp_power(
+        #     t, shot_globals.tw_ramp_dur, shot_globals.tw_ramp_power
+        # )
+
+        # t = self.BField_obj.ramp_bias_field(
+        #     t, # extra time to wait for 5e-3s extra time in optical pumping field
+        #     bias_field_vector=mw_field,
+        #     polar=True,
+        # )
+        t = self.BField_obj.ramp_bias_field_slerp(
+            t,
+            duration=10e-3,
+            final_bias_field=self.BField_obj.convert_bias_fields_sph_to_cart(*mw_field),
+            sample_points=501,
+        )
 
         # Apply Rydberg pulse with both 456 and 1064 active
         t += 2.5e-6
 
-        t += shot_globals.mw_field_wait_dur  # 400e-6
+        t += 30e-3  #shot_globals.mw_field_wait_dur  # 400e-6
 
         mw_buffer_t = 1e-3
         t, t_aom_start = self.RydLasers_obj.do_rydberg_pulse(
@@ -1047,8 +1102,12 @@ class RydbergOperations(TweezerOperations):
         )
 
         if shot_globals.do_mw_pulse:
-            t = self.Microwave_obj.do_pulse(t_aom_start-self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET + mw_buffer_t,
-                                             shot_globals.mw_pulse_time)
+            uwave_start_time = t_aom_start-self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET + mw_buffer_t
+            tweezer_lower_buffer_t = 100e-6
+            self.TweezerLaser_obj.aom_on(uwave_start_time - tweezer_lower_buffer_t, 0.14)
+            t = self.Microwave_obj.do_pulse(uwave_start_time, shot_globals.mw_pulse_time)
+            self.TweezerLaser_obj.aom_on(uwave_start_time + shot_globals.mw_pulse_time + tweezer_lower_buffer_t, shot_globals.tw_ramp_power)
+
         # elif shot_globals.do_mw_sweep:
         #     mw_sweep_start = (
         #         shot_globals.mw_detuning + shot_globals.mw_sweep_range / 2
