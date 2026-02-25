@@ -34,6 +34,7 @@ class LabDevices():
         print('Initializing connection table')
 
         pb = PulseBlasterESRPro500(name='pb', board_number=0)
+        self.pb = pb
         # pb = PrawnBlaster(name='pb', com_port='COM4', num_pseudoclocks=2)
 
         clockline_6363 = ClockLine(
