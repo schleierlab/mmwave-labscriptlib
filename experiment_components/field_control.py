@@ -519,7 +519,6 @@ class EField:
             shift_vec_cart = self.convert_fields_sph_to_cart(shift_vector[0], shift_vector[1], shift_vector[2])
         else:
             shift_vec_cart = shift_vector
-        print(shift_vec_cart)
         voltage_vec = np.array(
                 [
                     Ex_calib(shift_vec_cart[0]),
@@ -527,7 +526,6 @@ class EField:
                     Ez_calib(shift_vec_cart[2]),
                 ]
             )
-        print(voltage_vec)
 
         self.set_electric_field(t, voltage_vec)
 

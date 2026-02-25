@@ -14,6 +14,10 @@ from labscriptlib.shot_globals import shot_globals
 devices.initialize()
 #Note 20230327: can only use one channel for fifo mode for now.
 
+
+logger = logging.getLogger(__name__)
+
+
 def dbm_to_vpeak(power):
     # Converts power in dbm to peak voltage (not Vpp or Vrms)
     # r = 50 # Ohms
@@ -147,7 +151,7 @@ class SpectrumManagerFifo():
         if not self.outputting_tw:
             raise ValueError('SpectrumManager: must run start() before stop()')
 
-        logging.info(f'Ending last static period at time t = {t}')
+        logger.info(f'Ending last static period at time t = {t:.9f}')
         devices.spectrum_0.stop_flexible_loop(t, self.x_key, fifo=True)
         # devices.spectrum_0.stop_flexible_loop(t, self.y_key, fifo=True)
         self.outputting_tw = False
@@ -210,7 +214,7 @@ class SpectrumManagerFifo():
 
     def stop_cp(self, t):
         assert self.outputting_cp, 'SpectrumManager: must run start() before stop()'
-        logging.info(f'Ending last static period at time t = {t}')
+        logger.info(f'Ending last static period at time t = {t:.9f}')
         Spectrum6631.stop_flexible_loop(t, self.cp_key, fifo=True)
         self.outputting_cp = False
         return t

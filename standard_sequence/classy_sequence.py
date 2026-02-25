@@ -104,8 +104,8 @@ if __name__ == "__main__":
 
     if shot_globals.do_test_analog_in:
         duration = devices.test_analog_in.acquire('test_analog_in', t+1e-3, t+2e-3)
-        print("Duration was:", duration)
-        print("acquisitions: ",devices.test_analog_in.acquisitions)
+        logger.info("Duration was:", duration)
+        logger.info("acquisitions: ", devices.test_analog_in.acquisitions)
         t += 2e-3
 
     if shot_globals.do_mot_in_situ_check:
@@ -149,8 +149,8 @@ if __name__ == "__main__":
     elif shot_globals.do_tweezer_position_check:
         TweezerSequence_obj = TweezerOperations(t)
         sequence_objects.append(TweezerSequence_obj)
-        t = TweezerSequence_obj._do_tweezer_position_check_sequence(t, check_with_vimba=True)
-    
+        t = TweezerSequence_obj._do_tweezer_position_check_sequence(t, check_with_vimba=False)
+
     elif shot_globals.do_local_addr_move:
         TweezerSequence_obj = TweezerOperations(t)
         sequence_objects.append(TweezerSequence_obj)
@@ -262,7 +262,7 @@ if __name__ == "__main__":
     if hasattr(current_obj, 'TweezerLaser_obj'):
         logger.debug("current_obj has TweezerLaser_obj")
         t = current_obj.TweezerLaser_obj.stop_tweezers(t)
-        # print('tweezer is stopped at time ', t)
+        # logger.info('tweezer is stopped at time ', t)
     else:
         tweezerlaser_obj = TweezerLaser(
             t=0,
