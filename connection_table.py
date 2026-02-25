@@ -502,19 +502,19 @@ class LabDevices():
             BIAS_port=54321,
         )
 
-        self.manta419b_tweezer = Manta419B(
-            'manta419b_tweezer',
-            parent_device=ni_6363_0,
-            connection="port0/line13",
-            BIAS_port=54324,
-        )
+        # self.manta419b_tweezer = Manta419B(
+        #     'manta419b_tweezer',
+        #     parent_device=ni_6363_0,
+        #     connection="port0/line13",
+        #     BIAS_port=54324,
+        # )
 
-        self.manta419b_local_addr = Manta419B(
-            'manta419b_local_addr',
-            parent_device=ni_6363_0,
-            connection="port0/line21",
-            BIAS_port=54325,
-        )
+        # self.manta419b_local_addr = Manta419B(
+        #     'manta419b_local_addr',
+        #     parent_device=ni_6363_0,
+        #     connection="port0/line21",
+        #     BIAS_port=54325,
+        # )
 
         # self.manta419b_dipole_trap = Manta419B(
         #     'manta419b_dipole_trap',

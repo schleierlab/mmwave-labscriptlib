@@ -603,17 +603,19 @@ class TweezerLaser:
         # self.intensity_servo_keep_on(t)
         self.start_tweezers(t)
 
-    def start_tweezers(self, t):
+    def start_tweezers(self, t, start_card = True):
         """Initialize and start the optical tweezer system.
 
         Args:
             t (float): Time to start the tweezers
         """
         if self.spectrum_mode == 'sequence':
-            spectrum_manager.start_tweezer_card()
+            if start_card:
+                spectrum_manager.start_tweezer_card()
             spectrum_manager.start_tweezers(t)
         elif self.spectrum_mode == 'fifo':
-            spectrum_manager_fifo.start_tweezer_card()
+            if start_card:
+                spectrum_manager_fifo.start_tweezer_card()
             spectrum_manager_fifo.start_tweezers(t)
             logging.info(
                 'global `do_sequence_mode` is currently False, running Fifo mode now. '
@@ -626,7 +628,7 @@ class TweezerLaser:
             devices.dds0.synthesize(t+1e-3, freq = self.tw_y_freq, amp = 0.95, ph = 0) # unit: MHz
         self.aom_on(t, self.tweezer_power)
 
-    def stop_tweezers(self, t):
+    def stop_tweezers(self, t, stop_card = True):
         """Safely stop and power down the optical tweezer system.
 
         Args:
@@ -636,14 +638,16 @@ class TweezerLaser:
             # stop tweezers
             spectrum_manager.stop_tweezers(t)
 
-            # dummy segment, need this to stop tweezers due to spectrum card bug
-            spectrum_manager.start_tweezers(t)
-            t += 2e-3
-            spectrum_manager.stop_tweezers(t)
-            spectrum_manager.stop_tweezer_card()
+            if stop_card:
+                # dummy segment, need this to stop tweezers due to spectrum card bug
+                spectrum_manager.start_tweezers(t)
+                t += 2e-3
+                spectrum_manager.stop_tweezers(t)
+                spectrum_manager.stop_tweezer_card()
         elif self.spectrum_mode == 'fifo':
             spectrum_manager_fifo.stop_tweezers(t)
-            spectrum_manager_fifo.stop_tweezer_card()
+            if stop_card:
+                spectrum_manager_fifo.stop_tweezer_card()
         return t
 
     def intensity_servo_keep_on(self, t):
