@@ -501,12 +501,23 @@ class RydbergOperations(TweezerOperations):
             t_aom_stop = t_aom_start + shot_globals.ryd_456_duration
 
         if shot_globals.do_tw_trap_off:
-            # self.TweezerLaser_obj.ramp_power(t_aom_start - 0.6e-6 - 3e-6 - shot_globals.tw_ramp_dur, shot_globals.tw_ramp_dur, 0.14)
+            self.TweezerLaser_obj.ramp_power(
+                t_aom_start - 0.6e-6 - 3e-6 - shot_globals.tw_ramp_dur,
+                shot_globals.tw_ramp_dur,
+                0.14,
+            )
             self.TweezerLaser_obj.aom_off(t_aom_start - 0.6e-6, digital_only=True)
             self.TweezerLaser_obj.aom_on(t_aom_stop + 0.6e-6, 0.99)
 
-            # self.TweezerLaser_obj.aom_off(t_aom_start - 0.6e-6, digital_only=True)
-            # self.TweezerLaser_obj.aom_on(t_aom_stop + 0.6e-6, 0.99, digital_only=True)
+            # release-recapture temperature measurement code
+
+            # self.TweezerLaser_obj.aom_off(t, digital_only=True)
+            # self.TweezerLaser_obj.aom_on(t + shot_globals.ryd_456_duration, 0.99)
+
+            # self.TweezerLaser_obj.aom_off(t, digital_only=True)
+            # self.TweezerLaser_obj.aom_on(t + shot_globals.ryd_456_duration, shot_globals.tw_ramp_power, digital_only=True)
+            # t+= 30e-3
+            # self.TweezerLaser_obj.aom_on(t, 0.99)
 
             
             # self.TweezerLaser_obj.ramp_power(t_aom_stop, shot_globals.tw_ramp_dur, 0.99)
