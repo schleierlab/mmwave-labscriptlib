@@ -467,6 +467,15 @@ class RydbergOperations(TweezerOperations):
                                  shot_globals.ryd_E_shift_phi)
             self.EField_obj.set_efield_shift(t, E_field_shift_vec, polar = True)
 
+        
+        if shot_globals.do_tweezer_modulation:
+            dur = 20e-3
+            amp = 0.05
+            freq = shot_globals.tw_modulation_freq
+            
+            self.TweezerLaser_obj.sine_mod_power(t, dur, amp, freq)
+            self.TweezerLaser_obj.aom_on(t+dur, shot_globals.tw_ramp_power)
+
         t += 30e-3
         ls.add_time_marker(t, 'Rydberg physics')
         if shot_globals.do_ramsey:

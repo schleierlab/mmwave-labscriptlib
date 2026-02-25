@@ -713,7 +713,7 @@ class TweezerLaser:
             angfreq=2 * np.pi * freq,
             phase=0,
             dc_offset=self.tweezer_power,
-            samplerate=1e5,
+            samplerate=0.3e6,  # sets modulation Nyquist freq of 150 kHz
         )
 
 class LocalAddressLaser:
