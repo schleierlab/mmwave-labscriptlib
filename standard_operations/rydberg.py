@@ -530,7 +530,12 @@ class RydbergOperations(TweezerOperations):
             # 10 ms pulse length is unimportant
             # (just needs to be >> Rydberg lifetime)
             # detuning should just be away from any resonances
-            _ = self.Microwave_obj.do_mmwave_pulse(t_aom_stop-spectrum_card_delay, shot_globals.mmwave_pulse_time)
+            _ = self.Microwave_obj.do_mmwave_pulse(
+                t_aom_stop - spectrum_card_delay,
+                shot_globals.mmwave_pulse_time,
+                detuning=shot_globals.mmwave_spectrum_freq,
+                phase=0,
+            )
 
         if shot_globals.do_microwave_kill:
             _ = self.Microwave_obj.do_pulse(t_aom_stop-self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET+3e-6, 10e-6)
@@ -638,6 +643,7 @@ class RydbergOperations(TweezerOperations):
         # else:
         # Timing?
         mmwave_offset_t = (shot_globals.ryd_state_wait_time - shot_globals.mmwave_pi_pulse_t) / 2
+        print(mmwave_offset_t, t_aom_stop_0, spectrum_card_delay)
         self.Microwave_obj.do_mmwave_pulse(
             t_aom_stop_0 - spectrum_card_delay + mmwave_offset_t,
             shot_globals.mmwave_pi_pulse_t,
@@ -796,6 +802,68 @@ class RydbergOperations(TweezerOperations):
         t = self.reset_mot(t)
 
         return t
+    
+    def _prep_science_and_readout(self, t):
+        t = self.load_tweezers(t)
+        t = self.image_tweezers(t, shot_number=1)
+
+        # t += 1e-3
+        if shot_globals.do_rearrangement:
+            t += shot_globals.img_wait_time_between_shots
+            t = self.image_tweezers(t, shot_number=2) # 2nd image taken after rearragnement
+
+        t = self.pump_then_rotate(
+            t,
+            (shot_globals.ryd_bias_amp,
+             shot_globals.ryd_bias_phi,
+             shot_globals.ryd_bias_theta),
+             polar=True) # trap is lowered when optical pump happens
+
+        # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99) # ramp trap power back
+        t += 5e-3
+
+        E_field_shift_vec = (shot_globals.ryd_E_shift_amp,
+                             shot_globals.ryd_E_shift_theta,
+                             shot_globals.ryd_E_shift_phi)
+        self.EField_obj.set_efield_shift(t, E_field_shift_vec, polar = True)
+
+        t += 30e-3
+
+        ls.add_time_marker(t, 'Rydberg pulses')
+
+        t, pulse_start_times = self.RydLasers_obj.do_rydberg_multipulses(
+                t,
+                n_pulses=2,
+                pulse_dur= shot_globals.ryd_456_duration,
+                pulse_wait_dur = shot_globals.ryd_state_wait_time,
+                power_456 = shot_globals.ryd_456_power,
+                power_1064 = shot_globals.ryd_1064_power,
+                close_shutter=True,
+                long_1064=True,
+            )
+        t_aom_start = pulse_start_times[0]
+        t_aom_stop_0 = t_aom_start + shot_globals.ryd_456_duration
+        t_aom_stop_1 = t_aom_start + shot_globals.ryd_456_duration * 2 + shot_globals.ryd_state_wait_time
+        self.TweezerLaser_obj.aom_off(t_aom_start - 0.6e-6, digital_only=True)
+        self.TweezerLaser_obj.aom_on(t_aom_stop_1 + 0.6e-6, 0.99)
+
+        # do ramsey
+    
+
+        # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
+        t += 10e-3  # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
+        # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
+        # t += shot_globals.img_wait_time_between_shots
+        # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99) # ramp trap power back
+
+        if shot_globals.do_rearrangement:
+            t = self.image_tweezers(t, shot_number=3) # 3rd image (taken after rydberg if we do rearrangement)
+        else:
+            t = self.image_tweezers(t, shot_number=2)
+        t = self.take_in_shot_background(t)
+        t = self.reset_mot(t)
+
+        return t_aom_stop_0, t
 
     def _do_ryd_multipulse_check_sequence(self, t):
         """Perform a Rydberg pulse excitation check sequence.

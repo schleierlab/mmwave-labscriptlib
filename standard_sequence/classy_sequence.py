@@ -88,6 +88,9 @@ from labscriptlib.standard_operations import (
     RydbergOperations,
     TweezerOperations,
 )
+from labscriptlib.science_sequences import (
+    GHZSequences
+)
 
 logger = logging.getLogger(__name__)
 
@@ -250,6 +253,21 @@ if __name__ == "__main__":
         RydSequence_obj = RydbergOperations(t)
         sequence_objects.append(RydSequence_obj)
         t = RydSequence_obj._do_1064_light_shift_check_sequence(t)
+    
+    
+    #=================================================================================
+    #Science sequences
+
+    #GHZ States
+    elif shot_globals.do_variable_rotation_parity_fringe:
+        GHZSequences_obj = GHZSequences(t)
+        sequence_objects.append(GHZSequences_obj)
+        t = GHZSequences_obj.variable_rotation_parity_fringe(t)
+
+    elif shot_globals.do_interaction_based_readout:
+        GHZSequences_obj = GHZSequences(t)
+        sequence_objects.append(GHZSequences_obj)
+        t = GHZSequences_obj.interaction_based_readout(t)
 
     """ Here doing all the finish up quirk for spectrum cards """
     # Find the first non-None sequence object
