@@ -11,7 +11,6 @@ from labscriptlib.connection_table import devices
 from labscriptlib.tweezers_phaseAmplitudeAdjustment import trap_phase, trap_amplitude
 from labscriptlib.shot_globals import shot_globals
 
-devices.initialize()
 #Note 20230327: can only use one channel for fifo mode for now.
 
 

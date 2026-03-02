@@ -18,9 +18,6 @@ if not shot_globals.TW_y_use_dds:
 else:
     TW_y_channel = False  # use dds for tweezer y channel
 
-devices.initialize()
-
-
 class SpectrumManager:
     def __init__(self):
         # Flags for tweezer card (spectrum_0)
