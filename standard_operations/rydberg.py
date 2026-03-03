@@ -501,19 +501,20 @@ class RydbergOperations(TweezerOperations):
             t_aom_stop = t_aom_start + shot_globals.ryd_456_duration
 
         if shot_globals.do_tw_trap_off:
-            self.TweezerLaser_obj.ramp_power(
-                t_aom_start - 0.6e-6 - 3e-6 - shot_globals.tw_ramp_dur,
-                shot_globals.tw_ramp_dur,
-                0.14,
-            )
-            self.TweezerLaser_obj.aom_off(t_aom_start - 0.6e-6, digital_only=True)
-            self.TweezerLaser_obj.aom_on(t_aom_stop + 0.6e-6, 0.99)
+            # self.TweezerLaser_obj.ramp_power(
+            #     t_aom_start - 0.6e-6 - 3e-6 - shot_globals.tw_ramp_dur,
+            #     shot_globals.tw_ramp_dur,
+            #     0.14,
+            # )
+            if shot_globals.do_ryd_lifetime_check:
+                ryd_delay_time = shot_globals.ryd_tweezer_drop_time - shot_globals.ryd_state_wait_time
+                self.TweezerLaser_obj.aom_off(t_aom_start - ryd_delay_time - 0.6e-6, digital_only=True)
+                self.TweezerLaser_obj.aom_on(t_aom_stop + shot_globals.ryd_state_wait_time + 0.6e-6, 0.14)
+            else:
+                self.TweezerLaser_obj.aom_off(t_aom_start - 0.6e-6, digital_only=True)
+                self.TweezerLaser_obj.aom_on(t_aom_stop + 0.6e-6, 0.99)
 
             # release-recapture temperature measurement code
-
-            # self.TweezerLaser_obj.aom_off(t, digital_only=True)
-            # self.TweezerLaser_obj.aom_on(t + shot_globals.ryd_456_duration, 0.99)
-
             # self.TweezerLaser_obj.aom_off(t, digital_only=True)
             # self.TweezerLaser_obj.aom_on(t + shot_globals.ryd_456_duration, shot_globals.tw_ramp_power, digital_only=True)
             # t+= 30e-3
@@ -521,6 +522,11 @@ class RydbergOperations(TweezerOperations):
 
             
             # self.TweezerLaser_obj.ramp_power(t_aom_stop, shot_globals.tw_ramp_dur, 0.99)
+        
+        if shot_globals.do_gs_pushout:
+            shutter_config = ShutterConfig.OPTICAL_PUMPING
+            dur = shot_globals.ryd_state_delay_time
+            _ = self.D2Lasers_obj.do_pulse(t_aom_stop + 0.6e-6, dur, shutter_config, 1, 1, close_all_shutters=False, aom_leave_on = False)
 
         # Fudge time based on picoscope observation when NOT rearranging; depends on expt timing
         spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET - 30e-6
