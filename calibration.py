@@ -269,20 +269,20 @@ def voltages_to_bfield(voltages):
 
 # unit: V, MHz shift on 41S state
 def Ex_calib(shift):
-    V0 = 0.29 #0.5243 # V
-    a = 0.09 #546.8 # MHz/V^2
+    V0 = 0.58 #0.5243 # V
+    a = 0.08 #0.09 #546.8 # MHz/V^2
     voltage = np.sign(shift)*np.sqrt(np.abs(shift)/a) + V0
     return voltage
 
 def Ey_calib(shift):
-    V0 = 0 #0.5243 # V
+    V0 = -0.07 #0.5243 # V
     a = 0.35 #546.8 # MHz/V^2
     voltage = np.sign(shift)*np.sqrt(np.abs(shift)/a) + V0
     return voltage
 
 
 def Ez_calib(shift):
-    V0 = -0.01 #0.5243 # V
+    V0 = 0.24 #0.5243 # V
     a = 0.41 #546.8 # MHz/V^2
     voltage = np.sign(shift)*np.sqrt(np.abs(shift)/a) + V0
     return voltage
