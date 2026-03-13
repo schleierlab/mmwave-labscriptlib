@@ -528,10 +528,3 @@ class EField:
             )
 
         self.set_electric_field(t, voltage_vec)
-
-
-
-
-
-
-

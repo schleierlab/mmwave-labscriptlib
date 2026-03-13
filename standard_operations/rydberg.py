@@ -467,7 +467,6 @@ class RydbergOperations(TweezerOperations):
                                  shot_globals.ryd_E_shift_phi)
             self.EField_obj.set_efield_shift(t, E_field_shift_vec, polar = True)
 
-        
         if shot_globals.do_tweezer_modulation:
             dur = 20e-3
             amp = 0.05
@@ -625,28 +624,6 @@ class RydbergOperations(TweezerOperations):
         # spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET - 25.25e-6  # without rearrangement
         spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET - 24.57e-6  # with rearrangement
 
-        # if shot_globals.do_mmwave_ramsey:
-        #     ramsey_time = shot_globals.mmwave_pi_half_pulse_t*2 + shot_globals.mmwave_ramsey_wait_time
-        #     mmwave_offset_t = (shot_globals.ryd_state_wait_time - ramsey_time)/2
-
-        #     first_pulse_end_time = self.Microwave_obj.do_mmwave_pulse(
-        #         t_aom_stop_0 - spectrum_card_delay + mmwave_offset_t,
-        #         shot_globals.mmwave_pi_half_pulse_t,
-        #         detuning=shot_globals.mmwave_spectrum_freq,
-        #         phase=0,
-        #         keep_switch_on=True,
-        #         switch_offset = spectrum_card_delay,
-        #     )
-        #     phase_accumulation_degrees = 360 * (shot_globals.mmwave_spectrum_freq) * (shot_globals.mmwave_pi_half_pulse_t + shot_globals.mmwave_ramsey_wait_time)
-
-        #     self.Microwave_obj.do_mmwave_pulse(
-        #         first_pulse_end_time + shot_globals.mmwave_ramsey_wait_time,
-        #         shot_globals.mmwave_pi_half_pulse_t,
-        #         detuning=shot_globals.mmwave_spectrum_freq,
-        #         phase=phase_accumulation_degrees,
-        #         switch_offset = spectrum_card_delay,
-        #     )
-        # else:
         # Timing?
         mmwave_offset_t = (shot_globals.ryd_state_wait_time - shot_globals.mmwave_pi_pulse_t) / 2
         print(mmwave_offset_t, t_aom_stop_0, spectrum_card_delay)
