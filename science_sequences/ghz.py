@@ -22,7 +22,7 @@ class GHZSequences(RydbergOperations):
     def __init__(self, t):
         super(GHZSequences, self).__init__(t)
     
-        self.CONST_spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET - 25.35e-6#26.65e-6
+        self.CONST_spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET - 24.65e-6#26.65e-6
 
     def ensure_list(param):
             if np.isscalar(param):
@@ -34,6 +34,8 @@ class GHZSequences(RydbergOperations):
         """
         Perform a mm-wave rotation with an axis pointing on the Bloch sphere equator.
         The Bloch sphere is oriented with initial state |e> along the north pole.
+        The phase is reference to the fixed time self.t0,
+        which is defined by the @science_sequence decorator.
 
         Parameters
         ----------
@@ -55,7 +57,7 @@ class GHZSequences(RydbergOperations):
             detuning=pulse_frequency,
             phase=(axis_azimuth_deg + phase_accrual),
             keep_switch_on=keep_switch_on,
-            switch_offset=self.CONST_spectrum_card_delay - 1e-6
+            switch_offset=self.CONST_spectrum_card_delay,
         )
 
         return t + duration
@@ -79,6 +81,7 @@ class GHZSequences(RydbergOperations):
             t,
             axis_azimuth_deg=-180,
             rotation_angle_deg=shot_globals.mmwave_readout_pulse_phase,
+            keep_switch_on=False,
         )
 
     @science_sequence
@@ -106,6 +109,7 @@ class GHZSequences(RydbergOperations):
             t,
             axis_azimuth_deg=shot_globals.mmwave_readout_pulse_phase,
             rotation_angle_deg=90,
+            keep_switch_on=False,
         )
         raise NotImplementedError
 
