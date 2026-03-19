@@ -537,7 +537,7 @@ class RydbergOperations(TweezerOperations):
             # detuning should just be away from any resonances
             _ = self.Microwave_obj.do_mmwave_pulse(
                 t_aom_stop - spectrum_card_delay,
-                shot_globals.mmwave_pulse_time,
+                shot_globals.mmwave_kill_pulse_time,
                 detuning=shot_globals.mmwave_spectrum_freq,
                 phase=0,
             )
