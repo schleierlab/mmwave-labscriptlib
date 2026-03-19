@@ -62,6 +62,15 @@ class GHZSequences(RydbergOperations):
 
         return t + duration
 
+    def evolve(self, t, duration, echo: bool = False):
+        if echo:
+            t = t + duration / 2
+            self.rotate_about_phi(t, axis_azimuth_deg=0, rotation_angle_deg=180)
+            t = t + duration / 2
+            return t
+        else:
+            return t + duration
+
     @science_sequence
     def variable_rotation_parity_fringe(self, t):
         """
@@ -126,19 +135,27 @@ class GHZSequences(RydbergOperations):
             rotation_angle_deg=90
         )
 
-        t += shot_globals.interaction_time
+        t = self.evolve(
+            t,
+            duration=shot_globals.interaction_time,
+            echo=shot_globals.do_mmwave_spin_echo,
+        )
 
-        # t = self.rotate_about_phi(
-        #     t,
-        #     axis_azimuth_deg=180,
-        #     rotation_angle_deg=shot_globals.mmwave_readout_pulse_phase,
-        # )
+        t = self.rotate_about_phi(
+            t,
+            axis_azimuth_deg=0,
+            rotation_angle_deg=shot_globals.mmwave_readout_pulse_phase,
+        )
 
-        # t += shot_globals.interaction_time
+        t = self.evolve(
+            t,
+            duration=shot_globals.interaction_time,
+            echo=shot_globals.do_mmwave_spin_echo,
+        )
 
         t = self.rotate_about_phi(
             t, 
-            axis_azimuth_deg=-90, 
+            axis_azimuth_deg=90, 
             rotation_angle_deg=90,
             keep_switch_on=False
         )
