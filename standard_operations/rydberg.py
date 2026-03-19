@@ -734,7 +734,7 @@ class RydbergOperations(TweezerOperations):
         spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET - 24.65e-6 #29.30e-6
 
         # do ramsey
-        ramsey_time = shot_globals.mmwave_pi_half_pulse_t*2 + shot_globals.mmwave_ramsey_wait_time
+        ramsey_time = shot_globals.mmwave_pi_pulse_t + shot_globals.mmwave_ramsey_wait_time
         mmwave_offset_t = (shot_globals.ryd_state_wait_time - ramsey_time)/2
 
         def ensure_list(param):
@@ -747,7 +747,7 @@ class RydbergOperations(TweezerOperations):
 
         first_pulse_end_time = self.Microwave_obj.do_mmwave_pulse(
             t_aom_stop_0 - spectrum_card_delay + mmwave_offset_t,
-            shot_globals.mmwave_pi_half_pulse_t,
+            shot_globals.mmwave_pi_pulse_t/2,
             detuning=shot_globals.mmwave_spectrum_freq,
             phase=[0]*num_of_tone,
             keep_switch_on=True,
@@ -755,19 +755,20 @@ class RydbergOperations(TweezerOperations):
         )
 
         if shot_globals.do_mmwave_spin_echo:
-            phase_accumulation_degrees = 360 * (shot_globals.mmwave_spectrum_freq) * (shot_globals.mmwave_pi_half_pulse_t + shot_globals.mmwave_ramsey_wait_time/2)
-            second_pulse_end_time = self.Microwave_obj.do_mmwave_pulse(
+            phase_accumulation_degrees = 360 * (shot_globals.mmwave_spectrum_freq) * (shot_globals.mmwave_pi_pulse_t/2 + shot_globals.mmwave_ramsey_wait_time/2)
+            echo_pulse_end_time = self.Microwave_obj.do_mmwave_pulse(
                 first_pulse_end_time + shot_globals.mmwave_ramsey_wait_time/2,
                 shot_globals.mmwave_pi_pulse_t,
                 detuning=shot_globals.mmwave_spectrum_freq,
-                phase=phase_accumulation_degrees,
+                phase=(phase_accumulation_degrees + shot_globals.mmwave_echo_pulse_phase),
+                keep_switch_on=True,
                 switch_offset = spectrum_card_delay,
             )
-            pulse_start_time = second_pulse_end_time + shot_globals.mmwave_ramsey_wait_time/2
-            accumulated_time = shot_globals.mmwave_pi_half_pulse_t + shot_globals.mmwave_ramsey_wait_time + shot_globals.mmwave_pi_pulse_t
+            final_pulse_start_time = echo_pulse_end_time + shot_globals.mmwave_ramsey_wait_time/2
+            accumulated_time = shot_globals.mmwave_pi_pulse_t/2 + shot_globals.mmwave_ramsey_wait_time + shot_globals.mmwave_pi_pulse_t
         else:
-            pulse_start_time = first_pulse_end_time + shot_globals.mmwave_ramsey_wait_time
-            accumulated_time = (shot_globals.mmwave_pi_half_pulse_t + shot_globals.mmwave_ramsey_wait_time)
+            final_pulse_start_time = first_pulse_end_time + shot_globals.mmwave_ramsey_wait_time
+            accumulated_time = (shot_globals.mmwave_pi_pulse_t/2 + shot_globals.mmwave_ramsey_wait_time)
 
         phase_accumulation_degrees = 360 * (ensure_list(shot_globals.mmwave_spectrum_freq)[0]) * accumulated_time
         end_pulse_phase = (
@@ -777,9 +778,8 @@ class RydbergOperations(TweezerOperations):
         )
 
         self.Microwave_obj.do_mmwave_pulse(
-            pulse_start_time,
-            # shot_globals.ramsey_2nd_pulse_t,
-            shot_globals.mmwave_pi_half_pulse_t,
+            final_pulse_start_time,
+            shot_globals.mmwave_pi_pulse_t/2,
             detuning=shot_globals.mmwave_spectrum_freq,
             phase= end_pulse_phase,
             switch_offset = spectrum_card_delay,
