@@ -594,10 +594,17 @@ class RydbergOperations(TweezerOperations):
         # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99) # ramp trap power back
         t += 5e-3
 
-        E_field_shift_vec = (shot_globals.ryd_E_shift_amp,
-                             shot_globals.ryd_E_shift_theta,
-                             shot_globals.ryd_E_shift_phi)
-        self.EField_obj.set_efield_shift(t, E_field_shift_vec, polar = True)
+        #Switch E_field
+        if shot_globals.do_Efield_calib:
+            voltage_diff_vector = (shot_globals.Efield_Vx,
+                                   shot_globals.Efield_Vy,
+                                   shot_globals.Efield_Vz)
+            self.EField_obj.set_electric_field(t, voltage_diff_vector)
+        else:
+            E_field_shift_vec = (shot_globals.ryd_E_shift_amp,
+                                 shot_globals.ryd_E_shift_theta,
+                                 shot_globals.ryd_E_shift_phi)
+            self.EField_obj.set_efield_shift(t, E_field_shift_vec, polar = True)
 
         t += 30e-3
 
@@ -692,10 +699,17 @@ class RydbergOperations(TweezerOperations):
         # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99) # ramp trap power back
         t += 5e-3
 
-        E_field_shift_vec = (shot_globals.ryd_E_shift_amp,
-                             shot_globals.ryd_E_shift_theta,
-                             shot_globals.ryd_E_shift_phi)
-        self.EField_obj.set_efield_shift(t, E_field_shift_vec, polar = True)
+        #Switch E_field
+        if shot_globals.do_Efield_calib:
+            voltage_diff_vector = (shot_globals.Efield_Vx,
+                                   shot_globals.Efield_Vy,
+                                   shot_globals.Efield_Vz)
+            self.EField_obj.set_electric_field(t, voltage_diff_vector)
+        else:
+            E_field_shift_vec = (shot_globals.ryd_E_shift_amp,
+                                 shot_globals.ryd_E_shift_theta,
+                                 shot_globals.ryd_E_shift_phi)
+            self.EField_obj.set_efield_shift(t, E_field_shift_vec, polar = True)
 
         t += 30e-3
 
