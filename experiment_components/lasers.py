@@ -918,7 +918,12 @@ class RydLasers:
         # Initialize 456nm laser detuning
         # the initial detuning every ramp start and end to
         self.detuning_456 = init_blue_detuning
-        devices.dds1.synthesize(t, freq = self.detuning_456, amp = 0.5, ph = 0)
+        devices.dds1.synthesize(
+            t,
+            freq=self.detuning_456,
+            amp=0.1,  # 0.1 for AOSense setup; 0.5 for MOGLabs setup
+            ph=0,
+        )
         # Initialize shutter state
         self.shutter_open = False
 
@@ -958,7 +963,7 @@ class RydLasers:
         t_step = np.linspace(t - dur, t, num_steps)
         freq_step = np.linspace(start_freq, end_freq, num_steps)
         for i in np.arange(num_steps):
-            devices.dds1.synthesize(t_step[i], freq = freq_step[i], amp = 0.7, ph = 0)
+            devices.dds1.synthesize(t_step[i], freq = freq_step[i], amp = 0.1, ph = 0)
 
         self.detuning_456 = end_freq
         return t
