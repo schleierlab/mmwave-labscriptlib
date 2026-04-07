@@ -267,23 +267,27 @@ def voltages_to_bfield(voltages):
     return (voltages - bfield_calibration_offsets) * bfield_calibration_gains
 
 
-# unit: V, MHz shift on 41S state
+# unit: V, MHz shift on 41S-40P_3/2, mj = 3/2 transition
+# Note: the commented out values are calibration based on ground-41S shift. 
+# We switched our calibrtaion method to measure the mmwave shift instad because it is more sensitive. 
+# For 41S, we have ΔE = -6.36E^2 (V/cm -> MHz)
+# Whereas for 41S-40P_3/2, mj = 3/2, we have Δ(δE) = -97E^2 (V/cm -> MHz)
+# (See Google Doc 2026Week11)
 def Ex_calib(shift):
-    V0 = 0.58 #0.5243 # V
-    a = 0.08 #0.09 #546.8 # MHz/V^2
+    V0 = 0.646 # V
+    a = 0.73 #1.35 #0.08 # MHz/V^2
     voltage = np.sign(shift)*np.sqrt(np.abs(shift)/a) + V0
     return voltage
 
 def Ey_calib(shift):
-    V0 = -0.07 #0.5243 # V
-    a = 0.35 #546.8 # MHz/V^2
+    V0 = -0.0812 # V
+    a = 7.22 #6.07 #0.35 # MHz/V^2
     voltage = np.sign(shift)*np.sqrt(np.abs(shift)/a) + V0
     return voltage
 
-
 def Ez_calib(shift):
-    V0 = 0.24 #0.5243 # V
-    a = 0.41 #546.8 # MHz/V^2
+    V0 = 0.275 # V
+    a = 5.3 #6.7 #0.41 # MHz/V^2
     voltage = np.sign(shift)*np.sqrt(np.abs(shift)/a) + V0
     return voltage
 
