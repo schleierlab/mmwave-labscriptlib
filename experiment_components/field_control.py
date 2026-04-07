@@ -489,16 +489,27 @@ class EField:
         electrode_voltages: tuple, shape (8,)
         """
         vx, vy, vz = voltage_diff_vector
+        vx2, vy2, vz2 = vx/2, vy/2, vz/2
 
+        # electrode_voltages = (
+        #     vx + vy,
+        #     vy,
+        #     vx + vy + vz,
+        #     vy + vz,
+        #     vx,
+        #     0,
+        #     vx + vz,
+        #     vz,
+        # )
         electrode_voltages = (
-            vx + vy,
-            vy,
-            vx + vy + vz,
-            vy + vz,
-            vx,
-            0,
-            vx + vz,
-            vz,
+            + vx2 + vy2 - vz2,
+            - vx2 + vy2 - vz2,
+            + vx2 + vy2 + vz2,
+            - vx2 + vy2 + vz2,
+            + vx2 - vy2 - vz2,
+            - vx2 - vy2 - vz2,
+            + vx2 - vy2 + vz2,
+            - vx2 - vy2 + vz2,
         )
 
         return electrode_voltages
