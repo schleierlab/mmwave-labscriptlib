@@ -509,15 +509,15 @@ class LabDevices():
         #     BIAS_port=54324,
         # )
 
-        self.manta419b_local_addr = Manta419B(
-            'manta419b_local_addr',
+        self.manta419b_la_coll = Manta419B(
+            'manta419b_la_coll',
             parent_device=ni_6363_0,
             connection="port0/line21",
             BIAS_port=54325,
         )
 
-        self.manta419b_local_addr_focused = Manta419B(
-            'manta419b_local_addr_focused',
+        self.manta419b_la_focal = Manta419B(
+            'manta419b_la_focal',
             parent_device=ni_6363_0,
             connection="port0/line22",
             BIAS_port=54326,

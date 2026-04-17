@@ -51,7 +51,7 @@ class Camera:
             )
         
         if self.type == "local_addr_manta":
-            devices.manta419b_local_addr.expose(
+            devices.manta419b_la_coll.expose(
                 "manta419b",
                 t,
                 "atoms",
