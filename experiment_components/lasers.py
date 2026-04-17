@@ -1410,7 +1410,7 @@ class RydLasers:
             close_shutter: bool = False,
             in_dipole_trap: bool = False,
             long_1064: bool = False,
-            pd_analog_in: bool = True # monitor pd signal through photodetector analog in
+            pd_analog_in: bool = True, # monitor pd signal through photodetector analog in
     ):
         '''
         turn analog on 10 us earlier than the digital so there won't be pulseblaster related errors from the labscript
@@ -1427,8 +1427,9 @@ class RydLasers:
         # turn analog on 10 us earlier than the digital
         # workaround for timing limitation on pulseblaster due to labscript
         # https://groups.google.com/g/labscriptsuite/c/QdW6gUGNwQ0
-        aom_analog_ctrl_anticipation = 10e-6
-        extra_time_1064 = self.CONST_EXTRA_TIME_1064*long_1064
+        # must be longer (25e-6) when doing gs push out to avoid error from NI analog channels being too close in time to each other
+        aom_analog_ctrl_anticipation = 45e-6
+        extra_time_1064 = self.CONST_EXTRA_TIME_1064 * int(long_1064)
         if not self.shutter_open:
             if power_456 != 0:
                 t = self.update_blue_456_shutter(t, "open")
@@ -1453,8 +1454,8 @@ class RydLasers:
                     self.pulse_1064_aom_on(t, power_1064, digital_only=True)
 
         t_aom_start = t
-
         t += dur
+
         self.pulse_456_aom_off(t, digital_only=True)
         devices.pulse_456_aom_analog.constant(t + aom_analog_ctrl_anticipation, 0)
 
@@ -1471,7 +1472,6 @@ class RydLasers:
             if power_456 != 0:
                 t = self.update_blue_456_shutter(t, "close")
             self.pulse_456_aom_on(t, 1, digital_only=True)
-
 
         # logging the photodiode signal to analog in
         if pd_analog_in:
