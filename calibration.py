@@ -274,20 +274,20 @@ def voltages_to_bfield(voltages):
 # Whereas for 41S-40P_3/2, mj = 3/2, we have Δ(δE) = -97E^2 (V/cm -> MHz)
 # (See Google Doc 2026Week11)
 def Ex_calib(shift):
-    V0 = 0.646 # V
-    a = 0.73 #1.35 #0.08 # MHz/V^2
+    V0 = 1.169 #0.60 #0.646 # V
+    a = 0.63 #0.759 #0.73 #1.35 #0.08 # MHz/V^2
     voltage = np.sign(shift)*np.sqrt(np.abs(shift)/a) + V0
     return voltage
 
 def Ey_calib(shift):
-    V0 = -0.0812 # V
-    a = 7.22 #6.07 #0.35 # MHz/V^2
+    V0 = -0.133 #-0.098 #-0.0812 # V
+    a = 5.46 #7.11 #7.22 #6.07 #0.35 # MHz/V^2
     voltage = np.sign(shift)*np.sqrt(np.abs(shift)/a) + V0
     return voltage
 
 def Ez_calib(shift):
-    V0 = 0.275 # V
-    a = 5.3 #6.7 #0.41 # MHz/V^2
+    V0 = 0.164#0.2107 #0.275 # V
+    a = 4.63 #5.98 #5.3 #6.7 #0.41 # MHz/V^2
     voltage = np.sign(shift)*np.sqrt(np.abs(shift)/a) + V0
     return voltage
 

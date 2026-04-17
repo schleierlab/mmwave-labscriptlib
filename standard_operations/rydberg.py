@@ -72,6 +72,22 @@ class RydbergOperations(TweezerOperations):
 
         return t
 
+    def set_electric_field(self, t):
+        if shot_globals.do_Efield_calib:
+            voltage_diff_vector = (
+                shot_globals.Efield_Vx,
+                shot_globals.Efield_Vy,
+                shot_globals.Efield_Vz,
+            )
+            self.EField_obj.set_electric_field(t, voltage_diff_vector)
+        else:
+            E_field_shift_vec = (
+                shot_globals.ryd_E_shift_amp,
+                shot_globals.ryd_E_shift_theta,
+                shot_globals.ryd_E_shift_phi,
+            )
+            self.EField_obj.set_efield_shift(t, E_field_shift_vec, polar=True)
+
     def _do_dipole_trap_sequence(self, t):
         t = self.load_dipole_trap(t)
         t += 1e-3
@@ -456,16 +472,7 @@ class RydbergOperations(TweezerOperations):
         # because the analog change from tweezer ramp power
 
         #Switch E_field
-        if shot_globals.do_Efield_calib:
-            voltage_diff_vector = (shot_globals.Efield_Vx,
-                                   shot_globals.Efield_Vy,
-                                   shot_globals.Efield_Vz)
-            self.EField_obj.set_electric_field(t, voltage_diff_vector)
-        else:
-            E_field_shift_vec = (shot_globals.ryd_E_shift_amp,
-                                 shot_globals.ryd_E_shift_theta,
-                                 shot_globals.ryd_E_shift_phi)
-            self.EField_obj.set_efield_shift(t, E_field_shift_vec, polar = True)
+        self.set_electric_field(t)
 
         if shot_globals.do_tweezer_modulation:
             dur = 20e-3
@@ -595,17 +602,7 @@ class RydbergOperations(TweezerOperations):
         t += 5e-3
 
         #Switch E_field
-        if shot_globals.do_Efield_calib:
-            voltage_diff_vector = (shot_globals.Efield_Vx,
-                                   shot_globals.Efield_Vy,
-                                   shot_globals.Efield_Vz)
-            self.EField_obj.set_electric_field(t, voltage_diff_vector)
-        else:
-            E_field_shift_vec = (shot_globals.ryd_E_shift_amp,
-                                 shot_globals.ryd_E_shift_theta,
-                                 shot_globals.ryd_E_shift_phi)
-            self.EField_obj.set_efield_shift(t, E_field_shift_vec, polar = True)
-
+        self.set_electric_field(t)
         t += 30e-3
 
         ls.add_time_marker(t, 'Rydberg pulses')
@@ -700,16 +697,7 @@ class RydbergOperations(TweezerOperations):
         t += 5e-3
 
         #Switch E_field
-        if shot_globals.do_Efield_calib:
-            voltage_diff_vector = (shot_globals.Efield_Vx,
-                                   shot_globals.Efield_Vy,
-                                   shot_globals.Efield_Vz)
-            self.EField_obj.set_electric_field(t, voltage_diff_vector)
-        else:
-            E_field_shift_vec = (shot_globals.ryd_E_shift_amp,
-                                 shot_globals.ryd_E_shift_theta,
-                                 shot_globals.ryd_E_shift_phi)
-            self.EField_obj.set_efield_shift(t, E_field_shift_vec, polar = True)
+        self.set_electric_field(t)
 
         t += 30e-3
 
@@ -819,10 +807,7 @@ class RydbergOperations(TweezerOperations):
         # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99) # ramp trap power back
         t += 5e-3
 
-        E_field_shift_vec = (shot_globals.ryd_E_shift_amp,
-                             shot_globals.ryd_E_shift_theta,
-                             shot_globals.ryd_E_shift_phi)
-        self.EField_obj.set_efield_shift(t, E_field_shift_vec, polar = True)
+        self.set_electric_field(t)
 
         t += 30e-3
 
@@ -1187,10 +1172,13 @@ class RydbergOperations(TweezerOperations):
         )
 
         if shot_globals.do_mw_pulse:
-            uwave_start_time = t_aom_start-self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET + mw_buffer_t
+            uwave_start_time = t_aom_start - self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET + mw_buffer_t
             tweezer_lower_buffer_t = 100e-6
             self.TweezerLaser_obj.aom_on(uwave_start_time - tweezer_lower_buffer_t, 0.14)
-            t = self.Microwave_obj.do_pulse(uwave_start_time, shot_globals.mw_pulse_time)
+            t = self.Microwave_obj.do_pulse(
+                uwave_start_time,
+                shot_globals.mw_pulse_time,
+            )
             self.TweezerLaser_obj.aom_on(uwave_start_time + shot_globals.mw_pulse_time + tweezer_lower_buffer_t, shot_globals.tw_ramp_power)
 
         # elif shot_globals.do_mw_sweep:
