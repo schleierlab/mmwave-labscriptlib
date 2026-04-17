@@ -306,6 +306,9 @@ class TweezerOperations(OpticalPumpingOperations):
         # )
 
         t = self.image_tweezers(t, shot_number=1)
+        if shot_globals.do_rearrangement:
+            t += shot_globals.img_wait_time_between_shots
+            t = self.image_tweezers(t, shot_number=2) # 2nd image taken after rearragnement
 
         # t = self.TweezerLaser_obj.ramp_power(
         #     t, dur=TweezerLaser.CONST_TWEEZER_RAMPING_TIME, final_power = shot_globals.tw_ramp_power
@@ -318,9 +321,10 @@ class TweezerOperations(OpticalPumpingOperations):
         #     t, dur=TweezerLaser.CONST_TWEEZER_RAMPING_TIME, final_power = 0.99
         # )
 
-        t = self.image_tweezers(t, shot_number=2)
         if shot_globals.do_rearrangement:
-            t = self.image_tweezers(t, shot_number=3) # this adds 46 ms time offset
+            t = self.image_tweezers(t, shot_number=3) # 3rd image (taken after rydberg if we do rearrangement)
+        else:
+            t = self.image_tweezers(t, shot_number=2)
         t = self.take_in_shot_background(t)
         t = self.reset_mot(t)
 
