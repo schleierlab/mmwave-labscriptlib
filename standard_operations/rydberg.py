@@ -626,7 +626,7 @@ class RydbergOperations(TweezerOperations):
         # compensation for desynchronization between pulseblaster and spectrum card
         # subtracted time usually around 20 to 30 us
         # spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET - 25.25e-6  # without rearrangement
-        spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET - 24.57e-6  # with rearrangement
+        spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET# - 24.57e-6  # with rearrangement
 
         # Timing?
         mmwave_offset_t = (shot_globals.ryd_state_wait_time - shot_globals.mmwave_pi_pulse_t) / 2
@@ -719,7 +719,7 @@ class RydbergOperations(TweezerOperations):
         self.TweezerLaser_obj.aom_off(t_aom_start - 0.6e-6, digital_only=True)
         self.TweezerLaser_obj.aom_on(t_aom_stop_1 + 0.6e-6, 0.99)
 
-        spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET - 24.65e-6 #29.30e-6
+        spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET# - 24.65e-6 #29.30e-6
 
         # do ramsey
         ramsey_time = shot_globals.mmwave_pi_pulse_t + shot_globals.mmwave_ramsey_wait_time

@@ -22,7 +22,7 @@ class GHZSequences(RydbergOperations):
     def __init__(self, t):
         super(GHZSequences, self).__init__(t)
     
-        self.CONST_spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET - 24.65e-6#26.65e-6
+        self.CONST_spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET #- 24.65e-6#26.65e-6
 
     def ensure_list(param):
             if np.isscalar(param):
