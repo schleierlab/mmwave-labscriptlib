@@ -1338,8 +1338,8 @@ class RydLasers:
         # turn analog on 10 us earlier than the digital
         # workaround for timing limitation on pulseblaster due to labscript
         # https://groups.google.com/g/labscriptsuite/c/QdW6gUGNwQ0
-        aom_analog_ctrl_anticipation = 1e-5
-        extra_time_1064 = self.CONST_EXTRA_TIME_1064*long_1064
+        aom_analog_ctrl_anticipation = 1.5e-5
+        extra_time_1064 = self.CONST_EXTRA_TIME_1064 * int(long_1064)
 
         if not self.shutter_open:
             if power_1064 != 0:
@@ -1354,6 +1354,9 @@ class RydLasers:
                 # self.pulse_1064_aom_on(t- self.CONST_SHUTTER_TURN_ON_TIME, power_1064)
 
         for i in range(n_pulses):
+            is_first = (i == 0)
+            is_last = (i == n_pulses - 1)
+
             if just_456:
                 self.pulse_456_aom_on(t, power_456, digital_only=True)
                 # print(i, ' pulse start time:', t)
@@ -1361,16 +1364,34 @@ class RydLasers:
                 self.pulse_456_aom_off(t, digital_only=True)
                 t+= pulse_wait_dur
             else:
+                
+                if is_first:
+                    # extra_time_1064_i = extra_time_1064
+                    # extra_time_1064_f = 0
+                    extra_time_1064_i = 0.35e-6
+                    extra_time_1064_f = 0.15e-6
+                elif is_last:
+                    # extra_time_1064_i = 0.25e-6
+                    # extra_time_1064_f = extra_time_1064 - 0.25e-6
+                    extra_time_1064_i = 0.35e-6
+                    extra_time_1064_f = 0.15e-6
+                else:
+                    extra_time_1064_i = 0.25e-6
+                    extra_time_1064_f = 0
+                    
                 self.pulse_456_aom_on(t, power_456, digital_only=True)
-                self.pulse_1064_aom_on(t - extra_time_1064, power_1064, digital_only=True)
+                self.pulse_1064_aom_on(t - extra_time_1064_i, power_1064, digital_only=True)
                 t += pulse_dur
                 self.pulse_456_aom_off(t, digital_only=True)
-                self.pulse_1064_aom_off(t + extra_time_1064 , digital_only=True)
+                self.pulse_1064_aom_off(t + extra_time_1064_f, digital_only=True) #+ extra_time_1064
+                
                 t += pulse_wait_dur
 
-            pulse_start_times.append(t - pulse_wait_dur-pulse_dur)
+            pulse_start_times.append(t - pulse_wait_dur - pulse_dur)
+            if just_456:
+                self.pulse_1064_aom_off(t + extra_time_1064, digital_only=True)
 
-        self.pulse_1064_aom_off(t)
+        self.pulse_1064_aom_off(t + aom_analog_ctrl_anticipation)
         if close_shutter:
             if power_456 != 0:
                 t = self.update_blue_456_shutter(t,"close")
