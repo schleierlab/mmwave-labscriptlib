@@ -16,9 +16,6 @@ MOT:
   mot_x_coil_voltage: { value: -1, unit: V }
   mot_y_coil_voltage: { value: 0.6, unit: V }
   mot_z_coil_voltage: { value: -0.5, unit: V }
-  zero_Efield_Vx: { value: 0.58, unit: V }
-  zero_Efield_Vy: { value: -0.07, unit: V }
-  zero_Efield_Vz: { value: 0.24, unit: V }
 
 Bright_Molasses:
   bm_exposure_time: { value: 1e-3, unit: s }
