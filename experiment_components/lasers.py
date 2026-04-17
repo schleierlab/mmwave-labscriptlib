@@ -737,7 +737,7 @@ class LocalAddressLaser:
         """
         self.local_addr_power = local_addr_power
 
-        # self.intensity_servo_keep_on(t)
+        self.intensity_servo_keep_on(t)
         self.start_local_addr(t)
 
     def start_local_addr(self, t):
@@ -749,7 +749,7 @@ class LocalAddressLaser:
         spectrum_manager.start_local_addr_card()
         spectrum_manager.start_local_addr(t)
 
-        self.aom_on(t, self.local_addr_power)
+        self.aom_off(t)
 
     def stop_local_addr(self, t):
         """Safely stop and power down the optical tweezer system.
@@ -774,7 +774,7 @@ class LocalAddressLaser:
             t (float): Time to ensure servo remains active
         """
         """keep the AOM digital high for intensity servo"""
-        self.aom_on(t, 1)
+        devices.local_addr_1064_aom_digital.go_high(t)
 
     def aom_on(self, t, const, digital_only = False):
         """Turn on the tweezer beam using AOM.
