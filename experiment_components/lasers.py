@@ -436,7 +436,15 @@ class D2Lasers:
         return t
 
     def do_pulse(
-        self, t, dur, shutter_config, ta_power, repump_power, close_all_shutters=False, aom_leave_on = False
+        self,
+        t: float,
+        dur: float,
+        shutter_config: ShutterConfig,
+        ta_power: float,
+        repump_power: float,
+        close_all_shutters: bool = False,
+        aom_leave_on: bool = False,
+        early_analog: bool = False,
     ):
         """Perform a laser pulse with specified parameters.
 
@@ -467,19 +475,37 @@ class D2Lasers:
 
             self.ta_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
             self.repump_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
+        
+        analog_buffer_time = 10e-6
 
         if ta_power != 0:
-            self.ta_aom_on(t, ta_power)
+            if early_analog:
+                devices.ta_aom_digital.go_high(t)
+                devices.ta_aom_analog.constant(t - analog_buffer_time, ta_power)
+            else:
+                self.ta_aom_on(t, ta_power)
             self.ta_power = ta_power
         if repump_power != 0:
-            self.repump_aom_on(t, repump_power)
+            if early_analog:
+                devices.repump_aom_digital.go_high(t)
+                devices.repump_aom_analog.constant(t - analog_buffer_time, repump_power)
+            else:
+                self.repump_aom_on(t, repump_power)
             self.repump_power = repump_power
 
         t_aom_start = t
         t += dur
         if not aom_leave_on:
-            self.ta_aom_off(t)
-            self.repump_aom_off(t)
+            if early_analog:
+                devices.repump_aom_digital.go_low(t)
+                devices.repump_aom_analog.constant(t + analog_buffer_time, 0)
+                devices.ta_aom_digital.go_low(t)
+                devices.ta_aom_analog.constant(t + analog_buffer_time, 0)
+                self.repump_power = 0
+                self.ta_power = 0
+            else:
+                self.ta_aom_off(t)
+                self.repump_aom_off(t)
         # Remember that even if you don't close the shutters, the beam will turn off
         # at the end of the pulse duration. Plan accordingly and don't leave long wait
         # times between pulses accidentally.
