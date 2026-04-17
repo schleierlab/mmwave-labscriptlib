@@ -503,39 +503,16 @@ class RydbergOperations(TweezerOperations):
                 power_1064 = shot_globals.ryd_1064_power,
                 close_shutter=True,
                 long_1064 = True,
-                pd_analog_in = True)
+                pd_analog_in = False)
             t_aom_stop = t_aom_start + shot_globals.ryd_456_duration
-
-        if shot_globals.do_tw_trap_off:
-            # self.TweezerLaser_obj.ramp_power(
-            #     t_aom_start - 0.6e-6 - 3e-6 - shot_globals.tw_ramp_dur,
-            #     shot_globals.tw_ramp_dur,
-            #     0.14,
-            # )
-            if shot_globals.do_ryd_lifetime_check:
-                ryd_delay_time = shot_globals.ryd_tweezer_drop_time - shot_globals.ryd_state_wait_time
-                self.TweezerLaser_obj.aom_off(t_aom_start - ryd_delay_time - 0.6e-6, digital_only=True)
-                self.TweezerLaser_obj.aom_on(t_aom_stop + shot_globals.ryd_state_wait_time + 0.6e-6, 0.14)
-            else:
-                self.TweezerLaser_obj.aom_off(t_aom_start - 0.6e-6, digital_only=True)
-                self.TweezerLaser_obj.aom_on(t_aom_stop + 0.6e-6, 0.99)
-
-            # release-recapture temperature measurement code
-            # self.TweezerLaser_obj.aom_off(t, digital_only=True)
-            # self.TweezerLaser_obj.aom_on(t + shot_globals.ryd_456_duration, shot_globals.tw_ramp_power, digital_only=True)
-            # t+= 30e-3
-            # self.TweezerLaser_obj.aom_on(t, 0.99)
-
-            
-            # self.TweezerLaser_obj.ramp_power(t_aom_stop, shot_globals.tw_ramp_dur, 0.99)
         
-        if shot_globals.do_gs_pushout:
-            shutter_config = ShutterConfig.OPTICAL_PUMPING
-            dur = shot_globals.ryd_state_delay_time
-            _ = self.D2Lasers_obj.do_pulse(t_aom_stop + 0.6e-6, dur, shutter_config, 1, 1, close_all_shutters=False, aom_leave_on = False)
+        if shot_globals.drop_from_high_tw:
+            self.TweezerLaser_obj.ramp_power(t_aom_start-shot_globals.tw_ramp_dur-10e-6, shot_globals.tw_ramp_dur, 0.7) # ramp trap power back
+        self.TweezerLaser_obj.aom_off(t_aom_start - 0.6e-6, digital_only=True)
+        self.TweezerLaser_obj.aom_on(t_aom_stop + 0.6e-6, 0.99)
 
         # Fudge time based on picoscope observation when NOT rearranging; depends on expt timing
-        spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET - 30e-6
+        spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET# - 30e-6
 
         if shot_globals.do_mmwave_kill:
             # start microwaves as soon as blue is off
@@ -551,6 +528,187 @@ class RydbergOperations(TweezerOperations):
 
         if shot_globals.do_microwave_kill:
             _ = self.Microwave_obj.do_pulse(t_aom_stop-self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET+3e-6, 10e-6)
+
+        # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
+        t += 10e-3  # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
+        # that's why we add extra time here before imaging to prevent light leakage from optical pump beam
+        # t += shot_globals.img_wait_time_between_shots
+        # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99) # ramp trap power back
+
+        if shot_globals.do_rearrangement:
+            t = self.image_tweezers(t, shot_number=3) # 3rd image (taken after rydberg if we do rearrangement)
+        else:
+            t = self.image_tweezers(t, shot_number=2)
+        t = self.take_in_shot_background(t)
+        t = self.reset_mot(t)
+
+        return t
+
+
+    def _do_ryd_lifetime_check_sequence(self, t):
+        """Perform a Rydberg excitation check sequence.
+
+        Executes a sequence to verify Rydberg excitation:
+        1. Load atoms into tweezers
+        2. Take first image
+        3. Apply Rydberg excitation pulse
+        4. Take second image to check for atom loss
+        5. Reset MOT parameters
+
+        Args:
+            t (float): Start time for the sequence
+
+        Returns:
+            float: End time of the sequence
+        """
+        t = self.load_tweezers(t)
+        t = self.image_tweezers(t, shot_number=1)
+
+        # t += 1e-3
+        if shot_globals.do_rearrangement:
+            t += shot_globals.img_wait_time_between_shots
+            t = self.image_tweezers(t, shot_number=2) # 2nd image taken after rearragnement
+
+        t = self.pump_then_rotate(
+            t,
+            (shot_globals.ryd_bias_amp,
+             shot_globals.ryd_bias_phi,
+             shot_globals.ryd_bias_theta),
+             polar=True) # trap is lowered when optical pump happens
+
+        # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99) # ramp trap power back
+        # Apply Rydberg pulse with both 456 and 1064 active
+        t += 2.5e-6
+
+    
+        t += 3.1e-6
+        # added to allow the short duration < 3us pulse
+        # because the analog change from tweezer ramp power
+
+        #Switch E_field
+        self.set_electric_field(t)
+
+        if shot_globals.do_tweezer_modulation:
+            dur = 20e-3
+            amp = 0.05
+            freq = shot_globals.tw_modulation_freq
+            
+            self.TweezerLaser_obj.sine_mod_power(t, dur, amp, freq)
+            self.TweezerLaser_obj.aom_on(t+dur, shot_globals.tw_ramp_power)
+
+        t += 30e-3
+
+        #Rydberg and mmwave pulses
+        spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET# - 24.57e-6
+        ls.add_time_marker(t, 'Rydberg physics')
+        if shot_globals.ryd_lifetime_multi_pulses:
+            t, pulse_start_times = self.RydLasers_obj.do_rydberg_multipulses(
+                t,
+                n_pulses=2,
+                pulse_dur= shot_globals.ryd_456_duration,
+                pulse_wait_dur = shot_globals.ryd_life_wait_time,
+                power_456 = shot_globals.ryd_456_power,
+                power_1064 = shot_globals.ryd_1064_power,
+                just_456 = (shot_globals.ryd_life_wait_time < 1e-6),
+                close_shutter=True,
+                long_1064=True,
+            )
+            t_aom_start = pulse_start_times[0]
+            self.TweezerLaser_obj.ramp_power(t_aom_start-shot_globals.tw_ramp_dur-10e-6, shot_globals.tw_ramp_dur, 0.7) # ramp trap power back
+            t_aom_stop_0 = t_aom_start + shot_globals.ryd_456_duration
+            t_aom_stop_1 = t_aom_start + shot_globals.ryd_456_duration * 2 + shot_globals.ryd_life_wait_time
+            
+            #Coherent mmwave handling
+            if shot_globals.do_mmwave_pulse:
+                extra_time_1064 = 0.45e-6
+                self.Microwave_obj.do_mmwave_pulse( # first pi pulse
+                    t_aom_stop_0 - spectrum_card_delay + extra_time_1064,
+                    shot_globals.mmwave_pi_pulse_t,
+                    switch_offset = spectrum_card_delay,
+                    keep_switch_on = True
+                )
+                mmwave_offset_t = shot_globals.ryd_life_wait_time - shot_globals.mmwave_pi_pulse_t - extra_time_1064
+                self.Microwave_obj.do_mmwave_pulse(
+                    t_aom_stop_0 - spectrum_card_delay + mmwave_offset_t,
+                    shot_globals.mmwave_pi_pulse_t,
+                    switch_offset = spectrum_card_delay,
+                )
+        else:
+            t, t_aom_start = self.RydLasers_obj.do_rydberg_pulse_short(
+                t,
+                dur=shot_globals.ryd_456_duration,
+                power_456 = shot_globals.ryd_456_power,
+                power_1064 = shot_globals.ryd_1064_power,
+                close_shutter=True,
+                long_1064 = True,
+                pd_analog_in = False,
+            )
+            t_aom_stop_1 = t_aom_start + shot_globals.ryd_456_duration
+            
+            #Coherent mmwave handling
+            if shot_globals.do_mmwave_pulse:
+                extra_time_1064 = 0.45e-6
+                self.Microwave_obj.do_mmwave_pulse( # first pi pulse
+                    t_aom_stop_1 - spectrum_card_delay + extra_time_1064,
+                    shot_globals.mmwave_pi_pulse_t,
+                    switch_offset = spectrum_card_delay,
+                    keep_switch_on = True
+                )
+
+
+        #Tweezer handling
+        ryd_delay_time = shot_globals.ryd_tweezer_drop_time - shot_globals.ryd_life_wait_time
+
+        if shot_globals.ryd_lifetime_multi_pulses:
+            ryd_pulse_duration = shot_globals.ryd_456_duration*2
+        else:
+            ryd_pulse_duration = shot_globals.ryd_456_duration
+
+        if shot_globals.ryd_pulses_at_end:
+            tweezer_off_time = t_aom_start - ryd_delay_time - 0.8e-6
+            tweezer_on_time = t_aom_start + ryd_pulse_duration + shot_globals.ryd_life_wait_time + 0.8e-6
+        else:
+            tweezer_off_time = t_aom_start - 0.8e-6
+            tweezer_on_time = tweezer_off_time + ryd_pulse_duration + shot_globals.ryd_tweezer_drop_time + 0.8e-6
+
+        if shot_globals.drop_from_high_tw:
+            self.TweezerLaser_obj.ramp_power(tweezer_off_time-shot_globals.tw_ramp_dur-10e-6, shot_globals.tw_ramp_dur, 0.7)
+        self.TweezerLaser_obj.aom_off(tweezer_off_time, digital_only=True)
+        
+        if shot_globals.tweezer_recapture_high:
+            self.TweezerLaser_obj.aom_on(tweezer_on_time, 0.99)
+        else:
+            self.TweezerLaser_obj.aom_on(tweezer_on_time, 0.99, digital_only=True)
+            self.TweezerLaser_obj.aom_on(tweezer_on_time + 100e-6, 0.99)
+
+        
+        #Ground state pushout
+        if shot_globals.do_gs_pushout:
+            shutter_config = ShutterConfig.OPTICAL_PUMPING_FULL
+            dur = 3e-6
+            if shot_globals.do_mmwave_pulse:
+                push_out_pulse_end_t = t_aom_stop_1 - self.D2Lasers_obj.CONST_SHUTTER_TURN_ON_TIME - dur/2 - shot_globals.mmwave_pi_pulse_t 
+            else:
+                push_out_pulse_end_t = t_aom_stop_1 - self.D2Lasers_obj.CONST_SHUTTER_TURN_ON_TIME - dur/2
+            ramp_t = push_out_pulse_end_t - 10e-3
+            self.D2Lasers_obj.ramp_ta_freq(ramp_t, 7e-3, 0)
+            _ = self.D2Lasers_obj.do_pulse(push_out_pulse_end_t-dur, dur, shutter_config, 1, 1, close_all_shutters=False, aom_leave_on = False, early_analog = True)
+
+
+        if shot_globals.do_mmwave_kill:
+            # start microwaves as soon as blue is off
+            # 10 ms pulse length is unimportant
+            # (just needs to be >> Rydberg lifetime)
+            # detuning should just be away from any resonances
+            _ = self.Microwave_obj.do_mmwave_pulse(
+                t_aom_stop_1 - spectrum_card_delay,
+                shot_globals.mmwave_kill_pulse_time,
+                detuning=shot_globals.mmwave_spectrum_freq,
+                phase=0,
+            )
+
+        if shot_globals.do_microwave_kill:
+            _ = self.Microwave_obj.do_pulse(t_aom_stop_1-self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET+3e-6, 10e-6)
 
         # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99)
         t += 10e-3  # TODO: from the photodetector, the optical pumping beam shutter seems to be closing slower than others
@@ -614,22 +772,36 @@ class RydbergOperations(TweezerOperations):
                 pulse_wait_dur = shot_globals.ryd_state_wait_time,
                 power_456 = shot_globals.ryd_456_power,
                 power_1064 = shot_globals.ryd_1064_power,
+                just_456 = (shot_globals.ryd_state_wait_time < 1e-6),
                 close_shutter=True,
                 long_1064=True,
             )
         t_aom_start = pulse_start_times[0]
         t_aom_stop_0 = t_aom_start + shot_globals.ryd_456_duration
         t_aom_stop_1 = t_aom_start + shot_globals.ryd_456_duration * 2 + shot_globals.ryd_state_wait_time
-        self.TweezerLaser_obj.aom_off(t_aom_start - 0.6e-6, digital_only=True)
-        self.TweezerLaser_obj.aom_on(t_aom_stop_1 +  0.6e-6, 0.99)
+
+        if shot_globals.drop_from_high_tw:
+            self.TweezerLaser_obj.ramp_power(t_aom_start-shot_globals.tw_ramp_dur-10e-6, shot_globals.tw_ramp_dur, 0.7) # ramp trap power back
+        self.TweezerLaser_obj.aom_off(t_aom_start - 0.8e-6, digital_only=True)
+        self.TweezerLaser_obj.aom_on(t_aom_stop_1 + 0.4e-6, 0.99)
 
         # compensation for desynchronization between pulseblaster and spectrum card
         # subtracted time usually around 20 to 30 us
         # spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET - 25.25e-6  # without rearrangement
         spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET# - 24.57e-6  # with rearrangement
 
-        # Timing?
-        mmwave_offset_t = (shot_globals.ryd_state_wait_time - shot_globals.mmwave_pi_pulse_t) / 2
+        if shot_globals.do_mmwave_pi_pi:
+            extra_time_1064 = 0.45e-6
+            self.Microwave_obj.do_mmwave_pulse( # first pi pulse
+                t_aom_stop_0 - spectrum_card_delay + extra_time_1064,
+                shot_globals.mmwave_pi_pulse_t,
+                switch_offset = spectrum_card_delay,
+                keep_switch_on = True
+            )
+            mmwave_offset_t = shot_globals.ryd_state_wait_time - shot_globals.mmwave_pi_pulse_t - extra_time_1064 # start time of the 2nd pi pulse
+        else:
+            mmwave_offset_t = (shot_globals.ryd_state_wait_time - shot_globals.mmwave_pi_pulse_t) / 2
+
         print(mmwave_offset_t, t_aom_stop_0, spectrum_card_delay)
         self.Microwave_obj.do_mmwave_pulse(
             t_aom_stop_0 - spectrum_card_delay + mmwave_offset_t,
@@ -681,9 +853,13 @@ class RydbergOperations(TweezerOperations):
         t = self.load_tweezers(t)
         t = self.image_tweezers(t, shot_number=1)
 
+        # self.TweezerLaser_obj.switch_tweezer_waveforms(t+shot_globals.img_wait_time_between_shots) # for testing only
+
         # t += 1e-3
         if shot_globals.do_rearrangement:
             t += shot_globals.img_wait_time_between_shots
+            # self.TweezerLaser_obj.switch_tweezer_waveforms(t-3.1e-3) # switch waveform to target array waveform (drop unused traps)
+            # print('time after 1st imge wait time',t)
             t = self.image_tweezers(t, shot_number=2) # 2nd image taken after rearragnement
 
         t = self.pump_then_rotate(
@@ -693,7 +869,6 @@ class RydbergOperations(TweezerOperations):
              shot_globals.ryd_bias_theta),
              polar=True) # trap is lowered when optical pump happens
 
-        # t = self.TweezerLaser_obj.ramp_power(t, shot_globals.tw_ramp_dur, 0.99) # ramp trap power back
         t += 5e-3
 
         #Switch E_field
@@ -716,8 +891,11 @@ class RydbergOperations(TweezerOperations):
         t_aom_start = pulse_start_times[0]
         t_aom_stop_0 = t_aom_start + shot_globals.ryd_456_duration
         t_aom_stop_1 = t_aom_start + shot_globals.ryd_456_duration * 2 + shot_globals.ryd_state_wait_time
-        self.TweezerLaser_obj.aom_off(t_aom_start - 0.6e-6, digital_only=True)
-        self.TweezerLaser_obj.aom_on(t_aom_stop_1 + 0.6e-6, 0.99)
+        
+        if shot_globals.drop_from_high_tw:
+            self.TweezerLaser_obj.ramp_power(t_aom_start-shot_globals.tw_ramp_dur-10e-6, shot_globals.tw_ramp_dur, 0.7) # ramp trap power back
+        self.TweezerLaser_obj.aom_off(t_aom_start - 0.8e-6, digital_only=True)
+        self.TweezerLaser_obj.aom_on(t_aom_stop_1 + 0.4e-6, 0.99)
 
         spectrum_card_delay = self.Microwave_obj.CONST_SPECTRUM_CARD_OFFSET# - 24.65e-6 #29.30e-6
 
@@ -845,7 +1023,7 @@ class RydbergOperations(TweezerOperations):
         t = self.take_in_shot_background(t)
         t = self.reset_mot(t)
 
-        return t_aom_stop_0, t
+        return t_aom_stop_0 + 0.7e-6, t
 
     def _do_ryd_multipulse_check_sequence(self, t):
         """Perform a Rydberg pulse excitation check sequence.

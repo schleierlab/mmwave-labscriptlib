@@ -187,6 +187,11 @@ if __name__ == "__main__":
         sequence_objects.append(RydSequence_obj)
         t = RydSequence_obj._do_ryd_mmwave_ramsey_check_sequence(t)
 
+    elif shot_globals.do_ryd_lifetime_check:
+        RydSequence_obj = RydbergOperations(t)
+        sequence_objects.append(RydSequence_obj)
+        t = RydSequence_obj._do_ryd_lifetime_check_sequence(t)
+
     elif shot_globals.do_ryd_multipulse_check:
         RydSequence_obj = RydbergOperations(t)
         sequence_objects.append(RydSequence_obj)
