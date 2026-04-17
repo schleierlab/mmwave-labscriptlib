@@ -694,7 +694,7 @@ class TweezerLaser:
                 amp_scale = spectrum_manager_fifo.TW_x_amplitude*np.sqrt(len(target_freqs)/len(TW_x_freqs))
                 print('target array amp scale is:', amp_scale)
             else:
-                raise NotImplementedError("Can only swith to target waveforms. Add new waveforms to allow this option")
+                raise NotImplementedError("Can only switch to target waveforms. Add new waveforms to allow this option")
     
             spectrum_manager_fifo.switch_tweezer_comb(t, target_freqs, amp_scale=amp_scale, base_phase_deg=base_phase_deg,
                         power_dbm=None, ch=0, key=None)
@@ -1335,10 +1335,10 @@ class RydLasers:
 
         pulse_start_times = []
 
-        # turn analog on 10 us earlier than the digital
+        # turn analog on earlier than the digital
         # workaround for timing limitation on pulseblaster due to labscript
         # https://groups.google.com/g/labscriptsuite/c/QdW6gUGNwQ0
-        aom_analog_ctrl_anticipation = 1.5e-5
+        aom_analog_ctrl_anticipation = 15e-6
         extra_time_1064 = self.CONST_EXTRA_TIME_1064 * int(long_1064)
 
         if not self.shutter_open:
