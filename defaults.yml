@@ -2,7 +2,7 @@
 # Note: don't leave an empty units field, use "" for an empty string instead
 MOT:
   mot_do_coil: { value: True, unit: bool }
-  mot_do_uv: { value: False, unit: bool }
+  mot_do_uv: { value: True, unit: bool }
   mot_exposure_time: { value: 1e-3, unit: s }
   mot_load_dur: { value: 0.03, unit: s }  # making this too short (< 30 us ish) causes labscript timing errors (cmds in too quick succession on 6739 clockline)
   mot_repump_power: { value: 1, unit: V }
