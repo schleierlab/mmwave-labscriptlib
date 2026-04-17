@@ -97,9 +97,7 @@ logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-    logger.info(f'{devices=}, {devices.initialized()=}')
     devices.initialize()
-    logger.info(f'{devices=}, {devices.initialized()=}')
     labscript.start()
     t: float = 0
     sequence_objects: list[MOTOperations] = []

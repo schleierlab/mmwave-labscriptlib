@@ -90,9 +90,11 @@ class TweezerOperations(OpticalPumpingOperations):
 
         ls.add_time_marker(t, 'Start molasses')
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
+        ls.add_time_marker(t, 'End molasses')
 
         # TODO: does making this delay longer make the background better when using UV?
         t += 7e-3
+        ls.add_time_marker(t, 'Start tweezer ramp')
         t = self.TweezerLaser_obj.ramp_power(
             t, dur=TweezerLaser.CONST_TWEEZER_RAMPING_TIME, final_power=1
         )
@@ -105,6 +107,7 @@ class TweezerOperations(OpticalPumpingOperations):
             else:
                 raise ValueError
 
+            ls.add_time_marker(t, 'Start parity projection')
             t, _ = self.D2Lasers_obj.parity_projection_pulse(
                 t,
                 shot_globals.bm_parity_projection_pulse_dur,
@@ -114,6 +117,7 @@ class TweezerOperations(OpticalPumpingOperations):
                 shutterconfig=shutterconfig,
                 close_all_shutters=True,
             )
+            ls.add_time_marker(t, 'End parity projection')
 
         t = self.ramp_to_imaging_parameters(t)
 
@@ -131,6 +135,8 @@ class TweezerOperations(OpticalPumpingOperations):
 
         if shot_globals.tw_img_tof_imaging_delay <= D2Lasers.CONST_MIN_SHUTTER_OFF_TIME:
             raise ValueError("time of flight needs to be greater than CONST_MIN_SHUTTER_OFF_TIME")
+        
+        ls.add_time_marker(t, 'Imaging time-of-flight delay')
         t += shot_globals.tw_img_tof_imaging_delay
 
         return t
