@@ -88,15 +88,16 @@ from labscriptlib.standard_operations import (
     RydbergOperations,
     TweezerOperations,
 )
+from labscriptlib.science_sequences import (
+    GHZSequences
+)
 
 logger = logging.getLogger(__name__)
 
 
 if __name__ == "__main__":
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-    print(f'{devices.initialized()=}')
     devices.initialize()
-    print(f'{devices.initialized()=}')
     labscript.start()
     t: float = 0
     sequence_objects: list[MOTOperations] = []
@@ -104,8 +105,8 @@ if __name__ == "__main__":
 
     if shot_globals.do_test_analog_in:
         duration = devices.test_analog_in.acquire('test_analog_in', t+1e-3, t+2e-3)
-        print("Duration was:", duration)
-        print("acquisitions: ",devices.test_analog_in.acquisitions)
+        logger.info("Duration was:", duration)
+        logger.info("acquisitions: ", devices.test_analog_in.acquisitions)
         t += 2e-3
 
     if shot_globals.do_mot_in_situ_check:
@@ -149,8 +150,8 @@ if __name__ == "__main__":
     elif shot_globals.do_tweezer_position_check:
         TweezerSequence_obj = TweezerOperations(t)
         sequence_objects.append(TweezerSequence_obj)
-        t = TweezerSequence_obj._do_tweezer_position_check_sequence(t, check_with_vimba=True)
-    
+        t = TweezerSequence_obj._do_tweezer_position_check_sequence(t, check_with_vimba=False)
+
     elif shot_globals.do_local_addr_move:
         TweezerSequence_obj = TweezerOperations(t)
         sequence_objects.append(TweezerSequence_obj)
@@ -185,6 +186,11 @@ if __name__ == "__main__":
         RydSequence_obj = RydbergOperations(t)
         sequence_objects.append(RydSequence_obj)
         t = RydSequence_obj._do_ryd_mmwave_ramsey_check_sequence(t)
+
+    elif shot_globals.do_ryd_lifetime_check:
+        RydSequence_obj = RydbergOperations(t)
+        sequence_objects.append(RydSequence_obj)
+        t = RydSequence_obj._do_ryd_lifetime_check_sequence(t)
 
     elif shot_globals.do_ryd_multipulse_check:
         RydSequence_obj = RydbergOperations(t)
@@ -250,6 +256,21 @@ if __name__ == "__main__":
         RydSequence_obj = RydbergOperations(t)
         sequence_objects.append(RydSequence_obj)
         t = RydSequence_obj._do_1064_light_shift_check_sequence(t)
+    
+    
+    #=================================================================================
+    #Science sequences
+
+    #GHZ States
+    elif shot_globals.do_variable_rotation_parity_fringe:
+        GHZSequences_obj = GHZSequences(t)
+        sequence_objects.append(GHZSequences_obj)
+        t = GHZSequences_obj.variable_rotation_parity_fringe(t)
+
+    elif shot_globals.do_interaction_based_readout:
+        GHZSequences_obj = GHZSequences(t)
+        sequence_objects.append(GHZSequences_obj)
+        t = GHZSequences_obj.interaction_based_readout(t)
 
     """ Here doing all the finish up quirk for spectrum cards """
     # Find the first non-None sequence object
@@ -262,7 +283,7 @@ if __name__ == "__main__":
     if hasattr(current_obj, 'TweezerLaser_obj'):
         logger.debug("current_obj has TweezerLaser_obj")
         t = current_obj.TweezerLaser_obj.stop_tweezers(t)
-        # print('tweezer is stopped at time ', t)
+        # logger.info('tweezer is stopped at time ', t)
     else:
         tweezerlaser_obj = TweezerLaser(
             t=0,

@@ -34,6 +34,7 @@ class LabDevices():
         print('Initializing connection table')
 
         pb = PulseBlasterESRPro500(name='pb', board_number=0)
+        self.pb = pb
         # pb = PrawnBlaster(name='pb', com_port='COM4', num_pseudoclocks=2)
 
         clockline_6363 = ClockLine(
@@ -501,18 +502,25 @@ class LabDevices():
             BIAS_port=54321,
         )
 
-        self.manta419b_tweezer = Manta419B(
-            'manta419b_tweezer',
-            parent_device=ni_6363_0,
-            connection="port0/line13",
-            BIAS_port=54324,
-        )
+        # self.manta419b_tweezer = Manta419B(
+        #     'manta419b_tweezer',
+        #     parent_device=ni_6363_0,
+        #     connection="port0/line13",
+        #     BIAS_port=54324,
+        # )
 
-        self.manta419b_local_addr = Manta419B(
-            'manta419b_local_addr',
+        self.manta419b_la_coll = Manta419B(
+            'manta419b_la_coll',
             parent_device=ni_6363_0,
             connection="port0/line21",
             BIAS_port=54325,
+        )
+
+        self.manta419b_la_focal = Manta419B(
+            'manta419b_la_focal',
+            parent_device=ni_6363_0,
+            connection="port0/line22",
+            BIAS_port=54326,
         )
 
         # self.manta419b_dipole_trap = Manta419B(

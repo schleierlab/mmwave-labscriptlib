@@ -15,6 +15,8 @@ from labscriptlib.calibration import (
 from labscriptlib.connection_table import devices
 from labscriptlib.spectrum_manager import spectrum_manager
 from labscriptlib.spectrum_manager_fifo import spectrum_manager_fifo
+from labscriptlib.shot_globals import shot_globals
+
 
 class ShutterConfig(Flag):
     """Configuration flags for controlling various shutters in the experimental setup.
@@ -434,7 +436,15 @@ class D2Lasers:
         return t
 
     def do_pulse(
-        self, t, dur, shutter_config, ta_power, repump_power, close_all_shutters=False, aom_leave_on = False
+        self,
+        t: float,
+        dur: float,
+        shutter_config: ShutterConfig,
+        ta_power: float,
+        repump_power: float,
+        close_all_shutters: bool = False,
+        aom_leave_on: bool = False,
+        early_analog: bool = False,
     ):
         """Perform a laser pulse with specified parameters.
 
@@ -465,19 +475,37 @@ class D2Lasers:
 
             self.ta_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
             self.repump_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
+        
+        analog_buffer_time = 10e-6
 
         if ta_power != 0:
-            self.ta_aom_on(t, ta_power)
+            if early_analog:
+                devices.ta_aom_digital.go_high(t)
+                devices.ta_aom_analog.constant(t - analog_buffer_time, ta_power)
+            else:
+                self.ta_aom_on(t, ta_power)
             self.ta_power = ta_power
         if repump_power != 0:
-            self.repump_aom_on(t, repump_power)
+            if early_analog:
+                devices.repump_aom_digital.go_high(t)
+                devices.repump_aom_analog.constant(t - analog_buffer_time, repump_power)
+            else:
+                self.repump_aom_on(t, repump_power)
             self.repump_power = repump_power
 
         t_aom_start = t
         t += dur
         if not aom_leave_on:
-            self.ta_aom_off(t)
-            self.repump_aom_off(t)
+            if early_analog:
+                devices.repump_aom_digital.go_low(t)
+                devices.repump_aom_analog.constant(t + analog_buffer_time, 0)
+                devices.ta_aom_digital.go_low(t)
+                devices.ta_aom_analog.constant(t + analog_buffer_time, 0)
+                self.repump_power = 0
+                self.ta_power = 0
+            else:
+                self.ta_aom_off(t)
+                self.repump_aom_off(t)
         # Remember that even if you don't close the shutters, the beam will turn off
         # at the end of the pulse duration. Plan accordingly and don't leave long wait
         # times between pulses accidentally.
@@ -603,17 +631,19 @@ class TweezerLaser:
         # self.intensity_servo_keep_on(t)
         self.start_tweezers(t)
 
-    def start_tweezers(self, t):
+    def start_tweezers(self, t, start_card = True):
         """Initialize and start the optical tweezer system.
 
         Args:
             t (float): Time to start the tweezers
         """
         if self.spectrum_mode == 'sequence':
-            spectrum_manager.start_tweezer_card()
+            if start_card:
+                spectrum_manager.start_tweezer_card()
             spectrum_manager.start_tweezers(t)
         elif self.spectrum_mode == 'fifo':
-            spectrum_manager_fifo.start_tweezer_card()
+            if start_card:
+                spectrum_manager_fifo.start_tweezer_card()
             spectrum_manager_fifo.start_tweezers(t)
             logging.info(
                 'global `do_sequence_mode` is currently False, running Fifo mode now. '
@@ -626,7 +656,7 @@ class TweezerLaser:
             devices.dds0.synthesize(t+1e-3, freq = self.tw_y_freq, amp = 0.95, ph = 0) # unit: MHz
         self.aom_on(t, self.tweezer_power)
 
-    def stop_tweezers(self, t):
+    def stop_tweezers(self, t, stop_card = True):
         """Safely stop and power down the optical tweezer system.
 
         Args:
@@ -636,15 +666,38 @@ class TweezerLaser:
             # stop tweezers
             spectrum_manager.stop_tweezers(t)
 
-            # dummy segment, need this to stop tweezers due to spectrum card bug
-            spectrum_manager.start_tweezers(t)
-            t += 2e-3
-            spectrum_manager.stop_tweezers(t)
-            spectrum_manager.stop_tweezer_card()
+            if stop_card:
+                # dummy segment, need this to stop tweezers due to spectrum card bug
+                spectrum_manager.start_tweezers(t)
+                t += 2e-3
+                spectrum_manager.stop_tweezers(t)
+                spectrum_manager.stop_tweezer_card()
         elif self.spectrum_mode == 'fifo':
             spectrum_manager_fifo.stop_tweezers(t)
-            spectrum_manager_fifo.stop_tweezer_card()
+            if stop_card:
+                spectrum_manager_fifo.stop_tweezer_card()
         return t
+    
+    def switch_tweezer_waveforms(self, t, switch_to_target = True, amp_scale=None,base_phase_deg=None):
+        """
+        When amp_scale and base_phase_deg are set to None, they are set to the default amp 
+        and phase value set in the init of SpectrumManagerFifo class.
+        """
+        if self.spectrum_mode == 'sequence':
+            raise NotImplementedError("Switching frequencies option is not yet added to sequence mode.")
+        elif self.spectrum_mode == 'fifo':
+            if switch_to_target:
+                TW_x_freqs = np.asarray(shot_globals.TW_x_freqs)
+                target_indices = shot_globals.TW_target_array
+                target_freqs = TW_x_freqs[target_indices]
+                target_freqs = target_freqs.flatten()
+                amp_scale = spectrum_manager_fifo.TW_x_amplitude*np.sqrt(len(target_freqs)/len(TW_x_freqs))
+                print('target array amp scale is:', amp_scale)
+            else:
+                raise NotImplementedError("Can only switch to target waveforms. Add new waveforms to allow this option")
+    
+            spectrum_manager_fifo.switch_tweezer_comb(t, target_freqs, amp_scale=amp_scale, base_phase_deg=base_phase_deg,
+                        power_dbm=None, ch=0, key=None)
 
     def intensity_servo_keep_on(self, t):
         """Maintain the intensity servo in active state.
@@ -713,7 +766,7 @@ class TweezerLaser:
             angfreq=2 * np.pi * freq,
             phase=0,
             dc_offset=self.tweezer_power,
-            samplerate=1e5,
+            samplerate=0.3e6,  # sets modulation Nyquist freq of 150 kHz
         )
 
 class LocalAddressLaser:
@@ -733,7 +786,7 @@ class LocalAddressLaser:
         """
         self.local_addr_power = local_addr_power
 
-        # self.intensity_servo_keep_on(t)
+        self.intensity_servo_keep_on(t)
         self.start_local_addr(t)
 
     def start_local_addr(self, t):
@@ -745,7 +798,7 @@ class LocalAddressLaser:
         spectrum_manager.start_local_addr_card()
         spectrum_manager.start_local_addr(t)
 
-        self.aom_on(t, self.local_addr_power)
+        self.aom_off(t)
 
     def stop_local_addr(self, t):
         """Safely stop and power down the optical tweezer system.
@@ -770,7 +823,7 @@ class LocalAddressLaser:
             t (float): Time to ensure servo remains active
         """
         """keep the AOM digital high for intensity servo"""
-        self.aom_on(t, 1)
+        devices.local_addr_1064_aom_digital.go_high(t)
 
     def aom_on(self, t, const, digital_only = False):
         """Turn on the tweezer beam using AOM.
@@ -914,7 +967,12 @@ class RydLasers:
         # Initialize 456nm laser detuning
         # the initial detuning every ramp start and end to
         self.detuning_456 = init_blue_detuning
-        devices.dds1.synthesize(t, freq = self.detuning_456, amp = 0.5, ph = 0)
+        devices.dds1.synthesize(
+            t,
+            freq=self.detuning_456,
+            amp=0.1,  # 0.1 for AOSense setup; 0.5 for MOGLabs setup
+            ph=0,
+        )
         # Initialize shutter state
         self.shutter_open = False
 
@@ -954,7 +1012,7 @@ class RydLasers:
         t_step = np.linspace(t - dur, t, num_steps)
         freq_step = np.linspace(start_freq, end_freq, num_steps)
         for i in np.arange(num_steps):
-            devices.dds1.synthesize(t_step[i], freq = freq_step[i], amp = 0.7, ph = 0)
+            devices.dds1.synthesize(t_step[i], freq = freq_step[i], amp = 0.1, ph = 0)
 
         self.detuning_456 = end_freq
         return t
@@ -1277,11 +1335,11 @@ class RydLasers:
 
         pulse_start_times = []
 
-        # turn analog on 10 us earlier than the digital
+        # turn analog on earlier than the digital
         # workaround for timing limitation on pulseblaster due to labscript
         # https://groups.google.com/g/labscriptsuite/c/QdW6gUGNwQ0
-        aom_analog_ctrl_anticipation = 1e-5
-        extra_time_1064 = self.CONST_EXTRA_TIME_1064*long_1064
+        aom_analog_ctrl_anticipation = 15e-6
+        extra_time_1064 = self.CONST_EXTRA_TIME_1064 * int(long_1064)
 
         if not self.shutter_open:
             if power_1064 != 0:
@@ -1296,6 +1354,9 @@ class RydLasers:
                 # self.pulse_1064_aom_on(t- self.CONST_SHUTTER_TURN_ON_TIME, power_1064)
 
         for i in range(n_pulses):
+            is_first = (i == 0)
+            is_last = (i == n_pulses - 1)
+
             if just_456:
                 self.pulse_456_aom_on(t, power_456, digital_only=True)
                 # print(i, ' pulse start time:', t)
@@ -1303,16 +1364,34 @@ class RydLasers:
                 self.pulse_456_aom_off(t, digital_only=True)
                 t+= pulse_wait_dur
             else:
+                
+                if is_first:
+                    # extra_time_1064_i = extra_time_1064
+                    # extra_time_1064_f = 0
+                    extra_time_1064_i = 0.35e-6
+                    extra_time_1064_f = 0.15e-6
+                elif is_last:
+                    # extra_time_1064_i = 0.25e-6
+                    # extra_time_1064_f = extra_time_1064 - 0.25e-6
+                    extra_time_1064_i = 0.35e-6
+                    extra_time_1064_f = 0.15e-6
+                else:
+                    extra_time_1064_i = 0.25e-6
+                    extra_time_1064_f = 0
+                    
                 self.pulse_456_aom_on(t, power_456, digital_only=True)
-                self.pulse_1064_aom_on(t - extra_time_1064, power_1064, digital_only=True)
+                self.pulse_1064_aom_on(t - extra_time_1064_i, power_1064, digital_only=True)
                 t += pulse_dur
                 self.pulse_456_aom_off(t, digital_only=True)
-                self.pulse_1064_aom_off(t + extra_time_1064 , digital_only=True)
+                self.pulse_1064_aom_off(t + extra_time_1064_f, digital_only=True) #+ extra_time_1064
+                
                 t += pulse_wait_dur
 
-            pulse_start_times.append(t - pulse_wait_dur-pulse_dur)
+            pulse_start_times.append(t - pulse_wait_dur - pulse_dur)
+            if just_456:
+                self.pulse_1064_aom_off(t + extra_time_1064, digital_only=True)
 
-        self.pulse_1064_aom_off(t)
+        self.pulse_1064_aom_off(t + aom_analog_ctrl_anticipation)
         if close_shutter:
             if power_456 != 0:
                 t = self.update_blue_456_shutter(t,"close")
@@ -1331,7 +1410,7 @@ class RydLasers:
             close_shutter: bool = False,
             in_dipole_trap: bool = False,
             long_1064: bool = False,
-            pd_analog_in: bool = True # monitor pd signal through photodetector analog in
+            pd_analog_in: bool = True, # monitor pd signal through photodetector analog in
     ):
         '''
         turn analog on 10 us earlier than the digital so there won't be pulseblaster related errors from the labscript
@@ -1348,8 +1427,9 @@ class RydLasers:
         # turn analog on 10 us earlier than the digital
         # workaround for timing limitation on pulseblaster due to labscript
         # https://groups.google.com/g/labscriptsuite/c/QdW6gUGNwQ0
-        aom_analog_ctrl_anticipation = 10e-6
-        extra_time_1064 = self.CONST_EXTRA_TIME_1064*long_1064
+        # must be longer (25e-6) when doing gs push out to avoid error from NI analog channels being too close in time to each other
+        aom_analog_ctrl_anticipation = 45e-6
+        extra_time_1064 = self.CONST_EXTRA_TIME_1064 * int(long_1064)
         if not self.shutter_open:
             if power_456 != 0:
                 t = self.update_blue_456_shutter(t, "open")
@@ -1374,8 +1454,8 @@ class RydLasers:
                     self.pulse_1064_aom_on(t, power_1064, digital_only=True)
 
         t_aom_start = t
-
         t += dur
+
         self.pulse_456_aom_off(t, digital_only=True)
         devices.pulse_456_aom_analog.constant(t + aom_analog_ctrl_anticipation, 0)
 
@@ -1392,7 +1472,6 @@ class RydLasers:
             if power_456 != 0:
                 t = self.update_blue_456_shutter(t, "close")
             self.pulse_456_aom_on(t, 1, digital_only=True)
-
 
         # logging the photodiode signal to analog in
         if pd_analog_in:

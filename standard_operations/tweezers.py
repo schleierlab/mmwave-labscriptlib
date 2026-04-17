@@ -90,9 +90,11 @@ class TweezerOperations(OpticalPumpingOperations):
 
         ls.add_time_marker(t, 'Start molasses')
         t = self.do_molasses(t, dur=shot_globals.bm_time, close_all_shutters=True)
+        ls.add_time_marker(t, 'End molasses')
 
         # TODO: does making this delay longer make the background better when using UV?
         t += 7e-3
+        ls.add_time_marker(t, 'Start tweezer ramp')
         t = self.TweezerLaser_obj.ramp_power(
             t, dur=TweezerLaser.CONST_TWEEZER_RAMPING_TIME, final_power=1
         )
@@ -105,6 +107,7 @@ class TweezerOperations(OpticalPumpingOperations):
             else:
                 raise ValueError
 
+            ls.add_time_marker(t, 'Start parity projection')
             t, _ = self.D2Lasers_obj.parity_projection_pulse(
                 t,
                 shot_globals.bm_parity_projection_pulse_dur,
@@ -114,6 +117,7 @@ class TweezerOperations(OpticalPumpingOperations):
                 shutterconfig=shutterconfig,
                 close_all_shutters=True,
             )
+            ls.add_time_marker(t, 'End parity projection')
 
         t = self.ramp_to_imaging_parameters(t)
 
@@ -131,6 +135,8 @@ class TweezerOperations(OpticalPumpingOperations):
 
         if shot_globals.tw_img_tof_imaging_delay <= D2Lasers.CONST_MIN_SHUTTER_OFF_TIME:
             raise ValueError("time of flight needs to be greater than CONST_MIN_SHUTTER_OFF_TIME")
+        
+        ls.add_time_marker(t, 'Imaging time-of-flight delay')
         t += shot_globals.tw_img_tof_imaging_delay
 
         return t
@@ -300,6 +306,9 @@ class TweezerOperations(OpticalPumpingOperations):
         # )
 
         t = self.image_tweezers(t, shot_number=1)
+        if shot_globals.do_rearrangement:
+            t += shot_globals.img_wait_time_between_shots
+            t = self.image_tweezers(t, shot_number=2) # 2nd image taken after rearragnement
 
         # t = self.TweezerLaser_obj.ramp_power(
         #     t, dur=TweezerLaser.CONST_TWEEZER_RAMPING_TIME, final_power = shot_globals.tw_ramp_power
@@ -312,9 +321,10 @@ class TweezerOperations(OpticalPumpingOperations):
         #     t, dur=TweezerLaser.CONST_TWEEZER_RAMPING_TIME, final_power = 0.99
         # )
 
-        t = self.image_tweezers(t, shot_number=2)
         if shot_globals.do_rearrangement:
-            t = self.image_tweezers(t, shot_number=3) # this adds 46 ms time offset
+            t = self.image_tweezers(t, shot_number=3) # 3rd image (taken after rydberg if we do rearrangement)
+        else:
+            t = self.image_tweezers(t, shot_number=2)
         t = self.take_in_shot_background(t)
         t = self.reset_mot(t)
 
@@ -381,29 +391,28 @@ class TweezerOperations(OpticalPumpingOperations):
         Returns:
             float: End time of the sequence
         """
-        tweezer_cam_exposure_time = 80e-3
-        local_addr_cam_exposure_time = 10e-3
-        exposure_buffer = max(tweezer_cam_exposure_time, local_addr_cam_exposure_time) + 10e-3
-        #50us min exposure time
+        focal_cam_exposure_time = 0.05e-3
+        coll_cam_exposure_time = 50e-3
+        exposure_buffer = max(focal_cam_exposure_time, coll_cam_exposure_time) + 10e-3
 
         t += 1e-5
-        self.LocalAddressLaser_obj.aom_on(t, shot_globals.la_power)
         devices.local_addr_1064_aom_digital.go_high(t)
+        self.LocalAddressLaser_obj.aom_on(t, 0.05)
         self.TweezerLaser_obj.aom_off(t)
 
         t += 0.01
         ls.add_time_marker(t, 'Local addressing imaging')
-        devices.manta419b_local_addr.expose(
+        devices.manta419b_la_coll.expose(
             'manta419b',
             t,
             frametype='atoms',
-            exposure_time=local_addr_cam_exposure_time,
+            exposure_time=coll_cam_exposure_time,
         )
-        devices.manta419b_tweezer.expose(
+        devices.manta419b_la_focal.expose(
             'manta419b',
             t,
             frametype='atoms',
-            exposure_time=tweezer_cam_exposure_time,
+            exposure_time=focal_cam_exposure_time,
         )
 
         t += exposure_buffer
@@ -423,17 +432,17 @@ class TweezerOperations(OpticalPumpingOperations):
         t += 0.5
 
         ls.add_time_marker(t, 'Local addressing imaging')
-        devices.manta419b_local_addr.expose(
+        devices.manta419b_la_coll.expose(
             'manta419b',
             t,
             frametype='atoms',
-            exposure_time=local_addr_cam_exposure_time,
+            exposure_time=coll_cam_exposure_time,
         )
-        devices.manta419b_tweezer.expose(
+        devices.manta419b_la_focal.expose(
             'manta419b',
             t,
             frametype='atoms',
-            exposure_time=tweezer_cam_exposure_time,
+            exposure_time=focal_cam_exposure_time,
         )
 
         t += exposure_buffer
@@ -465,29 +474,28 @@ class TweezerOperations(OpticalPumpingOperations):
         Returns:
             float: End time of the sequence
         """
-        tweezer_cam_exposure_time = 40e-3
-        local_addr_cam_exposure_time = 10e-3
-        exposure_buffer = max(tweezer_cam_exposure_time, local_addr_cam_exposure_time) + 30e-3
+        focal_cam_exposure_time = 0.05e-3
+        coll_cam_exposure_time = 50e-3
+        exposure_buffer = max(focal_cam_exposure_time, coll_cam_exposure_time) + 30e-3
         #50us min exposure time
 
         self.TweezerLaser_obj.aom_off(t)
-        self.LocalAddressLaser_obj.aom_on(t, shot_globals.la_power)
-        devices.local_addr_1064_aom_digital.go_high(t)
+        self.LocalAddressLaser_obj.aom_on(t, 0.05)
 
         t += 0.1  # ensure that tweezers are OFF for the local addr image
         ls.add_time_marker(t, 'Local addressing imaging')
 
-        devices.manta419b_local_addr.expose(
+        devices.manta419b_la_coll.expose(
             'manta419b',
             t,
             frametype='atoms',
-            exposure_time=local_addr_cam_exposure_time,
+            exposure_time=coll_cam_exposure_time,
         )
-        devices.manta419b_tweezer.expose(
+        devices.manta419b_la_focal.expose(
             'manta419b',
             t,
             frametype='atoms',
-            exposure_time=10e-3,
+            exposure_time=focal_cam_exposure_time,
         )
 
         t += exposure_buffer
@@ -495,22 +503,21 @@ class TweezerOperations(OpticalPumpingOperations):
 
         ls.add_time_marker(t, 'Tweezer imaging')
         self.LocalAddressLaser_obj.aom_off(t)
-        # self.TweezerLaser_obj.start_tweezers(t)
-        self.TweezerLaser_obj.aom_on(t + 0.01, 0.035)
+        self.TweezerLaser_obj.aom_on(t, 0.05)
+        t += 0.1  # to make sure beams are switched over
 
-        t += 0.01  # to make sure beams are switched over
-
-        devices.manta419b_local_addr.expose(
+        devices.manta419b_la_coll.expose(
             'manta419b',
             t,
             frametype='atoms',
-            exposure_time=local_addr_cam_exposure_time,
+            exposure_time=coll_cam_exposure_time,
         )
-        devices.manta419b_tweezer.expose(
+
+        devices.manta419b_la_focal.expose(
             'manta419b',
             t,
             frametype='atoms',
-            exposure_time=10e-3,
+            exposure_time=focal_cam_exposure_time,
         )
 
         t += exposure_buffer

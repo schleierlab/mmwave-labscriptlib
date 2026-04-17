@@ -2,7 +2,7 @@
 # Note: don't leave an empty units field, use "" for an empty string instead
 MOT:
   mot_do_coil: { value: True, unit: bool }
-  mot_do_uv: { value: False, unit: bool }
+  mot_do_uv: { value: True, unit: bool }
   mot_exposure_time: { value: 1e-3, unit: s }
   mot_load_dur: { value: 0.03, unit: s }  # making this too short (< 30 us ish) causes labscript timing errors (cmds in too quick succession on 6739 clockline)
   mot_repump_power: { value: 1, unit: V }
@@ -16,22 +16,19 @@ MOT:
   mot_x_coil_voltage: { value: -1, unit: V }
   mot_y_coil_voltage: { value: 0.6, unit: V }
   mot_z_coil_voltage: { value: -0.5, unit: V }
-  zero_Efield_Vx: { value: 0.29, unit: V }
-  zero_Efield_Vy: { value: 0, unit: V }
-  zero_Efield_Vz: { value: -0.01, unit: V }
 
 Bright_Molasses:
   bm_exposure_time: { value: 1e-3, unit: s }
   bm_parity_projection_pulse_dur: { value: 40e-3, unit: s }
   bm_parity_projection_beam_choice:  { value: "\"img\"", unit: "" } # "mot" or "img"
-  bm_parity_projection_ta_detuning: { value: -15, unit: MHz } #-6
+  bm_parity_projection_ta_detuning: { value: -8, unit: MHz } #-10#-6
   bm_parity_projection_ta_power: { value: 0.13, unit: V }
   bm_parity_projection_repump_power: { value: 1, unit: V }
   bm_repump_detuning: { value: 0.0, unit: MHz }
   bm_repump_power: { value: 1.0, unit: V }
   bm_robust_loading_pulse_dur: { value: 40e-3, unit: s }
   bm_ta_detuning: { value: -150, unit: MHz }
-  bm_ta_power: { value: 0.2, unit: V } #0.15
+  bm_ta_power: { value: 0.15, unit: V } #0.15
   bm_time: { value: 30e-3, unit: s }
   bm_tof_imaging_delay: { value: 7e-3, unit: s }
   bm_beam_choice: { value: "\"mot\"", unit: "" } # "mot" or "img"
@@ -43,7 +40,7 @@ Mmwaves:
   do_mmwave_pulse: { value: False, unit: bool }
   do_mmwave_kill: { value: False, unit: bool }
   do_mmwave_ramsey: { value: False, unit: bool }
-  mmwave_pulse_time: { value: 2.013e-7, unit: s }  # pi pulse time
+  mmwave_kill_pulse_time: { value: 2.013e-7, unit: s }
   mmwave_ramsey_wait_time: { value: 0.8e-6, unit: s }
   mmwave_spectrum_freq: { value: 300e6, unit: Hz }
   mmwave_export_spectrum_segments: { value: False, unit: bool }
@@ -134,7 +131,7 @@ Tweezers:
   tw_img_exposure_time: { value: 40e-3, unit: s } #80e-3
   tw_img_repump_power: { value: 0.21, unit: V }
   tw_img_ta_detuning: { value: -46, unit: MHz} #-47
-  tw_img_ta_power: { value: 0.2, unit: V }
+  tw_img_ta_power: { value: 0.17, unit: V }
   tw_img_tof_imaging_delay: { value: 50e-3, unit: s }
   kinetix_roi_row: { value: "tuple((1150,110))", unit: pixels }
   tw_modulation_freq: { value: 0, unit: Hz }

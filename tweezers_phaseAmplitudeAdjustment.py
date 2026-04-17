@@ -361,8 +361,10 @@ phase_dict_48 = {60.0: 194.3202373453966, 63.0: 29.301585540002726, 66.0: 12.696
 phase_dict_49 = {58.0: 80.48743636091693, 61.0: 137.20669083892471, 64.0: 130.2178636012717, 67.0: 159.77072626691006, 70.0: 0.0, 73.0: 55.6548418943129, 76.0: 262.20873937840616, 79.0: 190.61946205551052, 82.0: 51.202315922854396, 85.0: 231.8115649410449}
 # 10 traps, freq = np.arange(58,88,3)
 
+phase_dict_50 = {59.8: 154.26634933829806, 61.6: 61.707815318745105, 71.8: 306.2280325092131, 73.6: 119.85166490486102, 83.8: 273.709205262265, 85.6: 0.27548155156437926}
+# dimers target sites [3, 6, 23, 26, 43, 46] for freq = np.arange(58, 88, 0.6)
 
-phase_dictionaries = [phase_dict_49, phase_dict_48, phase_dict_47, phase_dict_46, phase_dict_45, phase_dict_44, phase_dict_43, phase_dict_42, phase_dict_41, phase_dict_40, phase_dict_39, phase_dict_38, phase_dict_37, phase_dict_36, phase_dict_35, phase_dict_34, phase_dict_33, phase_dict_32, phase_dict_31, phase_dict_30, phase_dict_27, phase_dict_29, phase_dict_26, phase_dict_25, phase_dict_24, phase_dict_23, phase_dict_22, phase_dict_21, phase_dict_17, phase_dict_1, phase_dict_2, phase_dict_5, phase_dict_6, phase_dict_7, phase_dict_8, phase_dict_9, phase_dict_10, phase_dict_10b, phase_dict_11, phase_dict_12, phase_dict_13, phase_dict_14, phase_dict_15, phase_dict_16, phase_dict_18, phase_dict_19, phase_dict_20, phase_dict_28] #,phase_dict_3, phase_dict_4]
+phase_dictionaries = [phase_dict_50, phase_dict_49, phase_dict_48, phase_dict_47, phase_dict_46, phase_dict_45, phase_dict_44, phase_dict_43, phase_dict_42, phase_dict_41, phase_dict_40, phase_dict_39, phase_dict_38, phase_dict_37, phase_dict_36, phase_dict_35, phase_dict_34, phase_dict_33, phase_dict_32, phase_dict_31, phase_dict_30, phase_dict_27, phase_dict_29, phase_dict_26, phase_dict_25, phase_dict_24, phase_dict_23, phase_dict_22, phase_dict_21, phase_dict_17, phase_dict_1, phase_dict_2, phase_dict_5, phase_dict_6, phase_dict_7, phase_dict_8, phase_dict_9, phase_dict_10, phase_dict_10b, phase_dict_11, phase_dict_12, phase_dict_13, phase_dict_14, phase_dict_15, phase_dict_16, phase_dict_18, phase_dict_19, phase_dict_20, phase_dict_28] #,phase_dict_3, phase_dict_4]
 
 ##########################################################################
 
@@ -641,7 +643,9 @@ amp_dict_32 = {60.0: 0.9, 63.0: 0.9, 66.0: 0.9, 69.0: 0.9, 72.0: 0.9, 75.0: 0.9,
 amp_dict_33 = {58.0: 0.9, 61.0: 0.9, 64.0: 0.9, 67.0: 0.9, 70.0: 0.9, 73.0: 0.9, 76.0: 0.9, 79.0: 0.9, 82.0: 0.9, 85.0: 0.9}
 # 10 traps, freq = np.arange(58,88,3)
 
-amp_dictionaries = [amp_dict_33, amp_dict_32, amp_dict_31, amp_dict_30, amp_dict_29, amp_dict_28, amp_dict_27, amp_dict_26, amp_dict_25, amp_dict_24, amp_dict_23, amp_dict_22, amp_dict_21, amp_dict_20, amp_dict_19, amp_dict_18, amp_dict_17, amp_dict_16, amp_dict_14, amp_dict_15, amp_dict_11, amp_dict_1, amp_dict_2, amp_dict_3, amp_dict_4, amp_dict_5, amp_dict_6, amp_dict_7, amp_dict_8, amp_dict_9, amp_dict_10, amp_dict_12, amp_dict_13]
+amp_dict_34 = {59.8: 0.9, 61.6: 0.9, 71.8: 0.9, 73.6: 0.9, 83.8: 0.9, 85.6: 0.9}
+
+amp_dictionaries = [amp_dict_34, amp_dict_33, amp_dict_32, amp_dict_31, amp_dict_30, amp_dict_29, amp_dict_28, amp_dict_27, amp_dict_26, amp_dict_25, amp_dict_24, amp_dict_23, amp_dict_22, amp_dict_21, amp_dict_20, amp_dict_19, amp_dict_18, amp_dict_17, amp_dict_16, amp_dict_14, amp_dict_15, amp_dict_11, amp_dict_1, amp_dict_2, amp_dict_3, amp_dict_4, amp_dict_5, amp_dict_6, amp_dict_7, amp_dict_8, amp_dict_9, amp_dict_10, amp_dict_12, amp_dict_13]
 
 def trap_phase(frequencies):
     frequencies = [float(i) for i in frequencies]

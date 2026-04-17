@@ -20,7 +20,7 @@ class Microwave:
         CONST_SPECTRUM_UWAVE_CABLE_ATTEN (float): Attenuation in dB for the microwave output at 300 MHz (4.4)
     """
 
-    CONST_SPECTRUM_CARD_OFFSET: ClassVar[float] = 52.8e-6
+    CONST_SPECTRUM_CARD_OFFSET: ClassVar[float] = 26.3e-6  # 52.8e-6
     CONST_SPECTRUM_UWAVE_CABLE_ATTEN: ClassVar[float] = 4.4
 
     def __init__(self, t, init_detuning, init_mmwave_detuning):
@@ -104,13 +104,13 @@ class Microwave:
         Returns:
             float: End time after the pulse is complete
         """
-        t += self.CONST_SPECTRUM_CARD_OFFSET
+        # t += self.CONST_SPECTRUM_CARD_OFFSET
         devices.uwave_absorp_switch.go_high(t)
         self.uwave_absorp_switch_on = True
 
         pulse_detuning = self.mw_detuning if detuning is None else detuning
         devices.spectrum_uwave.single_freq(
-            t - self.CONST_SPECTRUM_CARD_OFFSET,
+            t,# - self.CONST_SPECTRUM_CARD_OFFSET,
             duration=dur,
             freq=spec_freq_calib(pulse_detuning),
             amplitude=0.99,  # the amplitude cannot be 1 due to bug in spectrum card server

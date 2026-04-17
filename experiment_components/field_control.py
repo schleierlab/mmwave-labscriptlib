@@ -489,16 +489,17 @@ class EField:
         electrode_voltages: tuple, shape (8,)
         """
         vx, vy, vz = voltage_diff_vector
+        vx2, vy2, vz2 = vx/2, vy/2, vz/2
 
         electrode_voltages = (
-            vx + vy,
-            vy,
-            vx + vy + vz,
-            vy + vz,
-            vx,
-            0,
-            vx + vz,
-            vz,
+            + vx2 + vy2 - vz2,
+            - vx2 + vy2 - vz2,
+            + vx2 + vy2 + vz2,
+            - vx2 + vy2 + vz2,
+            + vx2 - vy2 - vz2,
+            - vx2 - vy2 - vz2,
+            + vx2 - vy2 + vz2,
+            - vx2 - vy2 + vz2,
         )
 
         return electrode_voltages
@@ -519,7 +520,6 @@ class EField:
             shift_vec_cart = self.convert_fields_sph_to_cart(shift_vector[0], shift_vector[1], shift_vector[2])
         else:
             shift_vec_cart = shift_vector
-        print(shift_vec_cart)
         voltage_vec = np.array(
                 [
                     Ex_calib(shift_vec_cart[0]),
@@ -527,13 +527,5 @@ class EField:
                     Ez_calib(shift_vec_cart[2]),
                 ]
             )
-        print(voltage_vec)
 
         self.set_electric_field(t, voltage_vec)
-
-
-
-
-
-
-
