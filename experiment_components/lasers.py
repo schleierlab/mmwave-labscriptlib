@@ -15,6 +15,8 @@ from labscriptlib.calibration import (
 from labscriptlib.connection_table import devices
 from labscriptlib.spectrum_manager import spectrum_manager
 from labscriptlib.spectrum_manager_fifo import spectrum_manager_fifo
+from labscriptlib.shot_globals import shot_globals
+
 
 class ShutterConfig(Flag):
     """Configuration flags for controlling various shutters in the experimental setup.
@@ -649,6 +651,27 @@ class TweezerLaser:
             if stop_card:
                 spectrum_manager_fifo.stop_tweezer_card()
         return t
+    
+    def switch_tweezer_waveforms(self, t, switch_to_target = True, amp_scale=None,base_phase_deg=None):
+        """
+        When amp_scale and base_phase_deg are set to None, they are set to the default amp 
+        and phase value set in the init of SpectrumManagerFifo class.
+        """
+        if self.spectrum_mode == 'sequence':
+            raise NotImplementedError("Switching frequencies option is not yet added to sequence mode.")
+        elif self.spectrum_mode == 'fifo':
+            if switch_to_target:
+                TW_x_freqs = np.asarray(shot_globals.TW_x_freqs)
+                target_indices = shot_globals.TW_target_array
+                target_freqs = TW_x_freqs[target_indices]
+                target_freqs = target_freqs.flatten()
+                amp_scale = spectrum_manager_fifo.TW_x_amplitude*np.sqrt(len(target_freqs)/len(TW_x_freqs))
+                print('target array amp scale is:', amp_scale)
+            else:
+                raise NotImplementedError("Can only swith to target waveforms. Add new waveforms to allow this option")
+    
+            spectrum_manager_fifo.switch_tweezer_comb(t, target_freqs, amp_scale=amp_scale, base_phase_deg=base_phase_deg,
+                        power_dbm=None, ch=0, key=None)
 
     def intensity_servo_keep_on(self, t):
         """Maintain the intensity servo in active state.
