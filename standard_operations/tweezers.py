@@ -503,7 +503,7 @@ class TweezerOperations(OpticalPumpingOperations):
 
         ls.add_time_marker(t, 'Tweezer imaging')
         self.LocalAddressLaser_obj.aom_off(t)
-        self.TweezerLaser_obj.aom_on(t, 0.05)
+        self.TweezerLaser_obj.aom_on(t, 0.04)
         t += 0.1  # to make sure beams are switched over
 
         devices.manta419b_la_coll.expose(
