@@ -8,14 +8,11 @@ from typing import ClassVar, Literal
 import labscript
 import numpy as np
 
-from labscriptlib.calibration import (
-    repump_freq_calib,
-    ta_freq_calib,
-)
+from labscriptlib.calibration import repump_freq_calib, ta_freq_calib
 from labscriptlib.connection_table import devices
+from labscriptlib.shot_globals import shot_globals
 from labscriptlib.spectrum_manager import spectrum_manager
 from labscriptlib.spectrum_manager_fifo import spectrum_manager_fifo
-from labscriptlib.shot_globals import shot_globals
 
 
 class ShutterConfig(Flag):
@@ -222,13 +219,19 @@ class D2Lasers:
         beatnote lock. If current and final frequencies are the same, no ramp
         is performed.
 
-        Args:
-            t (float): Start time for the frequency ramp
-            duration (float): Desired duration of the ramp
-            final (float): Target frequency detuning in MHz
+        Parameters
+        ----------
+        t: float
+            Start time for the frequency ramp
+        duration: float
+            Desired duration of the ramp
+        final: float
+            Target frequency detuning from the F=4 to F'=5 transition, in MHz.
 
-        Returns:
-            float: End time of the ramp
+        Returns
+        -------
+        float
+            End time of the ramp
         """
         # TODO: check that duration statement here is valid for optical pumping
         if self.ta_freq == final:
@@ -253,13 +256,19 @@ class D2Lasers:
         beatnote lock. If current and final frequencies are the same, no ramp
         is performed.
 
-        Args:
-            t (float): Start time for the frequency ramp
-            duration (float): Desired duration of the ramp
-            final (float): Target frequency detuning in MHz
+        Parameters
+        ----------
+        t: float
+            Start time for the frequency ramp
+        duration: float
+            Desired duration of the ramp
+        final: float
+            Target frequency detuning from the F=3 to F'=4 transition, in MHz
 
-        Returns:
-            float: End time of the ramp
+        Returns
+        -------
+        float
+            End time of the ramp
         """
         # TODO: check that duration statement here is valid for optical pumping
         if self.repump_freq == final:
@@ -475,7 +484,7 @@ class D2Lasers:
 
             self.ta_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
             self.repump_aom_off(t - self.CONST_SHUTTER_TURN_ON_TIME)
-        
+
         analog_buffer_time = 10e-6
 
         if ta_power != 0:
@@ -567,7 +576,7 @@ class D2Lasers:
             dur,
             ta_freq,
             ta_power,
-            repump_power, 
+            repump_power,
             shutterconfig: ShutterConfig = ShutterConfig.IMG_FULL,
             close_all_shutters: bool = False,
     ):
@@ -677,10 +686,10 @@ class TweezerLaser:
             if stop_card:
                 spectrum_manager_fifo.stop_tweezer_card()
         return t
-    
+
     def switch_tweezer_waveforms(self, t, switch_to_target = True, amp_scale=None,base_phase_deg=None):
         """
-        When amp_scale and base_phase_deg are set to None, they are set to the default amp 
+        When amp_scale and base_phase_deg are set to None, they are set to the default amp
         and phase value set in the init of SpectrumManagerFifo class.
         """
         if self.spectrum_mode == 'sequence':
@@ -695,7 +704,7 @@ class TweezerLaser:
                 print('target array amp scale is:', amp_scale)
             else:
                 raise NotImplementedError("Can only switch to target waveforms. Add new waveforms to allow this option")
-    
+
             spectrum_manager_fifo.switch_tweezer_comb(t, target_freqs, amp_scale=amp_scale, base_phase_deg=base_phase_deg,
                         power_dbm=None, ch=0, key=None)
 
@@ -877,7 +886,7 @@ class LocalAddressLaser:
         Returns:
             float: End time of the ramp
 
-        Voltages should be given as (v_x1, v_x2, v_y1, v_y2), 
+        Voltages should be given as (v_x1, v_x2, v_y1, v_y2),
         and should be between +/- 10V (maximum NI analog and piezo controller range)
         """
         if not (0 <= unsigned_voltage <= 10):
@@ -895,13 +904,13 @@ class LocalAddressLaser:
 
             if duration == 0:
                 continue
-            
+
             piezo.constant(t, sign * unsigned_voltage)
             piezo.constant(t + duration, 0)
 
         max_duration = max(abs(effective_dur) for effective_dur in effective_durations)
         return t + max_duration
-    
+
     # def deflect_mirrors(self, t, direction, mag, dur = None, cal = True):
     #     if cal:
     #         voltages, duration = local_addr_move_cal(direction, mag)
@@ -911,7 +920,7 @@ class LocalAddressLaser:
     #             raise ValueError("gimme some duration I'm not calibrated")
     #         else:
     #             duration = dur
-        
+
     #     t = self.deflect_mirrors_uncal(t, duration, voltages)
     #     return t
 
@@ -1364,7 +1373,7 @@ class RydLasers:
                 self.pulse_456_aom_off(t, digital_only=True)
                 t+= pulse_wait_dur
             else:
-                
+
                 if is_first:
                     # extra_time_1064_i = extra_time_1064
                     # extra_time_1064_f = 0
@@ -1378,13 +1387,13 @@ class RydLasers:
                 else:
                     extra_time_1064_i = 0.25e-6
                     extra_time_1064_f = 0
-                    
+
                 self.pulse_456_aom_on(t, power_456, digital_only=True)
                 self.pulse_1064_aom_on(t - extra_time_1064_i, power_1064, digital_only=True)
                 t += pulse_dur
                 self.pulse_456_aom_off(t, digital_only=True)
                 self.pulse_1064_aom_off(t + extra_time_1064_f, digital_only=True) #+ extra_time_1064
-                
+
                 t += pulse_wait_dur
 
             pulse_start_times.append(t - pulse_wait_dur - pulse_dur)
